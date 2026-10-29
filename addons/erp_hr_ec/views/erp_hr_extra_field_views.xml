@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <record id="erp_hr_extra_field_view_list" model="ir.ui.view">
+    <field name="name">erp.hr.extra.field.list</field>
+    <field name="model">erp.hr.extra.field</field>
+    <field name="arch" type="xml">
+      <list string="Datos adicionales">
+        <field name="sequence" widget="handle" />
+        <field name="name" />
+        <field name="value_type" />
+        <field name="company_id" groups="base.group_multi_company" optional="hide" />
+        <field name="active" optional="show" />
+      </list>
+    </field>
+  </record>
+
+  <record id="erp_hr_extra_field_view_form" model="ir.ui.view">
+    <field name="name">erp.hr.extra.field.form</field>
+    <field name="model">erp.hr.extra.field</field>
+    <field name="arch" type="xml">
+      <form string="Dato adicional">
+        <sheet>
+          <widget
+            name="web_ribbon"
+            title="Archivado"
+            bg_color="text-bg-danger"
+            invisible="active"
+          />
+          <field name="active" invisible="1" />
+          <group>
+            <group>
+              <field name="name" placeholder="p. ej. Tipo de sangre" />
+              <field name="value_type" />
+              <field name="sequence" />
+              <field
+                name="company_id"
+                groups="base.group_multi_company"
+                options="{'no_create': True}"
+              />
+            </group>
+            <group>
+              <field
+                name="help"
+                placeholder="Texto de ayuda para quien registra el dato"
+              />
+            </group>
+          </group>
+          <group name="options" string="Opciones" invisible="value_type != 'selection'">
+            <field name="option_ids" nolabel="1" colspan="2">
+              <list string="Opciones" editable="bottom">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="active" widget="boolean_toggle" />
+              </list>
+            </field>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_hr_extra_field_view_search" model="ir.ui.view">
+    <field name="name">erp.hr.extra.field.search</field>
+    <field name="model">erp.hr.extra.field</field>
+    <field name="arch" type="xml">
+      <search string="Buscar datos adicionales">
+        <field name="name" />
+        <separator />
+        <filter name="inactive" string="Archivados" domain="[('active', '=', False)]" />
+        <group name="group_by" string="Agrupar por">
+          <filter
+            name="group_value_type"
+            string="Tipo"
+            context="{'group_by': 'value_type'}"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="erp_hr_extra_field_action" model="ir.actions.act_window">
+    <field name="name">Datos adicionales</field>
+    <field name="res_model">erp.hr.extra.field</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="erp_hr_extra_field_view_search" />
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Defina los datos adicionales de sus empleados
+      </p>
+      <p>
+        Cada dato tiene un tipo (texto, entero, decimal, fecha, sí/no o lista
+        de opciones) y se registra por empleado en la pestaña
+        <em>Datos adicionales</em> de su ficha. Archivar un dato lo oculta sin
+        borrar los valores ya registrados.
+      </p>
+    </field>
+  </record>
+</odoo>

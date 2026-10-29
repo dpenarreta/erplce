@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Acción de solo consulta del catálogo de establecimientos para RRHH
+    (menú Empleados > Configuración > Empleado). El catálogo se administra
+    desde Ajustes con la acción original de erp_establishment.
+  -->
+  <record id="erp_hr_ec_establishment_action" model="ir.actions.act_window">
+    <field name="name">Establecimientos</field>
+    <field name="res_model">erp.establishment</field>
+    <field name="view_mode">list,form</field>
+    <field
+      name="search_view_id"
+      ref="erp_establishment.erp_establishment_view_search"
+    />
+    <field
+      name="context"
+    >{'create': False, 'edit': False, 'delete': False, 'import': False}</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_empty_folder">
+        Aún no hay establecimientos registrados
+      </p>
+      <p>
+        Este catálogo es de solo consulta para Recursos Humanos. Lo administra
+        un usuario con permisos de Ajustes desde
+        <strong>Ajustes &gt; Usuarios y empresas &gt; Establecimientos</strong>.
+      </p>
+    </field>
+  </record>
+</odoo>

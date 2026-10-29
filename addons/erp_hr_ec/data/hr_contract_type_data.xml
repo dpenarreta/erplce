@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!--
+        Tipos de contrato iniciales de Ecuador (US-007, CA-8). Editables y
+        ampliables por el usuario; noupdate para no sobrescribir sus cambios al
+        actualizar el módulo. El indicador de relación laboral es un valor
+        inicial A VALIDAR por la empresa.
+    -->
+  <record id="contract_type_ec_indefinido" model="hr.contract.type">
+    <field name="name">Indefinido</field>
+    <field name="code">EC_INDEFINIDO</field>
+    <field name="sequence">101</field>
+    <field name="country_id" ref="base.ec" />
+    <field name="erp_labor_relationship" eval="True" />
+  </record>
+  <record id="contract_type_ec_eventual" model="hr.contract.type">
+    <field name="name">Eventual</field>
+    <field name="code">EC_EVENTUAL</field>
+    <field name="sequence">102</field>
+    <field name="country_id" ref="base.ec" />
+    <field name="erp_labor_relationship" eval="True" />
+  </record>
+  <record id="contract_type_ec_bajo_factura" model="hr.contract.type">
+    <field name="name">Bajo factura</field>
+    <field name="code">EC_BAJO_FACTURA</field>
+    <field name="sequence">103</field>
+    <field name="country_id" ref="base.ec" />
+    <field name="erp_labor_relationship" eval="False" />
+  </record>
+  <record id="contract_type_ec_pasantia" model="hr.contract.type">
+    <field name="name">Pasantía</field>
+    <field name="code">EC_PASANTIA</field>
+    <field name="sequence">104</field>
+    <field name="country_id" ref="base.ec" />
+    <field name="erp_labor_relationship" eval="False" />
+  </record>
+  <record id="contract_type_ec_tiempo_parcial" model="hr.contract.type">
+    <field name="name">Tiempo parcial</field>
+    <field name="code">EC_TIEMPO_PARCIAL</field>
+    <field name="sequence">105</field>
+    <field name="country_id" ref="base.ec" />
+    <field name="erp_labor_relationship" eval="True" />
+  </record>
+</odoo>

@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_erp_hr_dependent_user,erp.hr.dependent.user,model_erp_hr_dependent,hr.group_hr_user,1,1,1,1
+access_erp_hr_benefit_election_user,erp.hr.benefit.election.user,model_erp_hr_benefit_election,hr.group_hr_user,1,1,1,1
+access_erp_hr_extra_value_user,erp.hr.extra.value.user,model_erp_hr_extra_value,hr.group_hr_user,1,1,1,1
+access_erp_hr_extra_field_user,erp.hr.extra.field.user,model_erp_hr_extra_field,hr.group_hr_user,1,0,0,0
+access_erp_hr_extra_field_manager,erp.hr.extra.field.manager,model_erp_hr_extra_field,hr.group_hr_manager,1,1,1,1
+access_erp_hr_extra_field_option_user,erp.hr.extra.field.option.user,model_erp_hr_extra_field_option,hr.group_hr_user,1,0,0,0
+access_erp_hr_extra_field_option_manager,erp.hr.extra.field.option.manager,model_erp_hr_extra_field_option,hr.group_hr_manager,1,1,1,1

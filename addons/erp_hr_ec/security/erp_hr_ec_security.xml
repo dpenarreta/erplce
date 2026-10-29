@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <record id="erp_hr_dependent_company_rule" model="ir.rule">
+    <field name="name">Carga familiar: multiempresa</field>
+    <field name="model_id" ref="model_erp_hr_dependent" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="erp_hr_benefit_election_company_rule" model="ir.rule">
+    <field name="name">Elección de modalidad de beneficio: multiempresa</field>
+    <field name="model_id" ref="model_erp_hr_benefit_election" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="erp_hr_extra_field_company_rule" model="ir.rule">
+    <field name="name">Dato adicional: multiempresa</field>
+    <field name="model_id" ref="model_erp_hr_extra_field" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="erp_hr_extra_field_option_company_rule" model="ir.rule">
+    <field name="name">Opción de dato adicional: multiempresa</field>
+    <field name="model_id" ref="model_erp_hr_extra_field_option" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="erp_hr_extra_value_company_rule" model="ir.rule">
+    <field name="name">Valor de dato adicional: multiempresa</field>
+    <field name="model_id" ref="model_erp_hr_extra_value" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+</odoo>

@@ -95,8 +95,9 @@ Convención dentro de cada módulo de `addons/<modulo>/`:
 ## 7. Estado actual
 
 - 2026-10-29: entorno Docker y scripts de verificación creados (US-001 completada con pendientes). Motor de nómina: OCA `payroll` 18.0 como submódulo `third_party/payroll` (ADR-001), extendido en `addons/erp_payroll_ec` (US-006 completada con pendientes). Empresa: LAARCOURIER EXPRESS S.A. (RUC 1791705726001), una sola empresa. Marca: ERP LCE. Prioridad: RRHH/Nómina antes que facturación SRI (ver índice de historias).
+- 2026-10-29: US-007 completada con pendientes: `addons/erp_establishment` (catálogo de 178 establecimientos SRI con región y régimen de décimo cuarto; plantilla de importación y guía en `docs/guias/carga-establecimientos.md`) y `addons/erp_hr_ec` (datos de Ecuador del empleado, cargas, modalidad de décimos/fondos de reserva con vigencia, datos adicionales configurables, tipos de contrato y máximo semanal). US-008 debe hacer depender `erp_payroll_ec` de `erp_hr_ec` y usar `_get_benefit_mode`, `erp_decimo_cuarto_regime`, `erp_labor_relationship` y `_erp_get_work_time_rate`.
 - Primera historia obligatoria: **Historia Técnica de base de la plataforma** (entorno Docker reproducible, estructura `addons/` y `third_party/`, `scripts/check.sh` y `scripts/test.sh`, módulo `erp_base` con dependencias de `l10n_ec`, idioma `es_EC`, zona horaria y moneda, y módulo `erp_branding`).
-- Pendiente de confirmar con el usuario: razón social/RUC de la(s) empresa(s), multiempresa, ambiente SRI (pruebas/producción), tipos de comprobantes electrónicos requeridos, reglas de nómina (contratos, horas extra, beneficios propios) y fuente normativa de los parámetros.
+- Pendiente de confirmar con el usuario: valores "a validar" de US-007 y datos de US-008 (catálogo de bonos y descuentos, política de préstamos).
 
 ### Notas de entorno (US-001)
 - Imágenes fijadas: `odoo:18.0@sha256:9668abac…` (build 2026-10-26) y `postgres:16@sha256:1beaa308…` (16.15). Ver `docker-compose.yml`.

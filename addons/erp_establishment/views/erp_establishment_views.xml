@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <record id="erp_establishment_view_list" model="ir.ui.view">
+    <field name="name">erp.establishment.list</field>
+    <field name="model">erp.establishment</field>
+    <field name="arch" type="xml">
+      <list string="Establecimientos">
+        <field name="code" />
+        <field name="name" />
+        <field name="city" />
+        <field name="state_id" />
+        <field name="region" />
+        <field name="decimo_cuarto_regime" />
+        <field name="company_id" groups="base.group_multi_company" optional="hide" />
+        <field name="active" optional="hide" />
+      </list>
+    </field>
+  </record>
+
+  <record id="erp_establishment_view_form" model="ir.ui.view">
+    <field name="name">erp.establishment.form</field>
+    <field name="model">erp.establishment</field>
+    <field name="arch" type="xml">
+      <form string="Establecimiento">
+        <sheet>
+          <widget
+            name="web_ribbon"
+            title="Archivado"
+            bg_color="text-bg-danger"
+            invisible="active"
+          />
+          <field name="active" invisible="1" />
+          <group>
+            <group name="identification" string="Identificación">
+              <field name="code" placeholder="p. ej. 001" />
+              <field name="name" placeholder="p. ej. Agencia Matriz Quito" />
+              <field
+                name="company_id"
+                groups="base.group_multi_company"
+                options="{'no_create': True}"
+              />
+            </group>
+            <group name="location" string="Ubicación">
+              <field name="street" />
+              <field name="city" />
+              <field
+                name="state_id"
+                domain="[('country_id.code', '=', 'EC')]"
+                options="{'no_create': True, 'no_open': True}"
+              />
+            </group>
+            <group name="region" string="Región y décimo cuarto">
+              <field name="region" />
+              <field name="decimo_cuarto_regime" readonly="1" />
+            </group>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_establishment_view_search" model="ir.ui.view">
+    <field name="name">erp.establishment.search</field>
+    <field name="model">erp.establishment</field>
+    <field name="arch" type="xml">
+      <search string="Buscar establecimientos">
+        <field
+          name="name"
+          string="Código o nombre"
+          filter_domain="['|', ('code', 'ilike', self), ('name', 'ilike', self)]"
+        />
+        <field name="city" />
+        <field name="state_id" />
+        <separator />
+        <filter
+          name="region_costa"
+          string="Costa"
+          domain="[('region', '=', 'costa')]"
+        />
+        <filter
+          name="region_sierra"
+          string="Sierra"
+          domain="[('region', '=', 'sierra')]"
+        />
+        <filter
+          name="region_amazonia"
+          string="Amazonía"
+          domain="[('region', '=', 'amazonia')]"
+        />
+        <filter
+          name="region_galapagos"
+          string="Galápagos"
+          domain="[('region', '=', 'galapagos')]"
+        />
+        <separator />
+        <filter
+          name="regime_costa_galapagos"
+          string="Décimo cuarto Costa / Galápagos"
+          domain="[('decimo_cuarto_regime', '=', 'costa_galapagos')]"
+        />
+        <filter
+          name="regime_sierra_amazonia"
+          string="Décimo cuarto Sierra / Amazonía"
+          domain="[('decimo_cuarto_regime', '=', 'sierra_amazonia')]"
+        />
+        <separator />
+        <filter name="inactive" string="Archivados" domain="[('active', '=', False)]" />
+        <group name="group_by" string="Agrupar por">
+          <filter
+            name="group_region"
+            string="Región"
+            context="{'group_by': 'region'}"
+          />
+          <filter
+            name="group_state"
+            string="Provincia"
+            context="{'group_by': 'state_id'}"
+          />
+          <filter
+            name="group_regime"
+            string="Régimen de décimo cuarto"
+            context="{'group_by': 'decimo_cuarto_regime'}"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="erp_establishment_action" model="ir.actions.act_window">
+    <field name="name">Establecimientos</field>
+    <field name="res_model">erp.establishment</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="erp_establishment_view_search" />
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Registre los establecimientos SRI de la empresa
+      </p>
+      <p>
+        Cada establecimiento tiene un código SRI de 3 dígitos y una región,
+        que define el régimen de décimo cuarto sueldo de sus empleados.
+      </p>
+      <p>
+        Para cargarlos en bloque use <strong>Importar registros</strong> (menú de
+        acciones de la lista) y descargue allí la plantilla
+        <em>plantilla_establecimientos.csv</em>.
+      </p>
+    </field>
+  </record>
+
+  <menuitem
+    id="erp_establishment_menu_settings"
+    name="Establecimientos"
+    parent="base.menu_users"
+    action="erp_establishment_action"
+    groups="base.group_system"
+    sequence="30"
+  />
+</odoo>

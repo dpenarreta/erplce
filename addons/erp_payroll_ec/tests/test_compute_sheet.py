@@ -107,6 +107,11 @@ class TestPayslipComputeSheet(TransactionCase):
             }
         )
 
+        # Tipo de contrato estándar (hr_contract): erp_hr_ec (US-007) exige
+        # tipo en los contratos en curso cuando está instalado en la misma BD.
+        cls.contract_type = cls.env["hr.contract.type"].create(
+            {"name": "Indefinido (prueba US-006)"}
+        )
         Employee = cls.env["hr.employee"]
         cls.employee = Employee.create({"name": "José Ñúñez Peña"})
         cls.employee_2 = Employee.create({"name": "María Fernanda Muñoz"})
@@ -124,6 +129,7 @@ class TestPayslipComputeSheet(TransactionCase):
                 "date_start": date_start,
                 "date_end": date_end,
                 "state": state,
+                "contract_type_id": cls.contract_type.id,
                 "struct_id": cls.structure.id,
                 "journal_id": cls.journal.id,
             }

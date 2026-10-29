@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!-- Empleados > Configuración > Empleado -->
+  <menuitem
+    id="erp_hr_ec_menu_establishment"
+    name="Establecimientos"
+    parent="hr.menu_config_employee"
+    action="erp_hr_ec_establishment_action"
+    groups="hr.group_hr_user"
+    sequence="8"
+  />
+  <menuitem
+    id="erp_hr_ec_menu_extra_field"
+    name="Datos adicionales"
+    parent="hr.menu_config_employee"
+    action="erp_hr_extra_field_action"
+    groups="hr.group_hr_manager"
+    sequence="9"
+  />
+</odoo>

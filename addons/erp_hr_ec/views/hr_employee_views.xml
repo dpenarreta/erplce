@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Todos los campos de erp_hr_ec en hr.employee llevan groups="hr.group_hr_user"
+    en el modelo; aquí también, para que la vista no los pida a usuarios sin
+    RRHH (que usan las vistas de hr.employee.public).
+  -->
+  <record id="hr_employee_view_form_inherit_erp_hr_ec" model="ir.ui.view">
+    <field name="name">hr.employee.form.inherit.erp_hr_ec</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="hr.view_employee_form" />
+    <field name="arch" type="xml">
+      <!-- Información de trabajo > Ubicación: establecimiento SRI -->
+      <xpath
+        expr="//page[@name='public']//field[@name='work_location_id']"
+        position="after"
+      >
+        <field
+          name="erp_establishment_id"
+          domain="[('active', '=', True)]"
+          options="{'no_create': True}"
+          groups="hr.group_hr_user"
+        />
+        <field
+          name="erp_region"
+          readonly="1"
+          invisible="not erp_establishment_id"
+          groups="hr.group_hr_user"
+        />
+        <field
+          name="erp_decimo_cuarto_regime"
+          readonly="1"
+          invisible="not erp_establishment_id"
+          groups="hr.group_hr_user"
+        />
+      </xpath>
+
+      <!-- Pestañas de Ecuador después de Información privada -->
+      <xpath expr="//page[@name='personal_information']" position="after">
+        <page name="erp_ecuador" string="Ecuador" groups="hr.group_hr_user">
+          <group>
+            <group name="erp_disability" string="Discapacidad">
+              <field name="erp_disability" />
+              <field
+                name="erp_disability_percentage"
+                invisible="not erp_disability"
+                required="erp_disability"
+              />
+              <field name="erp_disability_card" invisible="not erp_disability" />
+              <field name="erp_disability_substitute" />
+            </group>
+          </group>
+          <separator name="erp_dependents" string="Cargas familiares" />
+          <field name="erp_dependent_ids" nolabel="1">
+            <list string="Cargas familiares" editable="bottom">
+              <field name="name" />
+              <field name="identification" />
+              <field name="relationship" />
+              <field name="birthdate" />
+              <field name="disability" />
+            </list>
+          </field>
+          <separator name="erp_benefits" string="Décimos y fondos de reserva" />
+          <p class="text-muted">
+            Registre aquí solo los cambios de modalidad del empleado, con la
+            fecha desde la que rigen. Mientras no tenga una elección vigente
+            para un beneficio, se aplica la modalidad por defecto de la empresa
+            (Empleados &gt; Configuración &gt; Ajustes, bloque Ecuador).
+          </p>
+          <field name="erp_benefit_election_ids" nolabel="1">
+            <list
+              string="Modalidad de décimos y fondos de reserva"
+              editable="bottom"
+              default_order="benefit, date_from desc"
+            >
+              <field name="benefit" />
+              <field name="mode" />
+              <field name="date_from" />
+              <field name="note" />
+            </list>
+          </field>
+        </page>
+        <page
+          name="erp_extra_data"
+          string="Datos adicionales"
+          groups="hr.group_hr_user"
+        >
+          <p class="text-muted">
+            Los datos disponibles los define un responsable de RRHH en
+            Empleados &gt; Configuración &gt; Datos adicionales. Registre un
+            valor por dato.
+          </p>
+          <field name="erp_extra_value_ids" nolabel="1">
+            <list string="Datos adicionales" editable="bottom">
+              <field
+                name="field_id"
+                domain="[('active', '=', True)]"
+                options="{'no_create': True, 'no_open': True}"
+              />
+              <field name="value_type" column_invisible="1" />
+              <field
+                name="value_char"
+                string="Valor (texto)"
+                invisible="value_type != 'char'"
+              />
+              <field
+                name="value_integer"
+                string="Valor (entero)"
+                invisible="value_type != 'integer'"
+              />
+              <field
+                name="value_float"
+                string="Valor (decimal)"
+                invisible="value_type != 'float'"
+              />
+              <field
+                name="value_date"
+                string="Valor (fecha)"
+                invisible="value_type != 'date'"
+              />
+              <field
+                name="value_boolean"
+                string="Valor (sí/no)"
+                invisible="value_type != 'boolean'"
+              />
+              <field
+                name="option_id"
+                string="Valor (opción)"
+                domain="[('field_id', '=', field_id)]"
+                invisible="value_type != 'selection'"
+                required="value_type == 'selection'"
+                options="{'no_create': True, 'no_open': True}"
+              />
+            </list>
+          </field>
+        </page>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="hr_employee_view_list_inherit_erp_hr_ec" model="ir.ui.view">
+    <field name="name">hr.employee.list.inherit.erp_hr_ec</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="hr.view_employee_tree" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='work_location_id']" position="after">
+        <field name="erp_establishment_id" optional="hide" groups="hr.group_hr_user" />
+        <field name="erp_region" optional="hide" groups="hr.group_hr_user" />
+      </xpath>
+    </field>
+  </record>
+
+  <record id="hr_employee_view_search_inherit_erp_hr_ec" model="ir.ui.view">
+    <field name="name">hr.employee.search.inherit.erp_hr_ec</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="hr.view_employee_filter" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='job_id']" position="after">
+        <field name="erp_establishment_id" groups="hr.group_hr_user" />
+      </xpath>
+      <xpath expr="//filter[@name='inactive']" position="before">
+        <filter
+          name="erp_region_costa"
+          string="Región Costa"
+          domain="[('erp_region', '=', 'costa')]"
+          groups="hr.group_hr_user"
+        />
+        <filter
+          name="erp_region_sierra"
+          string="Región Sierra"
+          domain="[('erp_region', '=', 'sierra')]"
+          groups="hr.group_hr_user"
+        />
+        <filter
+          name="erp_region_amazonia"
+          string="Región Amazonía"
+          domain="[('erp_region', '=', 'amazonia')]"
+          groups="hr.group_hr_user"
+        />
+        <filter
+          name="erp_region_galapagos"
+          string="Región Galápagos"
+          domain="[('erp_region', '=', 'galapagos')]"
+          groups="hr.group_hr_user"
+        />
+        <filter
+          name="erp_without_establishment"
+          string="Sin establecimiento"
+          domain="[('erp_establishment_id', '=', False)]"
+          groups="hr.group_hr_user"
+        />
+        <separator />
+      </xpath>
+      <xpath expr="//filter[@name='group_category_ids']" position="after">
+        <filter
+          name="erp_group_establishment"
+          string="Establecimiento"
+          context="{'group_by': 'erp_establishment_id'}"
+          groups="hr.group_hr_user"
+        />
+        <filter
+          name="erp_group_region"
+          string="Región"
+          context="{'group_by': 'erp_region'}"
+          groups="hr.group_hr_user"
+        />
+      </xpath>
+    </field>
+  </record>
+</odoo>

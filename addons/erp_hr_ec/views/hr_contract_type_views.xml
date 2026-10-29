@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <record id="hr_contract_type_view_list_inherit_erp_hr_ec" model="ir.ui.view">
+    <field name="name">hr.contract.type.list.inherit.erp_hr_ec</field>
+    <field name="model">hr.contract.type</field>
+    <field name="inherit_id" ref="hr.hr_contract_type_view_tree" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='country_id']" position="after">
+        <field name="erp_labor_relationship" string="Relación laboral" />
+      </xpath>
+    </field>
+  </record>
+
+  <record id="hr_contract_type_view_form_inherit_erp_hr_ec" model="ir.ui.view">
+    <field name="name">hr.contract.type.form.inherit.erp_hr_ec</field>
+    <field name="model">hr.contract.type</field>
+    <field name="inherit_id" ref="hr.hr_contract_type_view_form" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='country_id']" position="after">
+        <field name="erp_labor_relationship" />
+      </xpath>
+    </field>
+  </record>
+</odoo>

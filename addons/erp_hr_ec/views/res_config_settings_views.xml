@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <record id="res_config_settings_view_form_inherit_erp_hr_ec" model="ir.ui.view">
+    <field name="name">res.config.settings.form.inherit.erp_hr_ec</field>
+    <field name="model">res.config.settings</field>
+    <field name="inherit_id" ref="hr.res_config_settings_view_form" />
+    <field name="arch" type="xml">
+      <xpath expr="//block[@name='employee_rights_setting_container']" position="after">
+        <block title="Ecuador" name="erp_hr_ec_setting_container">
+          <setting
+            id="erp_benefit_modes_setting"
+            string="Modalidad por defecto de décimos y fondos de reserva"
+            company_dependent="1"
+            help="Se aplica a los empleados sin una elección propia vigente (pestaña Ecuador de la ficha). Valores iniciales a validar con la normativa vigente."
+          >
+            <div class="content-group">
+              <div class="row mt-2">
+                <label
+                  for="erp_default_reserve_fund_mode"
+                  string="Fondos de reserva"
+                  class="col-lg-5 o_light_label"
+                />
+                <field name="erp_default_reserve_fund_mode" class="col-lg-6" />
+              </div>
+              <div class="row">
+                <label
+                  for="erp_default_thirteenth_mode"
+                  string="Décimo tercero"
+                  class="col-lg-5 o_light_label"
+                />
+                <field name="erp_default_thirteenth_mode" class="col-lg-6" />
+              </div>
+              <div class="row">
+                <label
+                  for="erp_default_fourteenth_mode"
+                  string="Décimo cuarto"
+                  class="col-lg-5 o_light_label"
+                />
+                <field name="erp_default_fourteenth_mode" class="col-lg-6" />
+              </div>
+            </div>
+          </setting>
+          <setting
+            id="erp_max_weekly_hours_setting"
+            string="Máximo de horas semanales"
+            company_dependent="1"
+            help="Máximo de horas semanales que admite la jornada de un contrato. Valor inicial (40 h, Código del Trabajo) a validar con la normativa vigente."
+          >
+            <div class="content-group">
+              <div class="row mt-2">
+                <label
+                  for="erp_max_weekly_hours"
+                  string="Horas"
+                  class="col-lg-5 o_light_label"
+                />
+                <field name="erp_max_weekly_hours" class="col-lg-3" />
+              </div>
+            </div>
+          </setting>
+        </block>
+      </xpath>
+    </field>
+  </record>
+</odoo>
