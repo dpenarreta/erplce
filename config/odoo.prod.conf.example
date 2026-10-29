@@ -1,0 +1,33 @@
+; PLANTILLA de configuración de Odoo para PRODUCCIÓN.
+; El despliegue de producción (compose, proxy inverso, TLS, respaldos) se
+; define en US-009; esta plantilla fija los mínimos de seguridad.
+; Uso: copiar a config/odoo.conf en el servidor (NO se versiona) y completar.
+[options]
+; Contraseña maestra larga y aleatoria (p. ej. `openssl rand -base64 32`).
+; El contenedor no arranca si se deja __CAMBIAR__ o vacía.
+admin_passwd = __CAMBIAR__
+
+addons_path = /mnt/extra-addons
+data_dir = /var/lib/odoo
+
+; Seguridad
+list_db = False
+; Una sola BD por instancia: completar con el nombre real.
+db_name = __CAMBIAR_NOMBRE_BD__
+dbfilter = ^__CAMBIAR_NOMBRE_BD__$
+; Odoo detrás de proxy inverso con TLS (X-Forwarded-*).
+proxy_mode = True
+without_demo = all
+
+; Procesos (ajustar a CPU/RAM: workers ~ 2 * núcleos + 1)
+workers = 4
+max_cron_threads = 2
+; Websocket/longpolling en workers: el proxy debe enrutar /websocket a 8072.
+gevent_port = 8072
+limit_memory_soft = 2147483648
+limit_memory_hard = 2684354560
+limit_time_cpu = 600
+limit_time_real = 1200
+limit_request = 65536
+
+log_level = warn

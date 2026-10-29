@@ -1,0 +1,94 @@
+///
+/// ERP Branding - institutional palette (LAARCOURIER EXPRESS S.A.).
+///
+/// Loaded BEFORE web/static/src/scss/primary_variables.scss: every core
+/// variable is declared with !default, so the first definition wins.
+/// Shared by backend, frontend (login) and report bundles.
+///
+/// Contrast rules (WCAG 2.1 AA):
+/// - Yellow is only used as a background/surface, always with black text.
+/// - Text or links on light backgrounds use black or $erp-brand-yellow-text
+///   (dark shade of the brand yellow, 6.6:1 on white).
+///
+
+$erp-brand-yellow: #fce200 !default; // Pantone P 4-8 C
+$erp-brand-black: #000000 !default; // Process Black C
+$erp-brand-gray: #e1e1e1 !default; // P 179-3 C
+$erp-brand-yellow-text: #6b5d00 !default;
+$erp-brand-white: #ffffff !default;
+
+// Brand colors
+$o-brand-odoo: $erp-brand-black !default;
+$o-brand-primary: $erp-brand-yellow !default;
+
+// "Action" color is used for text, icons and thin borders on white
+// backgrounds: it must not be the light yellow.
+$o-action: $erp-brand-yellow-text !default;
+$o-main-link-color: $erp-brand-yellow-text !default;
+$o-input-border-required: $erp-brand-black !default;
+$o-component-active-bg: mix($erp-brand-yellow, $erp-brand-white, 30%) !default;
+$o-component-active-border: $erp-brand-black !default;
+
+// ".text-primary" must stay readable on white: use the dark shade.
+$o-theme-text-colors: (
+  "primary": $erp-brand-yellow-text,
+  "success": #008818,
+  "info": #0180a5,
+  "warning": #9a6b01,
+  "danger": #d23f3a,
+) !default;
+
+// Buttons. The core merges its own maps INTO these ones
+// (map-merge(core, $o-btns-bs-override)), so the entries defined here win.
+// Every state must be defined (they are passed as-is to button-variant).
+// Primary: yellow surface with black text. Contrast on the compiled colors:
+// normal #fce200 16.0:1, hover #d3bd00 (darken 8%) 11.0:1,
+// active #b09d00 (darken 15%) 7.7:1.
+$o-btns-bs-override: (
+  "primary": (
+    background: $erp-brand-yellow,
+    border: $erp-brand-yellow,
+    color: $erp-brand-black,
+    hover-background: darken($erp-brand-yellow, 8%),
+    hover-border: $erp-brand-black,
+    hover-color: $erp-brand-black,
+    active-background: darken($erp-brand-yellow, 15%),
+    active-border: $erp-brand-black,
+    active-color: $erp-brand-black,
+  ),
+) !default;
+// Outline primary ("New" in forms, "Load more" in kanban): black outline and
+// text on the light background (21:1), yellow surface on hover (16.0:1) and
+// active (#d3bd00, 11.0:1), always with black text.
+$o-btns-bs-outline-override: (
+  "primary": (
+    background: transparent,
+    border: $erp-brand-black,
+    color: $erp-brand-black,
+    hover-background: $erp-brand-yellow,
+    hover-border: $erp-brand-black,
+    hover-color: $erp-brand-black,
+    active-background: darken($erp-brand-yellow, 8%),
+    active-border: $erp-brand-black,
+    active-color: $erp-brand-black,
+  ),
+) !default;
+
+// Bootstrap overrides (declared before web's bootstrap_overridden.scss).
+// Visible focus and checked states on white backgrounds.
+$input-focus-border-color: $erp-brand-black !default;
+$form-check-input-checked-border-color: $erp-brand-black !default;
+$form-check-input-checked-color: $erp-brand-black !default;
+$form-switch-checked-color: $erp-brand-black !default;
+$form-range-thumb-focus-box-shadow: 0 0 0 1px $erp-brand-black !default;
+// Yellow surfaces generated from $primary: black text on them.
+$progress-bar-color: $erp-brand-black !default;
+$nav-pills-link-active-color: $erp-brand-black !default;
+
+// Navbar: black with yellow accents.
+$o-navbar-background: $erp-brand-black !default;
+$o-navbar-border-bottom: 2px solid $erp-brand-yellow !default;
+$o-navbar-brand-color: $erp-brand-yellow !default;
+$o-navbar-entry-color: rgba($erp-brand-white, 0.9) !default;
+$o-navbar-entry-color--hover: $erp-brand-yellow !default;
+$o-navbar-entry-bg--hover: rgba($erp-brand-white, 0.12) !default;

@@ -1,0 +1,96 @@
+// ERP Branding - backend web client.
+// Colors come from erp_branding/static/src/scss/primary_variables.scss.
+// Yellow is a surface color (always with black text); text on light
+// backgrounds uses black or $erp-brand-yellow-text (6.6:1 on white).
+//
+// Primary/outline-primary buttons are fixed at the source through
+// $o-btns-bs-override / $o-btns-bs-outline-override. The rules below cover
+// core styles that use $primary / $o-brand-primary directly as a text color
+// (or white text on it). Each selector repeats the core one so that it wins
+// by source order with the same specificity; !important is only used where
+// the core rule already uses it.
+
+// Navbar (black background): visible keyboard focus with the yellow accent.
+.o_main_navbar {
+  .o_menu_brand,
+  .o_nav_entry,
+  .dropdown-toggle,
+  button {
+    &:focus-visible {
+      outline: 2px solid $erp-brand-yellow;
+      outline-offset: -2px;
+    }
+  }
+}
+
+// Generic visible focus on light backgrounds.
+.o_web_client {
+  .btn:focus-visible,
+  a:focus-visible {
+    outline: 2px solid $erp-brand-black;
+    outline-offset: 1px;
+  }
+}
+
+// Stat buttons (form button box): value and icon use $o-brand-primary through
+// these custom properties.
+.o-form-buttonbox {
+  --o-stat-text-color: #{$erp-brand-yellow-text};
+  --o-stat-button-color: #{$erp-brand-yellow-text};
+}
+
+// web/static/src/views/fields/fields.scss
+.o_field_widget.o_field_copy {
+  color: $erp-brand-yellow-text;
+  border-color: $erp-brand-yellow-text;
+}
+.o_field_widget.o_field_image .o_form_image_controls,
+.o_field_widget.o_field_image_url .o_form_image_controls {
+  color: $erp-brand-black;
+}
+
+// web/static/src/views/kanban/kanban_record_legacy.scss
+.o_kanban_renderer .o_legacy_kanban_record .o_kanban_record_bottom .o_link_muted:hover {
+  color: $erp-brand-yellow-text;
+}
+
+// web/static/src/views/fields/properties/*.scss
+.o_field_property_label .o_field_property_open_popover:hover,
+.o_field_property_label .oi-draggable:hover {
+  color: $erp-brand-yellow-text;
+}
+.o_field_property_tag .o_field_property_dropdown_add * {
+  color: $erp-brand-yellow-text !important; // core rule is !important
+}
+
+// web/static/src/legacy/scss/fields.scss (jQuery UI autocomplete)
+.ui-autocomplete .ui-menu-item.o_m2o_dropdown_option > a,
+.ui-autocomplete .ui-menu-item.o_m2o_dropdown_option > a.ui-state-active {
+  color: $erp-brand-yellow-text;
+}
+
+// Rules for modules erp_branding does not depend on (mail, web_editor): they
+// may be loaded after this file, so they are prefixed with .o_web_client
+// (the web client <body>) to win by specificity instead of source order.
+.o_web_client {
+  // mail: hidden chats bubble (core rule is !important).
+  .o-mail-ChatHub-hiddenBtnIcon {
+    color: $erp-brand-black !important;
+  }
+
+  // mail: record/channel links and mentions (light yellow tint background).
+  a.o_mail_redirect,
+  a.o_channel_redirect,
+  a.o-discuss-mention {
+    color: $erp-brand-black;
+
+    &:hover {
+      color: $erp-brand-black;
+    }
+  }
+
+  // web_editor media dialog: check mark on the selected attachment.
+  .modal .o_select_media_dialog .o_we_attachment_selected:not(.fa):before {
+    color: $erp-brand-black;
+  }
+}

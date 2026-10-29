@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="200" height="80" role="img" aria-label="LCE">
+  <title>LCE</title>
+  <defs>
+    <clipPath id="erp-logo-shape">
+      <rect width="200" height="80" rx="12"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#erp-logo-shape)">
+    <rect width="200" height="80" fill="#FCE200"/>
+    <rect y="68" width="200" height="12" fill="#000000"/>
+  </g>
+  <text x="100" y="34" dy="0.35em" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="44" font-weight="700" letter-spacing="2" fill="#000000">LCE</text>
+</svg>

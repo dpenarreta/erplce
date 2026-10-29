@@ -1,0 +1,5 @@
+# Herramientas de calidad del entorno (no son dependencias de Odoo).
+# Las usa la imagen docker/lint (scripts/check.sh). Opcionalmente, para
+# instalar el hook de git en local: python -m pip install -r requirements-dev.txt
+pre-commit==4.7.0
+pip-audit==2.10.1

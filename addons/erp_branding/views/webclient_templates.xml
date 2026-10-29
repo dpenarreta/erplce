@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!-- Base HTML layout (login, web client bootstrap and other public pages):
+         brand name as default document title and own favicon. -->
+  <template id="layout" inherit_id="web.layout" name="ERP Branding: layout">
+    <xpath expr="//head/title" position="attributes">
+      <attribute name="t-esc">title or env['ir.http'].get_erp_brand_name()</attribute>
+    </xpath>
+    <xpath expr="//head/link[@rel='shortcut icon']" position="attributes">
+      <attribute
+        name="t-att-href"
+      >x_icon or '/erp_branding/static/img/favicon.ico'</attribute>
+    </xpath>
+    <xpath expr="//head/link[@rel='shortcut icon']" position="after">
+      <link
+        t-if="not x_icon"
+        rel="icon"
+        type="image/svg+xml"
+        href="/erp_branding/static/img/favicon.svg"
+      />
+    </xpath>
+  </template>
+
+  <!-- Web client bootstrap page: browser theme color and touch icon. -->
+  <template
+    id="webclient_bootstrap"
+    inherit_id="web.webclient_bootstrap"
+    name="ERP Branding: web client"
+  >
+    <xpath expr="//meta[@name='theme-color']" position="attributes">
+      <attribute name="content">#000000</attribute>
+    </xpath>
+    <xpath expr="//link[@rel='apple-touch-icon']" position="attributes">
+      <attribute name="href">/erp_branding/static/img/apple-touch-icon.png</attribute>
+    </xpath>
+  </template>
+
+  <!-- Login layout: own logo, visible brand name, no "Powered by Odoo". -->
+  <template
+    id="login_layout"
+    inherit_id="web.login_layout"
+    name="ERP Branding: login layout"
+  >
+    <xpath expr="//t[@t-set='body_classname']" position="attributes">
+      <attribute name="t-value">'bg-100 o_erp_branding_login'</attribute>
+    </xpath>
+    <xpath
+      expr="//img[contains(@t-attf-src, '/web/binary/company_logo')]"
+      position="after"
+    >
+      <h1
+        class="o_erp_branding_name h4 fw-bold text-black mt-3 mb-0"
+        t-esc="env['ir.http'].get_erp_brand_name()"
+      />
+    </xpath>
+    <xpath
+      expr="//img[contains(@t-attf-src, '/web/binary/company_logo')]"
+      position="attributes"
+    >
+      <attribute name="t-attf-src" />
+      <attribute name="src">/erp_branding/static/img/logo.svg</attribute>
+      <!-- Decorative (alt=""): the brand name is rendered as text below. -->
+      <attribute name="alt" />
+      <attribute name="t-att-alt">''</attribute>
+      <attribute name="width">200</attribute>
+      <attribute name="height">80</attribute>
+      <attribute name="class">o_erp_branding_logo</attribute>
+    </xpath>
+    <!-- Not rendered at all (t-if) instead of "replace", so other modules can
+         still anchor xpaths on this node. -->
+    <xpath expr="//a[contains(@href, 'utm_medium=auth')]" position="attributes">
+      <attribute name="t-if">False</attribute>
+    </xpath>
+    <!-- Without the "Powered by" link the separator border is not needed. -->
+    <xpath expr="//a[@href='/web/database/manager']" position="attributes">
+      <attribute name="class" />
+    </xpath>
+  </template>
+</odoo>

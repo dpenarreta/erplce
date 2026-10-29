@@ -1,0 +1,39 @@
+// ERP Branding - login page (web.login_layout, frontend bundle).
+// Gray institutional background, white card with a yellow accent and black
+// text; the primary button is yellow with black text (WCAG AA: 15:1).
+
+body.o_erp_branding_login {
+  background-color: $erp-brand-gray !important;
+
+  .o_database_list.card {
+    background-color: $erp-brand-white !important;
+    border-top: 4px solid $erp-brand-yellow !important;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba($erp-brand-black, 0.12);
+  }
+
+  a:not(.btn) {
+    color: $erp-brand-black;
+    text-decoration: underline;
+  }
+
+  .btn-primary {
+    --btn-color: #{$erp-brand-black};
+    --btn-bg: #{$erp-brand-yellow};
+    --btn-border-color: #{$erp-brand-black};
+    --btn-hover-color: #{$erp-brand-black};
+    --btn-hover-bg: #{darken($erp-brand-yellow, 6%)};
+    --btn-hover-border-color: #{$erp-brand-black};
+    --btn-active-color: #{$erp-brand-black};
+    --btn-active-bg: #{darken($erp-brand-yellow, 10%)};
+    --btn-active-border-color: #{$erp-brand-black};
+  }
+
+  .btn:focus-visible,
+  a:focus-visible,
+  .form-control:focus {
+    outline: 2px solid $erp-brand-black;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,103 @@
+# Configuración de calidad estilo OCA para Odoo 18.0.
+# Versiones fijadas (base: OCA/l10n-ecuador rama 18.0 a 2026-10-29; shellcheck y
+# eslint añadidos en el proyecto).
+# Se ejecuta con: bash scripts/check.sh   (dentro del contenedor docker/lint)
+# Ámbito: módulos propios de addons/ y scripts de infraestructura (scripts/, docker/).
+# third_party/ no se analiza (no se edita).
+files: ^(addons|scripts|docker)/
+exclude: |
+  (?x)
+  # Archivos generados o de librerías
+  /static/description/index\.html$|
+  \.svg$|
+  /static/(src/)?lib/|
+  /tests/samples/.*|
+  (LICENSE.*|COPYING.*)
+default_language_version:
+  python: python3
+  node: "22.9.0"
+repos:
+  - repo: local
+    hooks:
+      - id: forbidden-files
+        name: forbidden files
+        entry: found forbidden files; remove them
+        language: fail
+        files: "\\.rej$"
+      - id: en-po-files
+        name: en.po files cannot exist
+        entry: found a en.po file
+        language: fail
+        files: '[a-zA-Z0-9_]*/i18n/en\.po$'
+  - repo: https://github.com/OCA/odoo-pre-commit-hooks
+    rev: v0.0.33
+    hooks:
+      # Validación de manifiestos, XML (ids duplicados, xpath, etc.) y CSV de Odoo
+      - id: oca-checks-odoo-module
+      - id: oca-checks-po
+        args:
+          - --disable=po-pretty-format
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier (with plugin-xml)
+        entry: prettier
+        args:
+          - --write
+          - --list-different
+          - --ignore-unknown
+        types: [text]
+        files: \.(css|htm|html|js|json|jsx|less|md|scss|toml|ts|xml|yaml|yml)$
+        language: node
+        additional_dependencies:
+          - "prettier@3.3.3"
+          - "@prettier/plugin-xml@3.4.1"
+  - repo: local
+    hooks:
+      # ESLint 9 (flat config: eslint.config.cjs) para el JS de los módulos (OWL/ES modules).
+      # Sin --fix: solo informa, no reescribe código de otros roles.
+      - id: eslint
+        name: eslint
+        entry: eslint
+        args: [--max-warnings=0, --no-warn-ignored]
+        language: node
+        files: ^addons/[^/]+/static/src/.*\.js$
+        additional_dependencies:
+          - "eslint@9.39.5"
+          - "@eslint/js@9.39.5"
+          - "globals@16.5.0"
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        files: ^(scripts/[^/]+|docker/.+)\.sh$
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: /README\.rst$|\.pot?$
+      - id: end-of-file-fixer
+        exclude: /README\.rst$|\.pot?$
+      - id: debug-statements
+      - id: fix-encoding-pragma
+        args: ["--remove"]
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-xml
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.8
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+  - repo: https://github.com/OCA/pylint-odoo
+    rev: v9.1.3
+    hooks:
+      - id: pylint_odoo
+        args:
+          - --rcfile=.pylintrc

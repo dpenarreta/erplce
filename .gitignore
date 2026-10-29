@@ -1,0 +1,52 @@
+# --- Secretos y configuración local (solo se versionan los *.example) ---
+.env
+.env.*
+!.env.example
+config/*
+!config/*.example
+CLAUDE.local.md
+
+# --- Certificados y claves (firma electrónica SRI, TLS) ---
+*.p12
+*.pfx
+*.pem
+*.key
+*.crt
+*.cer
+*.jks
+
+# --- Volcados y respaldos ---
+*.dump
+*.sql
+*.sql.gz
+*.backup
+*.bak
+backups/
+dumps/
+filestore/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# --- Node (hooks de pre-commit) ---
+node_modules/
+
+# --- Logs y temporales ---
+*.log
+*.tmp
+*.rej
+*.orig
+
+# --- Editores y SO ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,85 @@
+# Entorno de DESARROLLO del ERP (Odoo 18 Community + PostgreSQL 16).
+# Requisitos previos: copiar .env.example -> .env y config/odoo.conf.example ->
+# config/odoo.conf, y completar los valores marcados. Ver README.md.
+#
+# Las imágenes están fijadas por digest: actualizar una imagen es un cambio
+# explícito (ver README.md, "Actualizar imágenes").
+name: erp
+
+services:
+  db:
+    # postgres:16 (16.15-1.pgdg13+2), digest obtenido el 2026-10-29
+    image: postgres:16@sha256:1beaa3084eee2676f20a9cd9928f0bf2c5bf674f8e49f81017912183d377c61c
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Falta POSTGRES_USER. Copia .env.example a .env y completa los valores (ver README.md)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD. Copia .env.example a .env y define una contraseña (ver README.md)}
+      POSTGRES_DB: postgres
+    volumes:
+      - erp_db_data:/var/lib/postgresql/data
+    # Sin "ports": PostgreSQL solo es accesible desde la red interna de Compose.
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  odoo:
+    # odoo:18.0 (build 2026-10-26), digest obtenido el 2026-10-29
+    image: odoo:18.0@sha256:9668abacd894276ed009e8db7db1d1ffb8068af6982f76a3400ed0d68e40432d
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Envoltorio propio: calcula addons_path (núcleo + addons/ + third_party/<repo>)
+    # y valida admin_passwd antes de delegar en el /entrypoint.sh oficial.
+    entrypoint: ["/bin/bash", "/opt/erp/entrypoint.sh"]
+    command: ["odoo"]
+    environment:
+      # El /entrypoint.sh oficial convierte estas variables en --db_host/--db_user/...
+      HOST: db
+      PORT: "5432"
+      USER: ${POSTGRES_USER:?Falta POSTGRES_USER. Copia .env.example a .env y completa los valores (ver README.md)}
+      PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD. Copia .env.example a .env y define una contraseña (ver README.md)}
+    ports:
+      # Solo en loopback. Con workers = 0 (desarrollo) el websocket se sirve por 8069;
+      # el puerto 8072 (gevent) solo aplica con workers > 0 (producción, US-009).
+      - "127.0.0.1:${ODOO_HTTP_PORT:-8069}:8069"
+    volumes:
+      - erp_odoo_data:/var/lib/odoo
+      - ./addons:/mnt/extra-addons:ro
+      - ./third_party:/mnt/third-party:ro
+      - ./docker/odoo/entrypoint.sh:/opt/erp/entrypoint.sh:ro
+      - type: bind
+        source: ./config/odoo.conf
+        target: /etc/odoo/odoo.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      - backend
+      - egress
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8069/web/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+networks:
+  # Red interna sin salida a Internet: db y odoo.
+  backend:
+    name: erp_backend
+    internal: true
+  # Red con salida (SRI, bancos, publicación del puerto 8069): solo odoo.
+  egress:
+    name: erp_egress
+
+volumes:
+  erp_db_data:
+    name: erp_db_data
+  erp_odoo_data:
+    name: erp_odoo_data

@@ -1,0 +1,17 @@
+# Fines de línea LF en el repositorio y en la copia de trabajo (también en
+# Windows con core.autocrlf=true): los scripts .sh se ejecutan dentro de
+# contenedores Linux y fallan con CRLF.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.pdf binary
+*.p12 binary
+*.pfx binary

@@ -1,0 +1,3 @@
+# Contexto de build = raíz del repo: solo se envía lo necesario (nunca .env ni config/).
+*
+!requirements-dev.txt

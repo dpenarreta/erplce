@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!-- Brand name shown in the browser tab and on the login page.
+         Empty or missing value: "ERP LCE" is used (see ir.http.get_erp_brand_name). -->
+  <record id="config_parameter_brand_name" model="ir.config_parameter">
+    <field name="key">erp_branding.name</field>
+    <field name="value">ERP LCE</field>
+  </record>
+</odoo>

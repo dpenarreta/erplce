@@ -1,0 +1,9 @@
+# Sobrecarga para los contenedores efímeros de scripts/test.sh:
+#   docker compose -f docker-compose.yml -f docker/compose.test.yml run ...
+# Desactiva el healthcheck de odoo: sus GET /web/health cada 15 s llegaban al
+# servidor HTTP que levantan los HttpCase y provocaban hilos bloqueados,
+# timeouts de make_jsonrpc_request y "PoolError" en el apagado (falsos fallos).
+services:
+  odoo:
+    healthcheck:
+      disable: true

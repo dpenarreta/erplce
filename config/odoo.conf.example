@@ -1,0 +1,24 @@
+; Configuración de Odoo para DESARROLLO.
+; Uso: cp config/odoo.conf.example config/odoo.conf  (config/odoo.conf NO se versiona)
+;
+; - Credenciales de PostgreSQL: NO se escriben aquí; vienen de .env
+;   (POSTGRES_USER / POSTGRES_PASSWORD) y el entrypoint oficial las pasa como
+;   --db_host/--db_user/--db_password. Si se definen aquí, prevalecen sobre .env.
+; - addons_path: lo calcula docker/odoo/entrypoint.sh y lo pasa por línea de
+;   comandos (núcleo + addons/ + cada repo de third_party/ con módulos).
+;   El valor de abajo solo es informativo/de respaldo.
+[options]
+; Contraseña maestra (gestor de bases de datos). OBLIGATORIO cambiarla:
+; el contenedor no arranca si se deja __CAMBIAR__ o vacía.
+admin_passwd = __CAMBIAR__
+
+addons_path = /mnt/extra-addons
+data_dir = /var/lib/odoo
+
+; Desarrollo: gestor de BD visible, sin proxy, un solo proceso (websocket en 8069).
+list_db = True
+proxy_mode = False
+workers = 0
+max_cron_threads = 1
+
+log_level = info
