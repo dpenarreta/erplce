@@ -31,7 +31,10 @@ calidad corren en contenedores.
 ### Primeros pasos
 
 ```bash
-git clone --recurse-submodules <url> erp && cd erp
+git clone --recurse-submodules https://github.com/dpenarreta/erplce.git erp && cd erp
+#    third_party/ contiene submódulos git (p. ej. OCA/payroll); sin ellos Odoo
+#    no encuentra los módulos de terceros. Comprobar:
+git submodule status     # cada línea con el commit fijado y sin prefijo "-" ni "+"
 
 # 1. Variables de entorno (credenciales de PostgreSQL)
 cp .env.example .env
@@ -47,6 +50,28 @@ curl -s http://127.0.0.1:8069/web/health     # {"status": "pass"}
 ```
 
 Abrir `http://127.0.0.1:8069` y crear una base de datos con la contraseña maestra.
+
+### Submódulos (`third_party/`)
+
+Los módulos de terceros son submódulos git fijados a un commit (inventario en
+`third_party/README.md`).
+
+```bash
+# Clon existente hecho sin --recurse-submodules, o tras un pull que añade/cambia submódulos:
+git submodule update --init --recursive
+docker compose restart odoo        # recalcula el addons_path
+
+# Para que git pull actualice los submódulos automáticamente (opcional, por clon):
+git config submodule.recurse true
+```
+
+- `git submodule status`: prefijo `-` = sin inicializar; `+` = checkout distinto del commit
+  fijado (`git submodule update` lo corrige).
+- Los submódulos no se editan (`git -C third_party/<repo> status` debe estar limpio); las
+  adaptaciones van en `addons/erp_*`.
+- Si `git` falla por TLS detrás de un antivirus/proxy, pasar su CA solo en ese comando:
+  `git -c http.sslCAInfo=config/extra-ca.pem submodule update --init --recursive`
+  (no guardarla en la configuración del repositorio ni desactivar TLS).
 
 ### Comandos
 
@@ -143,7 +168,9 @@ TEST_KEEP_LOG=1 bash scripts/test.sh erp_base             # conservar el log
   revisan los cambios y se vuelve a ejecutar.
 - `--all` añade `scripts/test.sh` con todos los módulos de `addons/` y `pip-audit`
   de `requirements-dev.txt` (herramientas de calidad), del `requirements.txt` raíz y de
-  los `requirements*.txt` de módulos, si existen.
+  los `requirements*.txt` de módulos propios (`addons/*/`), si existen.
+- `third_party/` queda fuera de todo el análisis (pre-commit con `files: ^(addons|scripts|docker)/`
+  y `pip-audit`): es código de terceros fijado que no se edita.
 - Hook de git opcional en local: `python -m pip install -r requirements-dev.txt && pre-commit install`.
 
 ### Proxy o antivirus que inspecciona TLS
@@ -183,4 +210,5 @@ Sustituir el digest en `docker-compose.yml`, `docker compose up -d` y ejecutar
 | `check.sh`: `server verification failed: certificate signer not trusted` | Un proxy/antivirus (p. ej. Kaspersky) inspecciona TLS. Exportar su CA raíz vigente a PEM y definir `ERP_EXTRA_CA_CERT` en `.env` (ver abajo). Nunca desactivar la verificación TLS. |
 | Rutas `C:/Program Files/Git/...` en comandos docker | Conversión de rutas de Git Bash: ejecutar con `MSYS_NO_PATHCONV=1`. |
 | Un módulo nuevo no aparece | `docker compose restart odoo` (el `addons_path` se calcula al arrancar) y actualizar la lista de apps. |
+| `third_party/<repo>/` vacío, `/mnt/third-party/<repo>` ausente del `addons_path` o `module 'payroll' ... not found` | Submódulos sin inicializar: `git submodule update --init --recursive` y `docker compose restart odoo`. |
 | Cambié la contraseña de `.env` y Odoo no conecta | PostgreSQL fija la contraseña al crear `erp_db_data`; cambiarla con `ALTER USER` o recrear el volumen (destructivo). |

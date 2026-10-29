@@ -94,7 +94,7 @@ Convención dentro de cada módulo de `addons/<modulo>/`:
 
 ## 7. Estado actual
 
-- 2026-10-29: entorno Docker y scripts de verificación creados (US-001 completada con pendientes). Empresa: LAARCOURIER EXPRESS S.A. (RUC 1791705726001), una sola empresa. Marca: ERP LCE. Prioridad: RRHH/Nómina antes que facturación SRI (ver índice de historias).
+- 2026-10-29: entorno Docker y scripts de verificación creados (US-001 completada con pendientes). Motor de nómina: OCA `payroll` 18.0 como submódulo `third_party/payroll` (ADR-001), extendido en `addons/erp_payroll_ec` (US-006 completada con pendientes). Empresa: LAARCOURIER EXPRESS S.A. (RUC 1791705726001), una sola empresa. Marca: ERP LCE. Prioridad: RRHH/Nómina antes que facturación SRI (ver índice de historias).
 - Primera historia obligatoria: **Historia Técnica de base de la plataforma** (entorno Docker reproducible, estructura `addons/` y `third_party/`, `scripts/check.sh` y `scripts/test.sh`, módulo `erp_base` con dependencias de `l10n_ec`, idioma `es_EC`, zona horaria y moneda, y módulo `erp_branding`).
 - Pendiente de confirmar con el usuario: razón social/RUC de la(s) empresa(s), multiempresa, ambiente SRI (pruebas/producción), tipos de comprobantes electrónicos requeridos, reglas de nómina (contratos, horas extra, beneficios propios) y fuente normativa de los parámetros.
 

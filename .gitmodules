@@ -1,0 +1,4 @@
+[submodule "third_party/payroll"]
+	path = third_party/payroll
+	url = https://github.com/OCA/payroll.git
+	branch = 18.0

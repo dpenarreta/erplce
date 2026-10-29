@@ -27,6 +27,13 @@
 - Todos los porcentajes y valores (SBU, aportes, recargos) parametrizados con vigencia y fuente.
 - Parámetros normativos: nunca fijos en código; fuente indicada por el usuario o 'a validar'.
 
+### Heredado de QA de US-006 (2026-10-29)
+- Redondeo en cascada: con 1.000,05 el neto (900,05) no cuadra con la suma de líneas (900,04) y `payroll_account` añade un ajuste de 0,01 → convención de redondeo USD por regla y test con 1.000,05.
+- Permisos: confirmar un rol exige además el grupo contable `account.group_account_invoice`; diseñar los grupos de nómina y su test.
+- Lotes en renovación/terminación: el asistente OCA asigna `employee.contract_id` (contrato actual) sin mirar el periodo; preferir el contrato que cubre el periodo y decidir si un lote es "todo o nada" (178 establecimientos).
+- Estados heredados de OCA: doble asiento al confirmar dos veces (PR #308), `compute_sheet` sobre un rol `done` lo devuelve a `verify` con asiento publicado, roles duplicados del mismo empleado y periodo.
+- `group_payroll_user` tiene CRUD completo sobre `hr.payslip.line` (puede alterar importes).
+
 ### Respuestas del usuario (2026-10-29)
 - **Prioridad:** la nómina va antes que la facturación electrónica.
 - Fondos de reserva: mensualizados o acumulados **según lo que solicite cada empleado** (opción por empleado con vigencia).

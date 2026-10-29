@@ -108,7 +108,10 @@ if [ "$ALL" -eq 1 ]; then
 
     step "Auditoría de dependencias Python (pip-audit)"
     # requirements-dev.txt (herramientas de calidad), requirements.txt raíz
-    # (dependencias de los addons) y los de cada módulo propio.
+    # (dependencias de los addons) y los de cada módulo propio. Los requirements de
+    # third_party/ NO se auditan: declaran dependencias de módulos de terceros que no
+    # se instalan (p. ej. hr_payroll_document de OCA/payroll). Si un módulo de terceros
+    # instalado necesita paquetes, se declaran en el requirements.txt raíz.
     REQS=()
     for r in requirements-dev.txt requirements.txt; do
         [ -f "$r" ] && REQS+=("$r")
