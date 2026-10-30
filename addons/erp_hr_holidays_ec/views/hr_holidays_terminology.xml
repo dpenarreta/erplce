@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-012 (CA-7): menús, acciones y etiquetas de Ausencias (hr_holidays) en
+    español de Ecuador para usuarios no técnicos. La traducción de Odoo
+    (es_419) usa «Tiempo personal», «Asignaciones», «Justificante» y
+    «Vacaciones» para todo el módulo.
+
+    Se escriben en es_EC (context lang, idioma que activa erp_base) sin tocar
+    el inglés. Escribir aquí, y no solo en i18n/es.po, es necesario porque al
+    instalar o actualizar el módulo Odoo no sobrescribe una traducción ya
+    cargada (la de hr_holidays). i18n/es.po repite estos valores para que no
+    se pierdan al recargar las traducciones con «Sobrescribir términos
+    existentes» (se carga después del de hr_holidays). Mismo patrón que
+    erp_payroll_ec/views/payroll_terminology.xml.
+
+    Términos: «Ausencias» (aplicación y solicitudes: vacaciones, permisos y
+    licencias), «Saldo» (asignación de días), «Jefe inmediato» y «Talento
+    Humano» (aprobadores), «Documento de respaldo», «Sin sueldo», «Feriados»,
+    «Origen» (tipo de asignación), «Reglas de acumulación» (planes de
+    acumulación) y reportes con nombres distintos («Ausencias por empleado»,
+    «Ausencias por tipo»).
+
+    Los textos que hr_holidays fija en JS/OWL (tablero, ventana de la
+    solicitud, leyenda del calendario) no se cubren aquí ni en es.po: las
+    traducciones de JS se combinan sin orden fijo entre módulos. Se reescriben
+    por herencia de plantillas y patch en static/src.
+  -->
+
+  <!-- Menús -->
+  <record
+    id="hr_holidays.menu_hr_holidays_root"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Ausencias</field>
+  </record>
+  <record
+    id="hr_holidays.menu_hr_holidays_my_leaves"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Mis ausencias</field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_menu_new_request"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Solicitar ausencia</field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_menu_my"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Mis solicitudes</field>
+  </record>
+  <record
+    id="hr_holidays.menu_open_allocation"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Mis saldos</field>
+  </record>
+  <record
+    id="hr_holidays.menu_hr_holidays_dashboard"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Calendario del equipo</field>
+  </record>
+  <record
+    id="hr_holidays.menu_hr_holidays_management"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Aprobaciones</field>
+  </record>
+  <record
+    id="hr_holidays.menu_open_department_leave_approve"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Ausencias por aprobar</field>
+  </record>
+  <record
+    id="hr_holidays.hr_holidays_menu_manager_approve_allocations"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Saldos de vacaciones</field>
+  </record>
+  <record
+    id="hr_holidays.menu_hr_holidays_balance"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Saldos por empleado</field>
+  </record>
+  <record
+    id="hr_holidays.hr_holidays_status_menu_configuration"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Tipos de ausencia</field>
+  </record>
+  <record
+    id="hr_holidays.hr_holidays_public_time_off_menu_configuration"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Feriados</field>
+  </record>
+  <record
+    id="hr_holidays.hr_holidays_mandatory_day_menu_configuration"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Días sin ausencias</field>
+  </record>
+  <record
+    id="hr_holidays.hr_holidays_accrual_menu_configuration"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Reglas de acumulación</field>
+  </record>
+  <record
+    id="hr_holidays.menu_hr_available_holidays_report_tree"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Ausencias por empleado</field>
+  </record>
+  <record
+    id="hr_holidays.menu_hr_holidays_summary_all"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Ausencias por tipo</field>
+  </record>
+
+  <!-- Acciones de ventana (título de la pantalla y estado vacío) -->
+  <record
+    id="hr_holidays.hr_leave_action_new_request"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Solicitar ausencia</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Aún no tiene ausencias registradas</p>
+      <p>
+        Pulse <strong>Nuevo</strong> para pedir vacaciones o un permiso. Su
+        jefe inmediato recibirá la solicitud para aprobarla.
+      </p>
+    </field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_action_my"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Mis solicitudes</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Aún no ha solicitado ausencias</p>
+      <p>
+        Pulse <strong>Nuevo</strong> para pedir vacaciones o un permiso. Aquí
+        verá si su jefe inmediato ya la aprobó.
+      </p>
+    </field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_action_my_request"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Solicitud de ausencia</field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_action_action_approve_department"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Ausencias por aprobar</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">No hay ausencias por aprobar</p>
+      <p>
+        Aquí aparecen las solicitudes de su equipo que esperan su aprobación.
+        Para ver también las ya aprobadas, quite el filtro
+        <strong>Esperando mi aprobación</strong>.
+      </p>
+    </field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_action_holiday_allocation_id"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Ausencias</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">No hay ausencias con este saldo</p>
+      <p>Aquí aparecen las solicitudes que descuentan días de este saldo.</p>
+    </field>
+  </record>
+  <record
+    id="hr_holidays.action_hr_holidays_dashboard"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Calendario del equipo</field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_allocation_action_my"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Mis saldos</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Aún no tiene saldo de vacaciones</p>
+      <p>
+        Talento Humano asigna sus días de vacaciones en cada aniversario de su
+        ingreso, según su antigüedad. Si falta su saldo, consulte a Talento
+        Humano.
+      </p>
+    </field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_allocation_action_approve_department"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Saldos de vacaciones</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_empty_folder">Aún no hay saldos de vacaciones</p>
+      <p>
+        Aquí están los días de vacaciones de cada empleado; quite los filtros
+        para verlos todos. Talento Humano los calcula por antigüedad con
+        <strong>Calcular vacaciones</strong> en la ficha o la lista de empleados.
+      </p>
+    </field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_allocation_action_all"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Todos los saldos</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_empty_folder">Aún no hay saldos de vacaciones</p>
+      <p>
+        Talento Humano los calcula por antigüedad con
+        <strong>Calcular vacaciones</strong> en la ficha o la lista de empleados.
+      </p>
+    </field>
+  </record>
+  <record
+    id="hr_holidays.open_view_holiday_status"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Tipos de ausencia</field>
+  </record>
+  <record
+    id="hr_holidays.open_view_public_holiday"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Feriados</field>
+  </record>
+  <record
+    id="hr_holidays.hr_leave_mandatory_day_action"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Días sin ausencias</field>
+  </record>
+  <record
+    id="hr_holidays.action_hr_available_holidays_report"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Ausencias por empleado</field>
+  </record>
+  <record
+    id="hr_holidays.action_hr_leave_report"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Ausencias por tipo</field>
+  </record>
+  <record
+    id="hr_holidays.open_view_accrual_plans"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Reglas de acumulación</field>
+  </record>
+
+  <!-- Acciones de servidor (menú Acciones y reporte de saldos) -->
+  <record
+    id="hr_holidays.action_hr_holidays_by_employee_and_type_report"
+    model="ir.actions.server"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Saldos por empleado</field>
+  </record>
+  <record
+    id="hr_holidays.action_manager_approval"
+    model="ir.actions.server"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Aprobar (jefe inmediato)</field>
+  </record>
+  <record
+    id="hr_holidays.action_hr_approval"
+    model="ir.actions.server"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Aprobar (Talento Humano)</field>
+  </record>
+  <record
+    id="hr_holidays.ir_actions_server_approve_allocations"
+    model="ir.actions.server"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Aprobar saldos</field>
+  </record>
+
+  <!--
+    Etiquetas de campos de hr_holidays que se ven en formularios, filtros,
+    agrupaciones y exportación: solo la traducción es_EC de
+    field_description (escritura de solo traducción, permitida en campos
+    base); el inglés y la definición del campo no cambian.
+  -->
+  <record
+    id="hr_holidays.field_hr_leave_type__unpaid"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Sin sueldo</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_type__support_document"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Documento de respaldo</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave__leave_type_support_document"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Documento de respaldo</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_type__name"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Tipo de ausencia</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave__holiday_status_id"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Tipo de ausencia</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_allocation__holiday_status_id"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Tipo de ausencia</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_type__leave_validation_type"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Aprobación de la solicitud</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_type__request_unit"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Se solicita por</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_type__requires_allocation"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Requiere saldo</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_type__time_type"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Se registra como</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_type__create_calendar_meeting"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Mostrar en el calendario</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_type__include_public_holidays_in_duration"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Incluir feriados</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_type__responsible_ids"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Talento Humano a notificar</field>
+  </record>
+
+  <record
+    id="hr_holidays.field_hr_leave_allocation__allocation_type"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Origen</field>
+  </record>
+  <record
+    id="hr_holidays.field_hr_leave_allocation__accrual_plan_id"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Regla de acumulación</field>
+  </record>
+
+  <!-- Opciones de aprobación y de saldo del tipo de ausencia -->
+  <record
+    id="hr_holidays.selection__hr_leave_type__leave_validation_type__no_validation"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Sin aprobación</field>
+  </record>
+  <record
+    id="hr_holidays.selection__hr_leave_type__leave_validation_type__hr"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Talento Humano</field>
+  </record>
+  <record
+    id="hr_holidays.selection__hr_leave_type__leave_validation_type__manager"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Jefe inmediato</field>
+  </record>
+  <record
+    id="hr_holidays.selection__hr_leave_type__leave_validation_type__both"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Jefe inmediato y Talento Humano</field>
+  </record>
+  <record
+    id="hr_holidays.selection__hr_leave_type__allocation_validation_type__no_validation"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Sin aprobación</field>
+  </record>
+  <record
+    id="hr_holidays.selection__hr_leave_type__allocation_validation_type__hr"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Talento Humano</field>
+  </record>
+  <record
+    id="hr_holidays.selection__hr_leave_type__allocation_validation_type__manager"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Jefe inmediato</field>
+  </record>
+  <record
+    id="hr_holidays.selection__hr_leave_type__allocation_validation_type__both"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Jefe inmediato y Talento Humano</field>
+  </record>
+  <record
+    id="hr_holidays.selection__hr_leave_type__requires_allocation__no"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">No</field>
+  </record>
+
+  <!-- Origen del saldo («Tipo de asignación») -->
+  <record
+    id="hr_holidays.selection__hr_leave_allocation__allocation_type__regular"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Talento Humano</field>
+  </record>
+  <record
+    id="hr_holidays.selection__hr_leave_allocation__allocation_type__accrual"
+    model="ir.model.fields.selection"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Acumulación automática</field>
+  </record>
+</odoo>

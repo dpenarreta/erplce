@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-012 (CA-3, CA-4, CA-9): ficha del empleado.
+    - Botón «Calcular vacaciones» (secundario: la ficha no tiene primario
+      propio) solo para el encargado de ausencias; el método lo vuelve a
+      comprobar en el servidor.
+    - Botón inteligente del saldo de hr_holidays con texto claro: «12 de 15
+      días · Saldo disponible» en lugar de «12/15 Días · Vacaciones», con el
+      separador decimal del idioma (7,5 y no 7.5: widget erp_localized_number,
+      el núcleo calcula el texto con "%g").
+    Se hereda la extensión de hr_holidays (no la vista base) para que los
+      xpath se apliquen siempre después de ella.
+  -->
+  <record id="hr_employee_view_form_inherit_erp_hr_holidays_ec" model="ir.ui.view">
+    <field name="name">hr.employee.form.inherit.erp_hr_holidays_ec</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="hr_holidays.view_employee_form_leave_inherit" />
+    <field name="arch" type="xml">
+      <xpath expr="//header" position="inside">
+        <button
+          name="action_erp_generate_vacation_allocations"
+          type="object"
+          string="Calcular vacaciones"
+          groups="hr_holidays.group_hr_holidays_user"
+          confirm="Se calcularán los periodos de vacaciones pendientes desde la fecha de ingreso del empleado, según su antigüedad. ¿Desea continuar?"
+        />
+      </xpath>
+      <xpath
+        expr="//div[@name='button_box']/button[@name='action_time_off_dashboard'][@icon='fa-calendar']"
+        position="attributes"
+      >
+        <attribute
+          name="help"
+        >Días de vacaciones disponibles de los periodos vigentes. Abra para ver lo gozado y lo pendiente de aprobar.</attribute>
+      </xpath>
+      <!--
+        Sin replace (vista de prioridad normal): se ocultan los textos
+        nativos y se añaden los propios al final del botón.
+      -->
+      <xpath
+        expr="//div[@name='button_box']/button[@name='action_time_off_dashboard'][@icon='fa-calendar']/div[1]"
+        position="attributes"
+      >
+        <attribute name="invisible">1</attribute>
+      </xpath>
+      <xpath
+        expr="//div[@name='button_box']/button[@name='action_time_off_dashboard'][@icon='fa-calendar']/div[2]"
+        position="attributes"
+      >
+        <attribute name="invisible">1</attribute>
+      </xpath>
+      <xpath
+        expr="//div[@name='button_box']/button[@name='action_time_off_dashboard'][@icon='fa-calendar']"
+        position="inside"
+      >
+        <div
+          name="erp_balance"
+          class="o_field_widget o_stat_info"
+          invisible="allocation_display == '0'"
+        >
+          <span class="o_stat_value">
+            <field
+            name="allocation_remaining_display"
+            widget="erp_localized_number"
+          /> de <field name="allocation_display" widget="erp_localized_number" />
+            <span invisible="allocation_display != '1'">día</span>
+            <span invisible="allocation_display == '1'">días</span>
+          </span>
+          <span class="o_stat_text">Saldo disponible</span>
+        </div>
+        <div
+          name="erp_no_balance"
+          class="o_field_widget o_stat_info"
+          invisible="allocation_display != '0'"
+        >
+          <span class="o_stat_text">Ausencias</span>
+        </div>
+      </xpath>
+    </field>
+  </record>
+
+  <!--
+    CA-9: «Fecha de ingreso a la empresa» en la pestaña «Ecuador» (de
+    erp_hr_ec, solo RRHH), en una sección «Vacaciones» junto a
+    «Discapacidad». Vista aparte que hereda la de erp_hr_ec: la pestaña tiene
+    que existir antes del xpath.
+  -->
+  <record
+    id="hr_employee_view_form_inherit_erp_hr_ec_holidays_entry_date"
+    model="ir.ui.view"
+  >
+    <field name="name">hr.employee.form.inherit.erp_hr_holidays_ec.entry_date</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="erp_hr_ec.hr_employee_view_form_inherit_erp_hr_ec" />
+    <field name="arch" type="xml">
+      <xpath expr="//group[@name='erp_disability']" position="after">
+        <group name="erp_vacation" string="Vacaciones" groups="hr.group_hr_user">
+          <field name="erp_company_entry_date" groups="hr.group_hr_user" />
+          <div class="text-muted" colspan="2">
+            Vacía: se usa el inicio del primer contrato.
+          </div>
+        </group>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Lista de empleados: Acciones > Calcular vacaciones (varios a la vez). -->
+  <record
+    id="action_server_erp_generate_vacation_allocations"
+    model="ir.actions.server"
+  >
+    <field name="name">Calcular vacaciones</field>
+    <field name="model_id" ref="hr.model_hr_employee" />
+    <field name="binding_model_id" ref="hr.model_hr_employee" />
+    <field name="binding_view_types">list</field>
+    <field name="groups_id" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]" />
+    <field name="state">code</field>
+    <field
+      name="code"
+    >action = records.action_erp_generate_vacation_allocations()</field>
+  </record>
+
+  <!--
+    Mi perfil (preferencias del usuario con empleado): mismo texto del saldo
+    que la ficha (también «Ausencias» cuando no hay saldo, en lugar de «0 de
+    0 días»); un solo botón primario («Solicitar ausencia»), el segundo pasa a
+    secundario.
+  -->
+  <record id="res_users_view_form_inherit_erp_hr_holidays_ec" model="ir.ui.view">
+    <field name="name">res.users.profile.form.inherit.erp_hr_holidays_ec</field>
+    <field name="model">res.users</field>
+    <field name="inherit_id" ref="hr_holidays.res_users_view_form" />
+    <field name="arch" type="xml">
+      <xpath
+        expr="//header/button[@name='%(hr_holidays.hr_leave_action_new_request)d']"
+        position="attributes"
+      >
+        <attribute name="string">Solicitar ausencia</attribute>
+      </xpath>
+      <xpath
+        expr="//header/button[@name='%(hr_holidays.hr_leave_allocation_action_my)d']"
+        position="attributes"
+      >
+        <attribute name="string">Mis saldos</attribute>
+        <attribute name="class">btn btn-secondary</attribute>
+      </xpath>
+      <xpath
+        expr="//div[@name='button_box']/button[@name='%(hr_holidays.hr_leave_action_new_request)d'][@icon='fa-calendar']"
+        position="attributes"
+      >
+        <attribute
+          name="help"
+        >Días de vacaciones disponibles de los periodos vigentes. Abra para ver lo gozado y lo pendiente de aprobar.</attribute>
+      </xpath>
+      <xpath
+        expr="//div[@name='button_box']/button[@name='%(hr_holidays.hr_leave_action_new_request)d'][@icon='fa-calendar']/div"
+        position="attributes"
+      >
+        <attribute name="invisible">1</attribute>
+      </xpath>
+      <xpath
+        expr="//div[@name='button_box']/button[@name='%(hr_holidays.hr_leave_action_new_request)d'][@icon='fa-calendar']"
+        position="inside"
+      >
+        <div
+          name="erp_balance"
+          class="o_field_widget o_stat_info"
+          invisible="allocation_display == '0'"
+        >
+          <span class="o_stat_value">
+            <field
+            name="allocation_remaining_display"
+            widget="erp_localized_number"
+          /> de <field name="allocation_display" widget="erp_localized_number" />
+            <span invisible="allocation_display != '1'">día</span>
+            <span invisible="allocation_display == '1'">días</span>
+          </span>
+          <span class="o_stat_text">Saldo disponible</span>
+        </div>
+        <div
+          name="erp_no_balance"
+          class="o_field_widget o_stat_info"
+          invisible="allocation_display != '0'"
+        >
+          <span class="o_stat_text">Ausencias</span>
+        </div>
+      </xpath>
+    </field>
+  </record>
+</odoo>

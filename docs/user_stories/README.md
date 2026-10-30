@@ -15,7 +15,7 @@ Registro de trazabilidad del proyecto. Cada requerimiento ejecutado por el equip
 | [US-009](US-009-respaldo-despliegue.md) | Respaldo, restauración y despliegue de producción | Historia Técnica | Pendiente | 2026-10-29 |
 | [US-010](US-010-sin-instructor.md) | Opción "Sin instructor" y campo "Jefe inmediato" en la ficha de empleado | Historia de Usuario | COMPLETADA CON PENDIENTES | 2026-10-30 |
 | [US-011](US-011-horas-extra-asistencias.md) | Horas extra y asistencias | Historia de Usuario | Pendiente | 2026-10-30 |
-| [US-012](US-012-vacaciones-permisos.md) | Vacaciones y permisos | Historia de Usuario | Pendiente | 2026-10-30 |
+| [US-012](US-012-vacaciones-permisos.md) | Vacaciones y permisos | Historia de Usuario | BLOQUEADA (2 correcciones pendientes; retomar) | 2026-10-30 |
 | [US-013](US-013-liquidacion-finiquito.md) | Liquidación de haberes y finiquito; pago de décimos acumulados | Historia de Usuario | Pendiente | 2026-10-30 |
 | [US-014](US-014-utilidades.md) | Utilidades | Historia de Usuario | Pendiente | 2026-10-30 |
 | [US-015](US-015-reportes-iess-mdt.md) | Reportes legales IESS y Ministerio del Trabajo; rol individual | Historia de Usuario | Pendiente | 2026-10-30 |

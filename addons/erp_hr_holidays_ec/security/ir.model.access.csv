@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_erp_hr_vacation_history_officer,erp.hr.vacation.history.officer,model_erp_hr_vacation_history,hr_holidays.group_hr_holidays_user,1,1,1,1

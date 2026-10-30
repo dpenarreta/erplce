@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!--
+        Generación diaria de los periodos de vacaciones por año de servicio
+        (US-012, CA-3 y CA-12). Se instala INACTIVA: Talento Humano la activa
+        (Ajustes > Técnico > Acciones planificadas) después de validar los
+        parámetros de vacaciones. Solo genera los aniversarios iguales o
+        posteriores al corte (parámetro VACATION_GENERATION_START); los
+        periodos anteriores los genera el cálculo inicial (botón de Talento
+        Humano). Idempotente (restricción erp_auto_service_year_uniq) y con
+        candado contra la ejecución simultánea del botón. noupdate: se respeta
+        si el administrador la activa o cambia su horario.
+    -->
+  <record id="ir_cron_generate_vacation_allocations" model="ir.cron">
+    <field
+      name="name"
+    >Ausencias Ecuador: generar asignaciones anuales de vacaciones</field>
+    <field name="model_id" ref="hr_holidays.model_hr_leave_allocation" />
+    <field name="state">code</field>
+    <field name="code">model._erp_cron_generate_vacation_allocations()</field>
+    <field name="interval_number">1</field>
+    <field name="interval_type">days</field>
+    <field name="active" eval="False" />
+  </record>
+</odoo>

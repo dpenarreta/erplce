@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+  <!--
+    US-012 (QA-UX): leyenda del calendario de Ausencias. «Validado» → «Aprobado»,
+    el mismo término que el estado de la solicitud.
+  -->
+  <t t-inherit="hr_holidays.CalendarFilterPanel" t-inherit-mode="extension">
+    <xpath expr="//img[hasclass('o_calendar_filter_plain')]/.." position="replace">
+      <span class="align-middle o_erp_legend_approved"><img
+        class="o_calendar_filter_plain"
+        src="/hr/static/src/img/icons/plain.svg"
+        alt=""
+      /> Aprobado</span>
+    </xpath>
+  </t>
+</templates>

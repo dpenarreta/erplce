@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-012 (CA-11): vacaciones gozadas antes de usar el sistema (carga
+    inicial). Solo encargados de ausencias (ACL del modelo y grupo del menú).
+    Se importa con la plantilla del modelo (get_import_templates): engranaje
+    ⚙ > Importar registros > Plantilla de vacaciones gozadas.
+  -->
+  <record id="erp_hr_vacation_history_view_list" model="ir.ui.view">
+    <field name="name">erp.hr.vacation.history.list</field>
+    <field name="model">erp.hr.vacation.history</field>
+    <field name="arch" type="xml">
+      <list string="Vacaciones gozadas antes del sistema">
+        <field name="employee_id" widget="many2one_avatar_employee" />
+        <field name="identification" optional="show" />
+        <field name="date" />
+        <field name="number_of_days" width="120px" sum="Total" />
+        <field name="service_year" width="120px" optional="show" />
+        <field name="note" optional="show" />
+        <field name="company_id" optional="hide" groups="base.group_multi_company" />
+      </list>
+    </field>
+  </record>
+
+  <record id="erp_hr_vacation_history_view_form" model="ir.ui.view">
+    <field name="name">erp.hr.vacation.history.form</field>
+    <field name="model">erp.hr.vacation.history</field>
+    <field name="arch" type="xml">
+      <form string="Vacaciones gozadas antes del sistema">
+        <sheet>
+          <div class="oe_title">
+            <label for="employee_id" />
+            <h1>
+              <field
+                name="employee_id"
+                placeholder="Empleado"
+                options="{'no_create': True}"
+              />
+            </h1>
+          </div>
+          <group>
+            <group name="erp_history_main">
+              <field name="identification" />
+              <field name="date" />
+              <field name="number_of_days" />
+            </group>
+            <group name="erp_history_period">
+              <field name="service_year" placeholder="Vacío: del más antiguo" />
+              <field name="note" />
+              <field name="company_id" readonly="1" groups="base.group_multi_company" />
+            </group>
+          </group>
+          <div class="text-muted" role="note">
+            Los días se descuentan de los periodos vigentes en la fecha, del más
+            antiguo al más nuevo.
+          </div>
+        </sheet>
+        <chatter />
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_hr_vacation_history_view_search" model="ir.ui.view">
+    <field name="name">erp.hr.vacation.history.search</field>
+    <field name="model">erp.hr.vacation.history</field>
+    <field name="arch" type="xml">
+      <search string="Vacaciones gozadas antes del sistema">
+        <field name="employee_id" />
+        <field name="identification" />
+        <field name="service_year" />
+        <filter name="erp_date" string="Fecha" date="date" />
+        <group expand="0" string="Agrupar por">
+          <filter
+            name="erp_group_employee"
+            string="Empleado"
+            context="{'group_by': 'employee_id'}"
+          />
+          <filter
+            name="erp_group_service_year"
+            string="Año de servicio"
+            context="{'group_by': 'service_year'}"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="action_erp_hr_vacation_history" model="ir.actions.act_window">
+    <field name="name">Vacaciones gozadas antes del sistema</field>
+    <field name="res_model">erp.hr.vacation.history</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="erp_hr_vacation_history_view_search" />
+    <field name="help" type="html">
+      <p class="o_view_nocontent_empty_folder">
+        Aún no hay vacaciones gozadas registradas
+      </p>
+      <p>
+        Registre aquí los días de vacaciones que cada empleado gozó antes de usar
+        el sistema; se descuentan de sus periodos del más antiguo al más nuevo.
+        Antes, calcule sus periodos con <strong>Calcular vacaciones</strong>.
+      </p>
+      <p>
+        Para cargarlos en lote: engranaje <strong>⚙ &gt; Importar registros</strong>,
+        descargue la <strong>Plantilla de vacaciones gozadas</strong>, complete la
+        identificación (o el empleado), la fecha y los días gozados, y súbala.
+      </p>
+    </field>
+  </record>
+
+  <menuitem
+    id="menu_erp_hr_vacation_history"
+    name="Vacaciones gozadas antes del sistema"
+    parent="hr_holidays.menu_hr_holidays_management"
+    action="action_erp_hr_vacation_history"
+    groups="hr_holidays.group_hr_holidays_user"
+    sequence="17"
+  />
+</odoo>

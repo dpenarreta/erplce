@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-012 (CA-2, CA-7): tipo de ausencia con las reglas de Ecuador.
+    Etiquetas en español en la propia herencia (no dependen de la traducción
+    de hr_holidays); ayudas de una línea, el detalle está en el help del campo.
+    La duración máxima se muestra legible («3 días (a validar)»,
+    erp_max_duration_display) junto al código del parámetro; el código solo
+    lo ve y edita el administrador de ausencias.
+  -->
+  <record id="hr_leave_type_view_form_inherit_erp_hr_holidays_ec" model="ir.ui.view">
+    <field name="name">hr.leave.type.form.inherit.erp_hr_holidays_ec</field>
+    <field name="model">hr.leave.type</field>
+    <field name="inherit_id" ref="hr_holidays.edit_holiday_status_form" />
+    <field name="arch" type="xml">
+      <!--
+        Botones inteligentes: «Asignaciones» / «Tiempo personal» /
+        «Acumulaciones» → «Saldos» / «Ausencias» / «Acumulación». Sin replace
+        (vista de prioridad normal): se oculta el texto nativo y se añade el
+        propio.
+      -->
+      <xpath
+        expr="//button[@name='action_see_days_allocated']//span[hasclass('o_stat_text')]"
+        position="attributes"
+      >
+        <attribute name="invisible">1</attribute>
+      </xpath>
+      <xpath
+        expr="//button[@name='action_see_days_allocated']//span[hasclass('o_stat_text')]"
+        position="after"
+      >
+        <span name="erp_stat_text" class="o_stat_text">Saldos</span>
+      </xpath>
+      <xpath
+        expr="//button[@name='action_see_group_leaves']//span[hasclass('o_stat_text')]"
+        position="attributes"
+      >
+        <attribute name="invisible">1</attribute>
+      </xpath>
+      <xpath
+        expr="//button[@name='action_see_group_leaves']//span[hasclass('o_stat_text')]"
+        position="after"
+      >
+        <span name="erp_stat_text" class="o_stat_text">Ausencias</span>
+      </xpath>
+      <xpath
+        expr="//button[@name='action_see_accrual_plans']//span[hasclass('o_stat_text')]"
+        position="attributes"
+      >
+        <attribute name="invisible">1</attribute>
+      </xpath>
+      <xpath
+        expr="//button[@name='action_see_accrual_plans']//span[hasclass('o_stat_text')]"
+        position="after"
+      >
+        <span name="erp_stat_text" class="o_stat_text">Acumulación</span>
+      </xpath>
+      <xpath expr="//button[@name='action_see_days_allocated']" position="attributes">
+        <attribute
+          name="help"
+        >Saldos de este tipo vigentes hoy (aprobados o por aprobar).</attribute>
+      </xpath>
+      <xpath expr="//button[@name='action_see_group_leaves']" position="attributes">
+        <attribute
+          name="help"
+        >Ausencias de este tipo (aprobadas o por aprobar) que empiezan este año.</attribute>
+      </xpath>
+      <xpath expr="//group[@name='leave_validation']" position="attributes">
+        <attribute name="string">Solicitudes de ausencia</attribute>
+      </xpath>
+      <xpath expr="//group[@name='allocation_validation']" position="attributes">
+        <attribute name="string">Saldo</attribute>
+      </xpath>
+      <xpath expr="//field[@name='support_document']" position="attributes">
+        <attribute name="string">Documento de respaldo</attribute>
+      </xpath>
+      <xpath expr="//field[@name='support_document']" position="after">
+        <field name="erp_attachment_required" invisible="not support_document" />
+      </xpath>
+      <xpath expr="//group[@name='visual']" position="before">
+        <group name="erp_ecuador">
+          <group name="erp_ecuador_rules" string="Reglas de Ecuador">
+            <field name="erp_is_annual_vacation" />
+            <field name="unpaid" string="Sin sueldo" />
+            <field
+              name="erp_max_duration_display"
+              string="Duración máxima"
+              placeholder="Sin duración máxima"
+              readonly="1"
+            />
+            <field
+              name="erp_max_duration_param_code"
+              string="Duración máxima (código)"
+              placeholder="Vacío: sin duración máxima"
+              groups="hr_holidays.group_hr_holidays_manager"
+            />
+            <div
+              class="text-muted"
+              colspan="2"
+              groups="hr_holidays.group_hr_holidays_manager"
+            >
+              Código del parámetro (Nómina › Configuración › Parámetros normativos)
+            </div>
+          </group>
+        </group>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="hr_leave_type_view_list_inherit_erp_hr_holidays_ec" model="ir.ui.view">
+    <field name="name">hr.leave.type.list.inherit.erp_hr_holidays_ec</field>
+    <field name="model">hr.leave.type</field>
+    <field name="inherit_id" ref="hr_holidays.view_holiday_status_normal_tree" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='requires_allocation']" position="after">
+        <field name="unpaid" string="Sin sueldo" optional="show" />
+        <field
+          name="erp_max_duration_display"
+          string="Duración máxima"
+          optional="show"
+        />
+      </xpath>
+    </field>
+  </record>
+</odoo>

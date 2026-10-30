@@ -1,0 +1,342 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * erp_hr_holidays_ec
+#
+# US-012 (CA-7): terminología de Ecuador para Ausencias (hr_holidays): menús,
+# acciones, estados vacíos, etiquetas de campos y opciones de aprobación.
+# views/hr_holidays_terminology.xml ya los escribe en es_EC al instalar o
+# actualizar el módulo; estas entradas evitan que se pierdan al recargar las
+# traducciones de hr_holidays con "Sobrescribir términos existentes" (Odoo
+# carga los módulos en orden de dependencias y este archivo va después del de
+# hr_holidays). En las entradas de registros (model:) Odoo usa el xmlid, no el
+# msgid: un mismo texto inglés con dos traducciones distintas se agrupa bajo
+# otro texto de origen del mismo registro para no duplicar msgid.
+# Los textos de las vistas propias y los mensajes de DEV-2 están escritos en
+# español en el código (fuente): no necesitan entrada.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.hr_leave_action_holiday_allocation_id
+#: model:ir.ui.menu,name:hr_holidays.menu_hr_holidays_root
+msgid "Time Off"
+msgstr "Ausencias"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.ui.menu,name:hr_holidays.menu_hr_holidays_my_leaves
+msgid "My Time"
+msgstr "Mis ausencias"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.hr_leave_action_new_request
+#: model:ir.ui.menu,name:hr_holidays.hr_leave_menu_new_request
+msgid "Dashboard"
+msgstr "Solicitar ausencia"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.hr_leave_action_my
+#: model:ir.ui.menu,name:hr_holidays.hr_leave_menu_my
+msgid "My Time Off"
+msgstr "Mis solicitudes"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.hr_leave_allocation_action_my
+#: model:ir.ui.menu,name:hr_holidays.menu_open_allocation
+msgid "My Allocations"
+msgstr "Mis saldos"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.action_hr_holidays_dashboard
+#: model:ir.ui.menu,name:hr_holidays.menu_hr_holidays_dashboard
+msgid "Overview"
+msgstr "Calendario del equipo"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.ui.menu,name:hr_holidays.menu_hr_holidays_management
+msgid "Management"
+msgstr "Aprobaciones"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.hr_leave_action_action_approve_department
+#: model:ir.ui.menu,name:hr_holidays.menu_open_department_leave_approve
+msgid "All Time Off"
+msgstr "Ausencias por aprobar"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.hr_leave_allocation_action_approve_department
+#: model:ir.ui.menu,name:hr_holidays.hr_holidays_menu_manager_approve_allocations
+msgid "Allocations"
+msgstr "Saldos de vacaciones"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.hr_leave_allocation_action_all
+msgid "All Allocations"
+msgstr "Todos los saldos"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.server,name:hr_holidays.action_hr_holidays_by_employee_and_type_report
+#: model:ir.ui.menu,name:hr_holidays.menu_hr_holidays_balance
+msgid "Balance"
+msgstr "Saldos por empleado"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.open_view_holiday_status
+#: model:ir.ui.menu,name:hr_holidays.hr_holidays_status_menu_configuration
+msgid "Time Off Types"
+msgstr "Tipos de ausencia"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.open_view_public_holiday
+#: model:ir.ui.menu,name:hr_holidays.hr_holidays_public_time_off_menu_configuration
+msgid "Public Holidays"
+msgstr "Feriados"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.hr_leave_mandatory_day_action
+#: model:ir.ui.menu,name:hr_holidays.hr_holidays_mandatory_day_menu_configuration
+msgid "Mandatory Days"
+msgstr "Días sin ausencias"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.hr_leave_action_my_request
+msgid "Time Off Request"
+msgstr "Solicitud de ausencia"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.action_hr_available_holidays_report
+#: model:ir.ui.menu,name:hr_holidays.menu_hr_available_holidays_report_tree
+msgid "by Employee"
+msgstr "Ausencias por empleado"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.action_hr_leave_report
+#: model:ir.ui.menu,name:hr_holidays.menu_hr_holidays_summary_all
+msgid "by Type"
+msgstr "Ausencias por tipo"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,name:hr_holidays.open_view_accrual_plans
+#: model:ir.ui.menu,name:hr_holidays.hr_holidays_accrual_menu_configuration
+msgid "Accrual Plans"
+msgstr "Reglas de acumulación"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.server,name:hr_holidays.action_manager_approval
+msgid "Manager Approval"
+msgstr "Aprobar (jefe inmediato)"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.server,name:hr_holidays.action_hr_approval
+msgid "HR Approval"
+msgstr "Aprobar (Talento Humano)"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.server,name:hr_holidays.ir_actions_server_approve_allocations
+msgid "Approve Allocations"
+msgstr "Aprobar saldos"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,help:hr_holidays.hr_leave_action_new_request
+msgid ""
+"<p class=\"o_view_nocontent_smiling_face\">Aún no tiene ausencias "
+"registradas</p>\n"
+"<p>Pulse <strong>Nuevo</strong> para pedir vacaciones o un permiso. Su jefe "
+"inmediato recibirá la solicitud para aprobarla.</p>"
+msgstr ""
+"<p class=\"o_view_nocontent_smiling_face\">Aún no tiene ausencias "
+"registradas</p>\n"
+"<p>Pulse <strong>Nuevo</strong> para pedir vacaciones o un permiso. Su jefe "
+"inmediato recibirá la solicitud para aprobarla.</p>"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,help:hr_holidays.hr_leave_action_my
+msgid ""
+"<p class=\"o_view_nocontent_smiling_face\">Aún no ha solicitado "
+"ausencias</p>\n"
+"<p>Pulse <strong>Nuevo</strong> para pedir vacaciones o un permiso. Aquí "
+"verá si su jefe inmediato ya la aprobó.</p>"
+msgstr ""
+"<p class=\"o_view_nocontent_smiling_face\">Aún no ha solicitado "
+"ausencias</p>\n"
+"<p>Pulse <strong>Nuevo</strong> para pedir vacaciones o un permiso. Aquí "
+"verá si su jefe inmediato ya la aprobó.</p>"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,help:hr_holidays.hr_leave_action_action_approve_department
+msgid ""
+"<p class=\"o_view_nocontent_smiling_face\">No hay ausencias por aprobar</p>\n"
+"<p>Aquí aparecen las solicitudes de su equipo que esperan su aprobación. "
+"Para ver también las ya aprobadas, quite el filtro <strong>Esperando mi "
+"aprobación</strong>.</p>"
+msgstr ""
+"<p class=\"o_view_nocontent_smiling_face\">No hay ausencias por aprobar</p>\n"
+"<p>Aquí aparecen las solicitudes de su equipo que esperan su aprobación. "
+"Para ver también las ya aprobadas, quite el filtro <strong>Esperando mi "
+"aprobación</strong>.</p>"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,help:hr_holidays.hr_leave_action_holiday_allocation_id
+msgid ""
+"<p class=\"o_view_nocontent_smiling_face\">No hay ausencias con este "
+"saldo</p>\n"
+"<p>Aquí aparecen las solicitudes que descuentan días de este saldo.</p>"
+msgstr ""
+"<p class=\"o_view_nocontent_smiling_face\">No hay ausencias con este "
+"saldo</p>\n"
+"<p>Aquí aparecen las solicitudes que descuentan días de este saldo.</p>"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,help:hr_holidays.hr_leave_allocation_action_my
+msgid ""
+"<p class=\"o_view_nocontent_smiling_face\">Aún no tiene saldo de "
+"vacaciones</p>\n"
+"<p>Talento Humano asigna sus días de vacaciones en cada aniversario de su "
+"ingreso, según su antigüedad. Si falta su saldo, consulte a Talento "
+"Humano.</p>"
+msgstr ""
+"<p class=\"o_view_nocontent_smiling_face\">Aún no tiene saldo de "
+"vacaciones</p>\n"
+"<p>Talento Humano asigna sus días de vacaciones en cada aniversario de su "
+"ingreso, según su antigüedad. Si falta su saldo, consulte a Talento "
+"Humano.</p>"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,help:hr_holidays.hr_leave_allocation_action_approve_department
+msgid ""
+"<p class=\"o_view_nocontent_empty_folder\">Aún no hay saldos de "
+"vacaciones</p>\n"
+"<p>Aquí están los días de vacaciones de cada empleado; quite los filtros "
+"para verlos todos. Talento Humano los calcula por antigüedad con "
+"<strong>Calcular vacaciones</strong> en la ficha o la lista de "
+"empleados.</p>"
+msgstr ""
+"<p class=\"o_view_nocontent_empty_folder\">Aún no hay saldos de "
+"vacaciones</p>\n"
+"<p>Aquí están los días de vacaciones de cada empleado; quite los filtros "
+"para verlos todos. Talento Humano los calcula por antigüedad con "
+"<strong>Calcular vacaciones</strong> en la ficha o la lista de "
+"empleados.</p>"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.actions.act_window,help:hr_holidays.hr_leave_allocation_action_all
+msgid ""
+"<p class=\"o_view_nocontent_empty_folder\">Aún no hay saldos de "
+"vacaciones</p>\n"
+"<p>Talento Humano los calcula por antigüedad con <strong>Calcular "
+"vacaciones</strong> en la ficha o la lista de empleados.</p>"
+msgstr ""
+"<p class=\"o_view_nocontent_empty_folder\">Aún no hay saldos de "
+"vacaciones</p>\n"
+"<p>Talento Humano los calcula por antigüedad con <strong>Calcular "
+"vacaciones</strong> en la ficha o la lista de empleados.</p>"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_allocation__allocation_type
+msgid "Allocation Type"
+msgstr "Origen"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_allocation__accrual_plan_id
+msgid "Accrual Plan"
+msgstr "Regla de acumulación"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__unpaid
+msgid "Is Unpaid"
+msgstr "Sin sueldo"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave__leave_type_support_document
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__support_document
+msgid "Supporting Document"
+msgstr "Documento de respaldo"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave__holiday_status_id
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_allocation__holiday_status_id
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__name
+msgid "Time Off Type"
+msgstr "Tipo de ausencia"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__leave_validation_type
+msgid "Time Off Validation"
+msgstr "Aprobación de la solicitud"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__request_unit
+msgid "Take Time Off in"
+msgstr "Se solicita por"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__requires_allocation
+msgid "Requires allocation"
+msgstr "Requiere saldo"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__time_type
+msgid "Kind of Time Off"
+msgstr "Se registra como"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__create_calendar_meeting
+msgid "Display Time Off in Calendar"
+msgstr "Mostrar en el calendario"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__include_public_holidays_in_duration
+msgid "Public Holiday Included"
+msgstr "Incluir feriados"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields,field_description:hr_holidays.field_hr_leave_type__responsible_ids
+msgid "Notified Time Off Officer"
+msgstr "Talento Humano a notificar"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_type__allocation_validation_type__no_validation
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_type__leave_validation_type__no_validation
+msgid "No Validation"
+msgstr "Sin aprobación"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_type__allocation_validation_type__hr
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_type__leave_validation_type__hr
+msgid "By Time Off Officer"
+msgstr "Talento Humano"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_type__allocation_validation_type__manager
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_type__leave_validation_type__manager
+msgid "By Employee's Approver"
+msgstr "Jefe inmediato"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_type__allocation_validation_type__both
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_type__leave_validation_type__both
+msgid "By Employee's Approver and Time Off Officer"
+msgstr "Jefe inmediato y Talento Humano"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_type__requires_allocation__no
+msgid "No Limit"
+msgstr "No"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_allocation__allocation_type__regular
+msgid "Regular Allocation"
+msgstr "Talento Humano"
+
+#. module: erp_hr_holidays_ec
+#: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_allocation__allocation_type__accrual
+msgid "Accrual Allocation"
+msgstr "Acumulación automática"

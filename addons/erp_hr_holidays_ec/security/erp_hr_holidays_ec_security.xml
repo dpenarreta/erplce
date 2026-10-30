@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+        Vacaciones gozadas antes del sistema (US-012, CA-11): solo los
+        encargados de ausencias (ACL); cada empresa ve las de sus empleados.
+    -->
+  <record id="erp_hr_vacation_history_company_rule" model="ir.rule">
+    <field name="name">Vacaciones gozadas antes del sistema: multiempresa</field>
+    <field name="model_id" ref="model_erp_hr_vacation_history" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+</odoo>

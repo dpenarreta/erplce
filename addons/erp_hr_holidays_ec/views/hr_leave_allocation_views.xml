@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-012 (CA-3, CA-4, CA-9, CA-10, CA-11): saldos de vacaciones (asignaciones
+    de hr_holidays) por año de servicio = periodo.
+
+    - Formulario: «Saldo de vacaciones», «Días» y, en los periodos
+      automáticos, el detalle del periodo (nace el, caduca el, días del
+      periodo, gozados antes del sistema, gozados, por aprobar, disponibles,
+      caducados). Los campos del periodo son de solo lectura (el modelo los
+      protege). La herencia del formulario base alcanza también a sus vistas
+      primarias (responsable, tablero).
+    - «Mis saldos» sin «Nuevo» (create="0" en su lista, formulario y kanban,
+      vistas propias de la acción): el saldo lo calcula Talento Humano, que
+      crea saldos manuales desde «Saldos de vacaciones» / «Todos los saldos».
+      (Odoo 18 no admite grupos en vistas heredadas, así que no se puede
+      condicionar el atributo create por grupo en la misma vista.)
+    - Sin términos «Asignación», «Tipo de asignación» ni «Plan de
+      acumulación» en las listas: «Días», «Origen», «Regla de acumulación»
+      (columna opcional oculta).
+    - Lista «Periodos de vacaciones» (RRHH, jefe: su equipo; empleado: los
+      suyos por las reglas de registro de hr_holidays).
+  -->
+  <record
+    id="hr_leave_allocation_view_form_inherit_erp_hr_holidays_ec"
+    model="ir.ui.view"
+  >
+    <field name="name">hr.leave.allocation.form.inherit.erp_hr_holidays_ec</field>
+    <field name="model">hr.leave.allocation</field>
+    <field name="inherit_id" ref="hr_holidays.hr_leave_allocation_view_form" />
+    <field name="arch" type="xml">
+      <xpath expr="//form" position="attributes">
+        <attribute name="string">Saldo de vacaciones</attribute>
+      </xpath>
+      <xpath expr="//label[@for='number_of_days_display']" position="attributes">
+        <attribute name="string">Días</attribute>
+      </xpath>
+      <xpath expr="//group[@name='alloc_right_col']" position="inside">
+        <field name="erp_auto_generated" invisible="not erp_auto_generated" />
+        <field name="erp_service_year" invisible="not erp_auto_generated" />
+        <field name="erp_entry_date" invisible="not erp_auto_generated" />
+      </xpath>
+      <xpath expr="//group[@name='alloc_right_col']/.." position="after">
+        <group
+          name="erp_period_detail"
+          string="Detalle del periodo"
+          invisible="not erp_auto_generated"
+        >
+          <group name="erp_period_dates">
+            <field name="date_from" string="Nace el" readonly="1" />
+            <field name="date_to" string="Caduca el" readonly="1" />
+            <field name="erp_entitled_days" />
+            <field name="erp_history_days" />
+          </group>
+          <group name="erp_period_balance">
+            <field name="erp_days_used" />
+            <field name="erp_days_pending" />
+            <field name="erp_days_available" class="fw-bold" />
+            <field name="erp_days_expired" invisible="not erp_is_expired" />
+            <field name="erp_is_expired" invisible="1" />
+          </group>
+        </group>
+      </xpath>
+      <xpath expr="//field[@name='notes']" position="before">
+        <label
+          for="notes"
+          string="Detalle del cálculo"
+          invisible="not erp_auto_generated"
+        />
+      </xpath>
+    </field>
+  </record>
+
+  <record
+    id="hr_leave_allocation_view_list_inherit_erp_hr_holidays_ec"
+    model="ir.ui.view"
+  >
+    <field name="name">hr.leave.allocation.list.inherit.erp_hr_holidays_ec</field>
+    <field name="model">hr.leave.allocation</field>
+    <field name="inherit_id" ref="hr_holidays.hr_leave_allocation_view_tree" />
+    <field name="arch" type="xml">
+      <xpath expr="//list" position="attributes">
+        <attribute name="string">Saldos de vacaciones</attribute>
+      </xpath>
+      <xpath expr="//field[@name='holiday_status_id']" position="after">
+        <field
+          name="erp_service_year"
+          string="Año de servicio"
+          width="120px"
+          optional="show"
+          invisible="not erp_auto_generated"
+        />
+        <field name="erp_auto_generated" string="Automática" optional="hide" />
+      </xpath>
+      <xpath expr="//field[@name='duration_display']" position="attributes">
+        <attribute name="string">Días</attribute>
+      </xpath>
+      <xpath expr="//field[@name='date_from']" position="attributes">
+        <attribute name="string">Desde</attribute>
+      </xpath>
+      <xpath expr="//field[@name='date_to']" position="attributes">
+        <attribute name="string">Caduca el</attribute>
+        <attribute name="optional">show</attribute>
+      </xpath>
+      <xpath expr="//field[@name='date_to']" position="after">
+        <field
+          name="erp_days_pending"
+          string="Por aprobar"
+          width="110px"
+          optional="show"
+        />
+        <field
+          name="erp_days_available"
+          string="Disponibles"
+          width="110px"
+          optional="show"
+        />
+      </xpath>
+      <xpath expr="//field[@name='allocation_type']" position="attributes">
+        <attribute name="string">Origen</attribute>
+        <attribute name="optional">hide</attribute>
+      </xpath>
+      <xpath expr="//field[@name='accrual_plan_id']" position="attributes">
+        <attribute name="string">Regla de acumulación</attribute>
+        <attribute name="optional">hide</attribute>
+      </xpath>
+    </field>
+  </record>
+
+  <!--
+    «Mis saldos» (empleado): detalle del periodo en la lista. «Días» (saldo
+    neto que usa hr_holidays) queda como columna opcional; «Días del periodo»
+    y «Gozados» incluyen lo gozado antes del sistema.
+  -->
+  <record
+    id="hr_leave_allocation_view_list_my_inherit_erp_hr_holidays_ec"
+    model="ir.ui.view"
+  >
+    <field name="name">hr.leave.allocation.list.my.inherit.erp_hr_holidays_ec</field>
+    <field name="model">hr.leave.allocation</field>
+    <field name="inherit_id" ref="hr_holidays.hr_leave_allocation_view_tree_my" />
+    <field name="arch" type="xml">
+      <xpath expr="//list" position="attributes">
+        <attribute name="create">0</attribute>
+      </xpath>
+      <xpath expr="//field[@name='duration_display']" position="attributes">
+        <attribute name="optional">hide</attribute>
+      </xpath>
+      <xpath expr="//field[@name='date_from']" position="attributes">
+        <attribute name="string">Nace el</attribute>
+        <attribute name="optional">show</attribute>
+      </xpath>
+      <xpath expr="//field[@name='erp_days_pending']" position="before">
+        <field
+          name="erp_entitled_days"
+          string="Días del periodo"
+          width="130px"
+          invisible="not erp_auto_generated"
+        />
+        <field name="erp_days_used" string="Gozados" width="100px" />
+      </xpath>
+      <xpath expr="//field[@name='erp_days_available']" position="after">
+        <field
+          name="erp_days_expired"
+          string="Caducados"
+          width="100px"
+          optional="show"
+        />
+      </xpath>
+    </field>
+  </record>
+
+  <!-- «Mis saldos»: formulario y kanban propios, sin «Nuevo». -->
+  <record id="hr_leave_allocation_view_form_erp_my" model="ir.ui.view">
+    <field name="name">hr.leave.allocation.form.erp_my</field>
+    <field name="model">hr.leave.allocation</field>
+    <field name="inherit_id" ref="hr_holidays.hr_leave_allocation_view_form" />
+    <field name="mode">primary</field>
+    <field name="priority">90</field>
+    <field name="arch" type="xml">
+      <xpath expr="//form" position="attributes">
+        <attribute name="create">0</attribute>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="hr_leave_allocation_view_kanban_erp_my" model="ir.ui.view">
+    <field name="name">hr.leave.allocation.kanban.erp_my</field>
+    <field name="model">hr.leave.allocation</field>
+    <field name="inherit_id" ref="hr_holidays.hr_leave_allocation_view_kanban" />
+    <field name="mode">primary</field>
+    <field name="priority">90</field>
+    <field name="arch" type="xml">
+      <xpath expr="//kanban" position="attributes">
+        <attribute name="create">0</attribute>
+      </xpath>
+    </field>
+  </record>
+
+  <record
+    id="hr_holidays.hr_leave_allocation_action_my_view_form"
+    model="ir.actions.act_window.view"
+  >
+    <field name="view_id" ref="hr_leave_allocation_view_form_erp_my" />
+  </record>
+
+  <record
+    id="hr_leave_allocation_action_my_view_kanban_erp"
+    model="ir.actions.act_window.view"
+  >
+    <field name="sequence">3</field>
+    <field name="view_mode">kanban</field>
+    <field name="act_window_id" ref="hr_holidays.hr_leave_allocation_action_my" />
+    <field name="view_id" ref="hr_leave_allocation_view_kanban_erp_my" />
+  </record>
+
+  <record
+    id="hr_leave_allocation_view_search_inherit_erp_hr_holidays_ec"
+    model="ir.ui.view"
+  >
+    <field name="name">hr.leave.allocation.search.inherit.erp_hr_holidays_ec</field>
+    <field name="model">hr.leave.allocation</field>
+    <field name="inherit_id" ref="hr_holidays.view_hr_leave_allocation_filter" />
+    <field name="arch" type="xml">
+      <xpath expr="//filter[@name='validated']" position="after">
+        <separator />
+        <filter
+          name="erp_auto_generated"
+          string="Por antigüedad"
+          domain="[('erp_auto_generated', '=', True)]"
+        />
+        <filter
+          name="erp_manual"
+          string="Manuales"
+          domain="[('erp_auto_generated', '=', False)]"
+        />
+      </xpath>
+      <xpath expr="//filter[@name='group_allocation_type']" position="attributes">
+        <attribute name="string">Origen</attribute>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Periodos de vacaciones (CA-10, CA-11) -->
+  <record id="hr_leave_allocation_view_list_erp_periods" model="ir.ui.view">
+    <field name="name">hr.leave.allocation.list.erp_periods</field>
+    <field name="model">hr.leave.allocation</field>
+    <field name="priority">90</field>
+    <field name="arch" type="xml">
+      <list
+        string="Periodos de vacaciones"
+        create="0"
+        default_order="employee_id, date_from"
+        decoration-muted="erp_is_expired"
+      >
+        <field name="employee_id" widget="many2one_avatar_employee" />
+        <field name="holiday_status_id" optional="hide" />
+        <field name="erp_service_year" string="Año de servicio" width="120px" />
+        <field name="date_from" string="Nace el" width="110px" />
+        <field name="date_to" string="Caduca el" width="110px" />
+        <field
+          name="erp_entitled_days"
+          string="Días del periodo"
+          width="130px"
+          sum="Total"
+        />
+        <field
+          name="erp_history_days"
+          string="Gozados antes del sistema"
+          width="190px"
+          optional="show"
+        />
+        <field name="erp_days_used" string="Gozados" width="100px" />
+        <field name="erp_days_pending" string="Por aprobar" width="110px" />
+        <field
+          name="erp_days_available"
+          string="Disponibles"
+          width="110px"
+          decoration-bf="erp_days_available &gt; 0"
+        />
+        <field
+          name="erp_days_expired"
+          string="Caducados"
+          width="100px"
+          decoration-danger="erp_days_expired &gt; 0"
+        />
+        <field
+          name="state"
+          widget="badge"
+          optional="hide"
+          decoration-warning="state == 'confirm'"
+          decoration-success="state == 'validate'"
+        />
+        <field name="erp_is_expired" column_invisible="True" />
+      </list>
+    </field>
+  </record>
+
+  <record id="hr_leave_allocation_view_search_erp_periods" model="ir.ui.view">
+    <field name="name">hr.leave.allocation.search.erp_periods</field>
+    <field name="model">hr.leave.allocation</field>
+    <field name="priority">90</field>
+    <field name="arch" type="xml">
+      <search string="Periodos de vacaciones">
+        <field name="employee_id" />
+        <field name="department_id" />
+        <field name="erp_service_year" />
+        <filter
+          name="erp_current"
+          string="Vigentes"
+          domain="['|', ('date_to', '=', False), ('date_to', '&gt;=', context_today().strftime('%Y-%m-%d'))]"
+        />
+        <filter
+          name="erp_expired"
+          string="Caducados"
+          domain="[('date_to', '&lt;', context_today().strftime('%Y-%m-%d'))]"
+        />
+        <separator />
+        <filter
+          name="erp_approved"
+          string="Aprobados"
+          domain="[('state', '=', 'validate')]"
+        />
+        <filter
+          name="erp_to_approve"
+          string="Por aprobar"
+          domain="[('state', 'in', ('confirm', 'validate1'))]"
+        />
+        <separator />
+        <filter
+          name="erp_my_team"
+          string="Mi equipo"
+          domain="['|', ('employee_id.leave_manager_id', '=', uid), ('employee_id.user_id', '=', uid)]"
+        />
+        <group expand="0" string="Agrupar por">
+          <filter
+            name="erp_group_employee"
+            string="Empleado"
+            context="{'group_by': 'employee_id'}"
+          />
+          <filter
+            name="erp_group_service_year"
+            string="Año de servicio"
+            context="{'group_by': 'erp_service_year'}"
+          />
+          <filter
+            name="erp_group_state"
+            string="Estado"
+            context="{'group_by': 'state'}"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="action_erp_vacation_periods" model="ir.actions.act_window">
+    <field name="name">Periodos de vacaciones</field>
+    <field name="res_model">hr.leave.allocation</field>
+    <field name="view_mode">list,form</field>
+    <field name="view_id" ref="hr_leave_allocation_view_list_erp_periods" />
+    <field name="search_view_id" ref="hr_leave_allocation_view_search_erp_periods" />
+    <field name="domain">[('erp_auto_generated', '=', True)]</field>
+    <field
+      name="context"
+    >{'search_default_erp_current': 1, 'search_default_erp_group_employee': 1}</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_empty_folder">Aún no hay periodos de vacaciones</p>
+      <p>
+        Cada periodo es un año de servicio: nace en el aniversario del ingreso y
+        caduca al terminar el plazo de acumulación. Talento Humano los calcula
+        con <strong>Calcular vacaciones</strong> en la ficha del empleado o en la
+        lista de empleados (Acciones). Quite el filtro
+        <strong>Vigentes</strong> para ver también los caducados.
+      </p>
+    </field>
+  </record>
+
+  <menuitem
+    id="menu_erp_vacation_periods"
+    name="Periodos de vacaciones"
+    parent="hr_holidays.menu_hr_holidays_management"
+    action="action_erp_vacation_periods"
+    groups="hr_holidays.group_hr_holidays_responsible"
+    sequence="16"
+  />
+</odoo>

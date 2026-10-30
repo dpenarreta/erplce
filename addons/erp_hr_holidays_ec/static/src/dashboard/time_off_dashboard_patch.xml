@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+  <!--
+    US-012 (QA-UX): textos del tablero de Ausencias que vienen del JS de
+    hr_holidays. Las traducciones de JS se combinan en el navegador sin orden
+    fijo entre módulos, por lo que una entrada en i18n/es.po no las garantiza:
+    se reescriben aquí por herencia de plantillas (extensión).
+    - «Solicitudes pendientes» (solicitudes de saldo) solo se muestra si hay
+      alguna, con el nombre «Saldos por aprobar».
+    - «Nueva solicitud de asignación» / «Otorgar tiempo» → «Ver mis saldos» /
+      «Ver saldos del empleado» (botón accesible por teclado).
+  -->
+  <t t-inherit="hr_holidays.TimeOffDashboard" t-inherit-mode="extension">
+    <xpath expr="//strong[hasclass('o_timeoff_name')]" position="replace">
+      <strong
+        t-if="state.allocationRequests"
+        class="o_timeoff_name o_erp_pending_balances"
+      >Saldos por aprobar</strong>
+    </xpath>
+    <xpath expr="//span[@t-on-click='openPendingRequests']" position="attributes">
+      <attribute name="t-if">state.allocationRequests</attribute>
+    </xpath>
+    <xpath expr="//a[@t-on-click='newAllocationRequest']" position="replace">
+      <button
+        type="button"
+        class="btn btn-link o_timeoff_details o_erp_open_balances p-1"
+        t-on-click="erpOpenBalances"
+      >
+        <t t-if="props.employeeId">Ver saldos del empleado</t>
+        <t t-else="">Ver mis saldos</t>
+      </button>
+    </xpath>
+  </t>
+
+  <!--
+    Ventana de detalle de cada tarjeta: «Asignado (nueva solicitud)» → «Días
+    otorgados», sin enlace para pedir saldo (lo calcula Talento Humano).
+  -->
+  <t t-inherit="hr_holidays.TimeOffCardPopover" t-inherit-mode="extension">
+    <xpath
+      expr="//span[@t-on-click='props.onClickNewAllocationRequest']/.."
+      position="replace"
+    >
+      <span class="o_erp_granted_days">Días otorgados:</span>
+    </xpath>
+  </t>
+</templates>

@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!--
+        Parámetros normativos de vacaciones y licencias (US-012, CA-1). Son
+        VALORES POR DEFECTO DE PARTIDA en estado «A validar»: el responsable de
+        nómina / Talento Humano o el contador debe confirmarlos (estado
+        «Validado») o corregirlos. No se garantiza que estén vigentes.
+        noupdate: las actualizaciones del módulo no pisan los cambios del
+        usuario. Sin empresa: comunes a todas las empresas.
+        «Vigente desde»:
+        - Parámetros que calculan los periodos de vacaciones (días base,
+          adicionales, tope y vigencia): 2005-12-16, fecha de la Codificación
+          17 del Código del Trabajo (R.O. Supl. 167). El cálculo inicial
+          genera periodos de años de servicio anteriores a 2026 (desde la
+          fecha de ingreso, dentro del límite de acumulación) y necesita un
+          valor vigente en cada aniversario (US-012, CA-9).
+        - Conteo en días calendario y licencias: desde la norma que
+          introdujo el texto citado (2005-12-16 Codificación; 2009-02-13
+          R.O. Supl. 528, maternidad y paternidad; 2012-09-26 R.O. Supl. 797,
+          lactancia), para registrar ausencias históricas anteriores a 2026
+          (carga inicial, US-012 CA-11). Fechas a confirmar con la asesoría
+          laboral.
+        - VACATION_GENERATION_START: su «Vigente desde» ES el corte de la
+          tarea automática (US-012, CA-12).
+        Fuente consultada: Código del Trabajo, Codificación 17 (Registro
+        Oficial Suplemento 167, 16-dic-2005), texto con última modificación
+        22-jun-2020 (Lexis, copia publicada por el CES en su LOTAIP). Reformas
+        posteriores a esa fecha: a confirmar.
+    -->
+  <record id="param_vacation_base_days_2026" model="erp.payroll.parameter">
+    <field name="code">VACATION_BASE_DAYS</field>
+    <field name="name">Vacaciones anuales: días base</field>
+    <field name="value_type">number</field>
+    <field name="value">15</field>
+    <field name="date_from">2005-12-16</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 69, inciso primero: «Todo trabajador tendrá derecho a gozar anualmente de un período ininterrumpido de quince días de descanso, incluidos los días no laborables».</field>
+    <field
+      name="note"
+    >Valor de partida a validar. El art. 69 fija 20 días para menores de 16 años y 18 días para los de 16 a 18 años: no se modela (a confirmar si aplica a la empresa).</field>
+  </record>
+  <record id="param_vacation_extra_from_year_2026" model="erp.payroll.parameter">
+    <field name="code">VACATION_EXTRA_FROM_YEAR</field>
+    <field name="name">Vacaciones: año de servicio del primer día adicional</field>
+    <field name="value_type">number</field>
+    <field name="value">6</field>
+    <field name="date_from">2005-12-16</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 69: «Los trabajadores que hubieren prestado servicios por más de cinco años en la misma empresa o al mismo empleador, tendrán derecho a gozar adicionalmente de un día de vacaciones por cada uno de los años excedentes». Art. 70: la elección entre días adicionales o pago en dinero corresponde al empleador.</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Interpretación: el primer día adicional corresponde al sexto año de servicio (primer año que excede de cinco). Días adicionales del año de servicio N = (N − este valor + 1) × días por año, con tope.</field>
+  </record>
+  <record id="param_vacation_extra_days_per_year_2026" model="erp.payroll.parameter">
+    <field name="code">VACATION_EXTRA_DAYS_PER_YEAR</field>
+    <field name="name">Vacaciones: días adicionales por año excedente</field>
+    <field name="value_type">number</field>
+    <field name="value">1</field>
+    <field name="date_from">2005-12-16</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 69: «un día de vacaciones por cada uno de los años excedentes».</field>
+    <field name="note">Valor de partida a validar.</field>
+  </record>
+  <record id="param_vacation_extra_max_days_2026" model="erp.payroll.parameter">
+    <field name="code">VACATION_EXTRA_MAX_DAYS</field>
+    <field name="name">Vacaciones: tope de días adicionales</field>
+    <field name="value_type">number</field>
+    <field name="value">15</field>
+    <field name="date_from">2005-12-16</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 69, último inciso: «Los días de vacaciones adicionales por antigüedad no excederán de quince, salvo que las partes, mediante contrato individual o colectivo, convinieren en ampliar tal beneficio».</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Un contrato individual o colectivo puede ampliarlo.</field>
+  </record>
+  <record id="param_vacation_validity_years" model="erp.payroll.parameter">
+    <field name="code">VACATION_VALIDITY_YEARS</field>
+    <field
+      name="name"
+    >Vacaciones: años de vigencia de cada periodo (acumulación)</field>
+    <field name="value_type">number</field>
+    <field name="value">4</field>
+    <field name="date_from">2005-12-16</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 75 (inciso único), «Acumulación de vacaciones»: «El trabajador podrá no hacer uso de las vacaciones hasta por tres años consecutivos, a fin de acumularlas en el cuarto año». Véanse también el art. 74 (postergación por el empleador) y el art. 76 (compensación en dinero de las no gozadas, al salir del servicio).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Interpretación: el derecho de un periodo nace en el aniversario del ingreso (A); puede no usarse durante tres años consecutivos y gozarse en el cuarto: 3 + 1 = 4 años de vigencia. El periodo caduca el día anterior a A + este número de años (fecha «Caduca el» = fin de vigencia de la asignación). Ejemplo: ingreso 2020-03-15 → periodo del año de servicio 1 nace el 2021-03-15 y caduca el 2025-03-14. El cálculo inicial no genera los periodos ya caducados a la fecha de cálculo, y el saldo disponible no incluye días de periodos caducados. Si Talento Humano interpreta que solo se acumulan tres periodos, use 3. Debe ser mayor que cero.</field>
+  </record>
+  <record id="param_vacation_generation_start" model="erp.payroll.parameter">
+    <field name="code">VACATION_GENERATION_START</field>
+    <field name="name">Vacaciones: inicio de la generación automática (corte)</field>
+    <field name="value_type">number</field>
+    <field name="value">1</field>
+    <field name="date_from">2026-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >No es un valor del Código del Trabajo: decisión del usuario del 2026-10-30 (US-012, sección 5), corte 2026 de la generación automática de vacaciones.</field>
+    <field
+      name="note"
+    >Lo que cuenta es «Vigente desde» (el valor no se usa): la tarea diaria solo genera los periodos cuyo aniversario es igual o posterior a esa fecha. Los periodos anteriores los genera el cálculo inicial (botón de Talento Humano) desde la fecha de ingreso, dentro del límite de acumulación (VACATION_VALIDITY_YEARS).</field>
+  </record>
+  <record id="param_vacation_count_calendar_days_2026" model="erp.payroll.parameter">
+    <field name="code">VACATION_COUNT_CALENDAR_DAYS</field>
+    <field
+      name="name"
+    >Vacaciones: contar días calendario (1 = sí, 0 = laborables)</field>
+    <field name="value_type">number</field>
+    <field name="value">1</field>
+    <field name="date_from">2005-12-16</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 69: el período de quince días es «ininterrumpido» e incluye «los días no laborables»; por eso se cuentan días calendario.</field>
+    <field
+      name="note"
+    >Valor de partida a validar. 1: la duración de una solicitud de vacaciones cuenta todos los días del periodo (incluye fines de semana y feriados). 0: solo días laborables según la jornada del empleado.</field>
+  </record>
+  <record id="param_leave_count_calendar_days_2026" model="erp.payroll.parameter">
+    <field name="code">LEAVE_COUNT_CALENDAR_DAYS</field>
+    <field
+      name="name"
+    >Licencias por días: contar días calendario (1 = sí, 0 = laborables)</field>
+    <field name="value_type">number</field>
+    <field name="value">1</field>
+    <field name="date_from">2005-12-16</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 152 (maternidad: «doce (12) semanas»; paternidad: «diez días») y art. 42, num. 30 («tres días de licencia»): la ley expresa la duración en semanas o días sin distinguir laborables. Interpretación a confirmar.</field>
+    <field
+      name="note"
+    >A confirmar con Talento Humano / asesoría laboral. Aplica a las licencias por días con duración máxima legal (maternidad, paternidad, calamidad doméstica) al comparar con su máximo.</field>
+  </record>
+  <record id="param_leave_maternity_max_days_2026" model="erp.payroll.parameter">
+    <field name="code">LEAVE_MATERNITY_MAX_DAYS</field>
+    <field name="name">Licencia de maternidad: duración máxima (días)</field>
+    <field name="value_type">number</field>
+    <field name="value">94</field>
+    <field name="date_from">2009-02-13</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 152, inciso primero (sustituido por la Ley publicada en el R.O. Suplemento 528, 13-feb-2009): licencia con remuneración de doce (12) semanas (84 días) por el nacimiento; en nacimientos múltiples se extiende diez días adicionales (84 + 10 = 94).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Es el tope absoluto por solicitud (caso más amplio, nacimientos múltiples): Talento Humano comprueba con el certificado médico qué supuesto aplica (84 días en el caso general). La licencia opcional sin remuneración de hasta 9 meses para el cuidado de los hijos (artículo innumerado tras el art. 152, R.O. Suplemento 720, 28-mar-2016) se registra con «Permiso sin sueldo».</field>
+  </record>
+  <record id="param_leave_paternity_max_days_2026" model="erp.payroll.parameter">
+    <field name="code">LEAVE_PATERNITY_MAX_DAYS</field>
+    <field name="name">Licencia de paternidad: duración máxima (días)</field>
+    <field name="value_type">number</field>
+    <field name="value">25</field>
+    <field name="date_from">2009-02-13</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 152, incisos segundo y tercero: diez días por parto normal; cinco días más por nacimientos múltiples o cesárea; ocho días más por nacimiento prematuro o en condiciones de cuidado especial; veinticinco días si la hija o hijo nace con una enfermedad degenerativa, terminal o irreversible o con discapacidad severa.</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Es el tope absoluto por solicitud (supuesto más amplio, 25 días): Talento Humano comprueba con el certificado qué supuesto aplica (10 días en el caso general). Si fallece la madre, el padre puede usar lo que resta de la licencia de maternidad (art. 152, inciso cuarto): se registra con el tipo «Licencia por maternidad».</field>
+  </record>
+  <record id="param_leave_calamity_max_days_2026" model="erp.payroll.parameter">
+    <field name="code">LEAVE_CALAMITY_MAX_DAYS</field>
+    <field name="name">Calamidad doméstica: duración máxima (días)</field>
+    <field name="value_type">number</field>
+    <field name="value">3</field>
+    <field name="date_from">2005-12-16</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 42, num. 30: «Conceder tres días de licencia con remuneración completa al trabajador, en caso de fallecimiento de su cónyuge o de su conviviente en unión de hecho o de sus parientes dentro del segundo grado de consanguinidad o afinidad». Art. 54: no se pierde la remuneración por faltas debidas a calamidad doméstica debidamente comprobada.</field>
+    <field
+      name="note"
+    >A confirmar. El Código del Trabajo solo fija días para el fallecimiento (3 días); para otras calamidades (accidente o enfermedad grave de familiares, siniestros) no fija un número: definir política interna. La LOSEP (art. 27, lit. i: hasta 8 o 3 días) rige para el sector público, no para esta empresa.</field>
+  </record>
+  <record id="param_leave_nursing_hours_per_day_2026" model="erp.payroll.parameter">
+    <field name="code">LEAVE_NURSING_HOURS_PER_DAY</field>
+    <field name="name">Lactancia: horas de permiso por día</field>
+    <field name="value_type">number</field>
+    <field name="value">2</field>
+    <field name="date_from">2012-09-26</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 155, inciso tercero (sustituido por la Ley publicada en el R.O. Suplemento 797, 26-sep-2012): «Durante los doce (12) meses posteriores al parto, la jornada de la madre lactante durará seis (6) horas». Art. 47: jornada máxima de ocho horas diarias. 8 − 6 = 2 horas por día.</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Para jornadas inferiores a 8 horas la reducción debe recalcularse (a confirmar con Talento Humano).</field>
+  </record>
+  <record id="param_leave_nursing_months_2026" model="erp.payroll.parameter">
+    <field name="code">LEAVE_NURSING_MONTHS</field>
+    <field name="name">Lactancia: meses posteriores al parto</field>
+    <field name="value_type">number</field>
+    <field name="value">12</field>
+    <field name="date_from">2012-09-26</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 155, inciso tercero: «Durante los doce (12) meses posteriores al parto».</field>
+    <field name="note">Valor de partida a validar.</field>
+  </record>
+</odoo>
