@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Lotes de roles (vistas de OCA payroll) con la terminología de Ecuador
+    (US-017, M-1/M-2/M-4). Las etiquetas se fijan con string en la herencia
+    (fuente en español): al instalar o actualizar, Odoo no sobrescribe la
+    traducción ya cargada de payroll («Factura rectificativa», «Nóminas»...).
+    Los xpath no usan el texto de las etiquetas de OCA (cambia con el idioma
+    de la traducción), sino nombres y posición respecto de campos.
+  -->
+  <record id="hr_payslip_run_view_tree_inherit_erp_payroll_ec" model="ir.ui.view">
+    <field name="name">hr.payslip.run.list.inherit.erp_payroll_ec</field>
+    <field name="model">hr.payslip.run</field>
+    <field name="inherit_id" ref="payroll.hr_payslip_run_view_tree" />
+    <field name="arch" type="xml">
+      <field name="date_start" position="attributes">
+        <attribute name="string">Desde</attribute>
+      </field>
+      <field name="date_end" position="attributes">
+        <attribute name="string">Hasta</attribute>
+      </field>
+      <!-- Columna de casilla poco usada: opcional y oculta (no se trunca). -->
+      <field name="credit_note" position="attributes">
+        <attribute name="string">Rol rectificativo</attribute>
+        <attribute name="optional">hide</attribute>
+      </field>
+    </field>
+  </record>
+
+  <record id="hr_payslip_run_view_form_inherit_erp_payroll_ec" model="ir.ui.view">
+    <field name="name">hr.payslip.run.form.inherit.erp_payroll_ec</field>
+    <field name="model">hr.payslip.run</field>
+    <field name="inherit_id" ref="payroll.hr_payslip_run_view_form" />
+    <field name="arch" type="xml">
+      <!--
+        Un solo botón primario en borrador: «Generar roles» (acción del
+        asistente de OCA), que pasa delante; «Cerrar» queda como secundario.
+      -->
+      <xpath expr="//header/button[@type='action']" position="attributes">
+        <attribute name="string">Generar roles</attribute>
+      </xpath>
+      <xpath expr="//header/button[@name='close_payslip_run']" position="before">
+        <xpath expr="//header/button[@type='action']" position="move" />
+      </xpath>
+      <xpath expr="//header/button[@name='close_payslip_run']" position="attributes">
+        <attribute name="class" />
+      </xpath>
+      <field name="credit_note" position="attributes">
+        <attribute name="string">Rol rectificativo</attribute>
+      </field>
+      <xpath
+        expr="//field[@name='slip_ids']/preceding-sibling::separator[1]"
+        position="attributes"
+      >
+        <attribute name="string">Roles de pagos</attribute>
+      </xpath>
+    </field>
+  </record>
+</odoo>

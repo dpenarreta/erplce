@@ -30,10 +30,15 @@
             invisible="active"
           />
           <field name="active" invisible="1" />
+          <div class="oe_title">
+            <label for="name" />
+            <h1>
+              <field name="name" placeholder="p. ej. Agencia Matriz Quito" />
+            </h1>
+          </div>
           <group>
             <group name="identification" string="Identificación">
               <field name="code" placeholder="p. ej. 001" />
-              <field name="name" placeholder="p. ej. Agencia Matriz Quito" />
               <field
                 name="company_id"
                 groups="base.group_multi_company"
@@ -95,12 +100,12 @@
         <separator />
         <filter
           name="regime_costa_galapagos"
-          string="Décimo cuarto Costa / Galápagos"
+          string="Costa y Galápagos (14.º)"
           domain="[('decimo_cuarto_regime', '=', 'costa_galapagos')]"
         />
         <filter
           name="regime_sierra_amazonia"
-          string="Décimo cuarto Sierra / Amazonía"
+          string="Sierra y Amazonía (14.º)"
           domain="[('decimo_cuarto_regime', '=', 'sierra_amazonia')]"
         />
         <separator />
@@ -118,7 +123,7 @@
           />
           <filter
             name="group_regime"
-            string="Régimen de décimo cuarto"
+            string="Régimen 14.º sueldo"
             context="{'group_by': 'decimo_cuarto_regime'}"
           />
         </group>
@@ -140,9 +145,10 @@
         que define el régimen de décimo cuarto sueldo de sus empleados.
       </p>
       <p>
-        Para cargarlos en bloque use <strong>Importar registros</strong> (menú de
-        acciones de la lista) y descargue allí la plantilla
-        <em>plantilla_establecimientos.csv</em>.
+        Para cargarlos en bloque, haga clic en el engranaje
+        <i class="fa fa-cog" role="img" aria-label="engranaje" /> junto al
+        título y elija <strong>Importar registros</strong>; allí puede
+        descargar la plantilla <em>plantilla_establecimientos.csv</em>.
       </p>
     </field>
   </record>

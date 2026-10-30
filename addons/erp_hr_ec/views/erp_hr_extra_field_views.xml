@@ -9,7 +9,7 @@
         <field name="name" />
         <field name="value_type" />
         <field name="company_id" groups="base.group_multi_company" optional="hide" />
-        <field name="active" optional="show" />
+        <field name="active" optional="hide" />
       </list>
     </field>
   </record>
@@ -27,9 +27,14 @@
             invisible="active"
           />
           <field name="active" invisible="1" />
+          <div class="oe_title">
+            <label for="name" string="Dato adicional" />
+            <h1>
+              <field name="name" placeholder="p. ej. Tipo de sangre" />
+            </h1>
+          </div>
           <group>
             <group>
-              <field name="name" placeholder="p. ej. Tipo de sangre" />
               <field name="value_type" />
               <field name="sequence" />
               <field
@@ -89,8 +94,9 @@
       </p>
       <p>
         Cada dato tiene un tipo (texto, entero, decimal, fecha, sí/no o lista
-        de opciones) y se registra por empleado en la pestaña
-        <em>Datos adicionales</em> de su ficha. Archivar un dato lo oculta sin
+        de opciones) y se registra por empleado en la sección
+        <em>Datos adicionales</em> de la pestaña <em
+      >Ecuador</em> de su ficha. Archivar un dato lo oculta sin
         borrar los valores ya registrados.
       </p>
     </field>

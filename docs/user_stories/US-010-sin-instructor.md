@@ -73,6 +73,7 @@
 - 2026-10-30: el usuario pide renombrar "Gerente" (`parent_id`) a **"Jefe inmediato"** dentro de esta historia (CA-7).
 - Traducción de "Jefe inmediato" (`addons/erp_hr_ec/i18n/es.po`): se aplica a `es`, `es_EC` y demás variantes de español al instalar/actualizar `erp_hr_ec`. Al **activar otra variante de español** después de instalar el módulo, la traducción "Gerente" de `hr` puede prevalecer: hay que cargar el idioma desde *Ajustes > Traducciones > Cargar una traducción* marcando **"Sobrescribir términos existentes"** (o actualizar `erp_hr_ec` después de activarlo).
 - Posición de la entrada "Sin instructor" en el desplegable: primera solo con la búsqueda vacía y el campo sin instructor (CA-1); con instructor ya asignado y búsqueda vacía, al final; con texto escrito solo aparece si coincide por inicio de palabra ("sin", "instr") y va después de los empleados, para que Tab/Intro sobre la primera opción no marque "Sin instructor" por error.
+- **Cambio por US-017 (CA-7, decisión del usuario 2026-10-30):** "Sin instructor" va siempre al final del desplegable (después de los empleados, "Buscar más..." y las opciones de crear) y nunca es la primera opción activa; si no hay otras opciones va precedida de "Sin registros" (no seleccionable). Reemplaza la posición "al inicio" de CA-1 y la regla anterior.
 - Edición múltiple en la lista: vaciar el Instructor envía también `erp_no_coach = false`, de modo que todas las filas seleccionadas quedan "sin asignar".
 - Versión de `erp_hr_ec`: `18.0.1.1.0` (columna booleana nueva; sin script de migración).
 

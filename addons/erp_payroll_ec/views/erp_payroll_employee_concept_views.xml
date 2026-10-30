@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Bonos y descuentos fijos asignados a empleados (US-008, CA-7). Los crea y
+    edita el responsable de nómina (ACL); el usuario de nómina los consulta.
+    El solapamiento de vigencias lo valida el servidor (ValidationError).
+    «Concepto» sin dominio en la vista: el del campo ya limita a conceptos
+    fijos y añade el de empresa (check_company), que un dominio de vista
+    reemplazaría.
+  -->
+  <record id="erp_payroll_employee_concept_view_list" model="ir.ui.view">
+    <field name="name">erp.payroll.employee.concept.list</field>
+    <field name="model">erp.payroll.employee.concept</field>
+    <field name="arch" type="xml">
+      <list
+        string="Bonos y descuentos asignados"
+        editable="bottom"
+        decoration-muted="not active"
+      >
+        <field
+          name="employee_id"
+          options="{'no_create': True}"
+          readonly="context.get('default_employee_id')"
+        />
+        <field name="concept_id" options="{'no_create': True}" />
+        <field
+          name="concept_type"
+          widget="badge"
+          decoration-success="concept_type == 'income'"
+          decoration-danger="concept_type == 'deduction'"
+          optional="show"
+        />
+        <field name="amount" />
+        <field name="date_from" string="Desde" />
+        <field name="date_to" string="Hasta" />
+        <field name="active" widget="boolean_toggle" optional="hide" />
+        <field name="note" optional="show" />
+        <field name="company_id" groups="base.group_multi_company" optional="hide" />
+        <field name="currency_id" column_invisible="1" />
+      </list>
+    </field>
+  </record>
+
+  <record id="erp_payroll_employee_concept_view_form" model="ir.ui.view">
+    <field name="name">erp.payroll.employee.concept.form</field>
+    <field name="model">erp.payroll.employee.concept</field>
+    <field name="arch" type="xml">
+      <form string="Bono o descuento asignado">
+        <sheet>
+          <widget
+            name="web_ribbon"
+            title="Archivado"
+            bg_color="text-bg-danger"
+            invisible="active"
+          />
+          <group>
+            <group name="assignment" string="Asignación">
+              <field name="employee_id" options="{'no_create': True}" />
+              <field name="concept_id" options="{'no_create': True}" />
+              <field name="concept_type" />
+              <field name="amount" />
+              <field name="currency_id" invisible="1" />
+            </group>
+            <group name="validity" string="Vigencia">
+              <field name="date_from" />
+              <field name="date_to" placeholder="Sin fecha de fin" />
+              <field name="active" widget="boolean_toggle" />
+              <field name="company_id" groups="base.group_multi_company" />
+            </group>
+          </group>
+          <group name="note" string="Notas">
+            <field name="note" nolabel="1" colspan="2" />
+          </group>
+        </sheet>
+        <chatter />
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_payroll_employee_concept_view_search" model="ir.ui.view">
+    <field name="name">erp.payroll.employee.concept.search</field>
+    <field name="model">erp.payroll.employee.concept</field>
+    <field name="arch" type="xml">
+      <search string="Buscar bonos y descuentos asignados">
+        <field name="employee_id" />
+        <field name="concept_id" />
+        <filter
+          name="in_force"
+          string="Vigentes hoy"
+          domain="[('date_from', '&lt;=', context_today().strftime('%Y-%m-%d')), '|', ('date_to', '=', False), ('date_to', '&gt;=', context_today().strftime('%Y-%m-%d'))]"
+        />
+        <filter
+          name="ended"
+          string="Finalizados"
+          domain="[('date_to', '&lt;', context_today().strftime('%Y-%m-%d'))]"
+        />
+        <separator />
+        <filter
+          name="income"
+          string="Ingresos"
+          domain="[('concept_id.concept_type', '=', 'income')]"
+        />
+        <filter
+          name="deduction"
+          string="Descuentos"
+          domain="[('concept_id.concept_type', '=', 'deduction')]"
+        />
+        <separator />
+        <filter name="inactive" string="Archivados" domain="[('active', '=', False)]" />
+        <group expand="0" string="Agrupar por">
+          <filter
+            name="group_by_employee"
+            string="Empleado"
+            context="{'group_by': 'employee_id'}"
+          />
+          <filter
+            name="group_by_concept"
+            string="Concepto"
+            context="{'group_by': 'concept_id'}"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="erp_payroll_employee_concept_action" model="ir.actions.act_window">
+    <field name="name">Bonos y descuentos asignados</field>
+    <field name="res_model">erp.payroll.employee.concept</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="erp_payroll_employee_concept_view_search" />
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Asigne un bono o descuento fijo a un empleado
+      </p>
+      <p>
+        Elija un concepto <strong>fijo</strong> del catálogo (Nómina &gt;
+        Configuración &gt; Bonos y descuentos), el importe mensual en positivo
+        y la vigencia. El concepto entra en cada rol de pagos del periodo en
+        que la asignación esté vigente; para cambiar el importe, cierre la
+        asignación con «Vigente hasta» y cree otra.
+      </p>
+    </field>
+  </record>
+
+  <!--
+    Ficha del empleado: sección «Bonos y descuentos fijos» dentro de la
+    pestaña «Nómina» de OCA (payroll_settings) con la lista editable de
+    hr.employee.erp_payroll_concept_ids (US-008, CA-7; US-017, CA-5: como
+    máximo 6 pestañas, así que no es una pestaña propia).
+    - Hereda de la vista de payroll que crea la pestaña, para aplicarse
+      siempre después de ella.
+    - Sección y campo con groups="payroll.group_payroll_user": RRHH sin
+      nómina no la ve ni pide el campo (que tiene el mismo grupo en el modelo).
+    - Asignaciones archivadas: en Odoo 18 un context active_test=False en el
+      nodo del One2many NO las carga (web_read lee el One2many con el
+      contexto del registro padre; solo cuenta el context del campo Python).
+      La lista no muestra el interruptor «Activo» (US-017, CA-11): se
+      archivan desde Nómina > Bonos y descuentos asignados; el selector de
+      concepto fuerza active_test=True para no ofrecer conceptos archivados.
+    - Orden por fecha de inicio, la más reciente primero (CA-11).
+    - Sin readonly en la vista: get_views marca la lista embebida con
+      create/edit/delete="False" según la ACL del usuario (el usuario de
+      nómina solo lee asignaciones; el responsable las edita) y el servidor
+      lo impone igualmente (AccessError).
+  -->
+  <record id="hr_employee_view_form_inherit_erp_payroll_ec" model="ir.ui.view">
+    <field name="name">hr.employee.form.inherit.erp_payroll_ec</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="payroll.hr_employee_view_form" />
+    <field name="arch" type="xml">
+      <!--
+        US-017 (M-1): terminología de Ecuador en lo que añade OCA a la ficha
+        (botón inteligente «Nóminas», grupo «Contract Defaults»). Con string
+        en la herencia, no depende de las traducciones de payroll.
+      -->
+      <xpath
+        expr="//div[@name='button_box']//field[@name='payslip_count']"
+        position="attributes"
+      >
+        <attribute name="string">Roles de pagos</attribute>
+      </xpath>
+      <xpath
+        expr="//page[@name='payroll_settings']/group/group[field[@name='payroll_structure_id']]"
+        position="attributes"
+      >
+        <attribute name="string">Valores por defecto del contrato</attribute>
+      </xpath>
+      <xpath
+        expr="//page[@name='payroll_settings']//field[@name='payroll_structure_id']"
+        position="attributes"
+      >
+        <attribute name="string">Estructura salarial por defecto</attribute>
+      </xpath>
+      <xpath expr="//page[@name='payroll_settings']" position="inside">
+        <separator
+          name="erp_payroll_concepts"
+          string="Bonos y descuentos fijos"
+          groups="payroll.group_payroll_user"
+        />
+        <p class="text-muted" groups="payroll.group_payroll_user">
+          Importe mensual en positivo; para cambiarlo, cierre la asignación con
+          «Hasta» y añada otra.
+        </p>
+        <field
+          name="erp_payroll_concept_ids"
+          nolabel="1"
+          groups="payroll.group_payroll_user"
+        >
+          <list
+            string="Bonos y descuentos fijos"
+            editable="bottom"
+            decoration-muted="not active"
+            default_order="date_from desc"
+          >
+            <field
+              name="concept_id"
+              options="{'no_create': True}"
+              context="{'active_test': True}"
+            />
+            <field
+              name="concept_type"
+              widget="badge"
+              decoration-success="concept_type == 'income'"
+              decoration-danger="concept_type == 'deduction'"
+              optional="show"
+            />
+            <field name="amount" />
+            <field name="date_from" string="Desde" />
+            <field name="date_to" string="Hasta" placeholder="Sin fecha de fin" />
+            <field name="active" column_invisible="1" />
+            <field name="note" optional="show" />
+            <field name="company_id" column_invisible="1" />
+            <field name="currency_id" column_invisible="1" />
+          </list>
+        </field>
+      </xpath>
+    </field>
+  </record>
+</odoo>

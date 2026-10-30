@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_erp_payroll_parameter_user,erp.payroll.parameter.user,model_erp_payroll_parameter,payroll.group_payroll_user,1,0,0,0
+access_erp_payroll_parameter_manager,erp.payroll.parameter.manager,model_erp_payroll_parameter,payroll.group_payroll_manager,1,1,1,1
+access_erp_payroll_concept_user,erp.payroll.concept.user,model_erp_payroll_concept,payroll.group_payroll_user,1,0,0,0
+access_erp_payroll_concept_manager,erp.payroll.concept.manager,model_erp_payroll_concept,payroll.group_payroll_manager,1,1,1,1
+access_erp_payroll_employee_concept_user,erp.payroll.employee.concept.user,model_erp_payroll_employee_concept,payroll.group_payroll_user,1,0,0,0
+access_erp_payroll_employee_concept_manager,erp.payroll.employee.concept.manager,model_erp_payroll_employee_concept,payroll.group_payroll_manager,1,1,1,1
+access_hr_payslip_line_manager,hr.payslip.line.manager,payroll.model_hr_payslip_line,payroll.group_payroll_manager,1,1,1,1
+access_hr_payroll_structure_manager,hr.payroll.structure.manager,payroll.model_hr_payroll_structure,payroll.group_payroll_manager,1,1,1,1
+access_hr_salary_rule_category_manager,hr.salary.rule.category.manager,payroll.model_hr_salary_rule_category,payroll.group_payroll_manager,1,1,1,1

@@ -1,6 +1,13 @@
 // ERP Branding - login page (web.login_layout, frontend bundle).
 // Gray institutional background, white card with a yellow accent and black
-// text; the primary button is yellow with black text (WCAG AA: 15:1).
+// text; the primary button is yellow with black text (WCAG AA: 16:1).
+//
+// Base colors come from the frontend palette ($o-color-palettes in
+// primary_variables.scss): every Bootstrap button state (hover, active,
+// disabled while logging in, focus shadow) is already yellow/gray/black.
+// The rules below only add what the palette does not give: black borders on
+// the yellow button, black underlined links of at least 24 px, input borders
+// >= 3:1 and a visible focus outline.
 
 body.o_erp_branding_login {
   background-color: $erp-brand-gray !important;
@@ -17,6 +24,18 @@ body.o_erp_branding_login {
     text-decoration: underline;
   }
 
+  // "Restablecer contraseña" and other link buttons: black and underlined
+  // (21:1 on the white card), also when hovered, pressed or disabled.
+  .btn-link {
+    --btn-color: #{$erp-brand-black};
+    --btn-hover-color: #{$erp-brand-black};
+    --btn-active-color: #{$erp-brand-black};
+    --btn-disabled-color: #{$erp-brand-muted};
+    --btn-focus-shadow-rgb: #{to-rgb($erp-brand-black)};
+    text-decoration: underline;
+  }
+
+  // Disabled state = "Iniciar sesión" while the form is being submitted.
   .btn-primary {
     --btn-color: #{$erp-brand-black};
     --btn-bg: #{$erp-brand-yellow};
@@ -27,6 +46,47 @@ body.o_erp_branding_login {
     --btn-active-color: #{$erp-brand-black};
     --btn-active-bg: #{darken($erp-brand-yellow, 10%)};
     --btn-active-border-color: #{$erp-brand-black};
+    --btn-disabled-color: #{$erp-brand-black};
+    --btn-disabled-bg: #{$erp-brand-yellow};
+    --btn-disabled-border-color: #{$erp-brand-black};
+    --btn-focus-shadow-rgb: #{to-rgb($erp-brand-black)};
+  }
+
+  // Secondary buttons (e.g. user switcher): brand gray with black text
+  // (13.6:1).
+  .btn-secondary {
+    --btn-color: #{$erp-brand-black};
+    --btn-bg: #{$erp-brand-gray};
+    --btn-border-color: #{$erp-brand-gray};
+    --btn-hover-color: #{$erp-brand-black};
+    --btn-hover-bg: #{darken($erp-brand-gray, 8%)};
+    --btn-hover-border-color: #{$erp-brand-black};
+    --btn-active-color: #{$erp-brand-black};
+    --btn-active-bg: #{darken($erp-brand-gray, 12%)};
+    --btn-active-border-color: #{$erp-brand-black};
+    --btn-disabled-color: #{$erp-brand-black};
+    --btn-disabled-bg: #{$erp-brand-gray};
+    --btn-disabled-border-color: #{$erp-brand-gray};
+    --btn-focus-shadow-rgb: #{to-rgb($erp-brand-black)};
+  }
+
+  // Input borders (WCAG 1.4.11, >= 3:1): #767676 is 4.5:1 on the white card
+  // (the core gray-300 #dee2e6 is 1.3:1). Black when focused.
+  .form-control {
+    border-color: $erp-brand-control-border;
+
+    &:focus {
+      border-color: $erp-brand-black;
+    }
+  }
+
+  // Small links ("Restablecer contraseña", "Gestionar bases de datos"): target
+  // of at least 24 px high (WCAG 2.5.8), centered vertically.
+  a:not(.btn),
+  .btn-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
   }
 
   .btn:focus-visible,

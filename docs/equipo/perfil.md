@@ -25,6 +25,7 @@ Convención dentro de cada módulo de `addons/<modulo>/`:
 | DEV-2 Backend | `dev-backend` | En `addons/*/`: **métodos de negocio** de los modelos (`@api.depends`/compute, `@api.constrains`, `@api.onchange`, acciones `action_*`, flujos de estado, overrides de `create`/`write`/`unlink`), `wizard/`, `controllers/`, `report/*.py`, crons (`ir.cron` + método), y sus tests |
 | DEV-4 Web | `dev-web` | En `addons/*/`: `views/*.xml` (form, list, kanban, search, pivot, graph, menús, acciones de ventana), `report/*.xml` (QWeb PDF/HTML), `static/src/` (OWL, JS, SCSS, XML de plantillas), `static/description/`, traducciones `i18n/es.po` / `es_EC.po`, y el módulo de marca `erp_branding` |
 | QA-FUNC / QA-TECH | `qa-functional` / `qa-technical` | Solo lectura + ejecutar verificación |
+| QA-UX Auditor UX/UI | `auditor-ux-ui` (`.claude/agents/auditor-ux-ui.md`) | Solo lectura + observación en vivo (Chrome) |
 | DEV-1 Mobile | — | No aplica en esta fase |
 
 **Archivos compartidos** (`__manifest__.py`, `__init__.py`, `models/*.py`): DEV-3 crea el archivo y declara campos; DEV-2 añade métodos en el mismo archivo después; cada uno añade en `__manifest__.py` solo sus entradas (`data`, `depends`, `assets`). El Tech Lead los lanza en secuencia (DEV-3 → DEV-2 → DEV-4), nunca en paralelo sobre el mismo módulo.
@@ -63,8 +64,15 @@ Convención dentro de cada módulo de `addons/<modulo>/`:
 |---|---|---|
 | Entorno | `docker compose up -d` | Levanta Odoo + PostgreSQL |
 | Calidad estática | `bash scripts/check.sh` | pre-commit en contenedor (`docker/lint`) sobre `addons/`, `scripts/` y `docker/`: ruff, pylint-odoo 18.0, odoo-pre-commit-hooks, prettier XML/JS, ESLint 9 (`addons/*/static/src/**/*.js`, `eslint.config.cjs`) y shellcheck (`scripts/*.sh`, `docker/**/*.sh`). Si un hook corrige archivos, sale ≠ 0: volver a ejecutar |
-| Tests | `bash scripts/test.sh <modulo>[,<modulo>]` | Crea BD efímera, instala los módulos **sin demo** (`--without-demo=all`; `TEST_DEMO=1` para cargarla) con `--test-enable --stop-after-init`, ejecuta solo los tests de esos módulos (`TEST_TAGS` para cambiarlo), borra la BD y devuelve ≠ 0 si falla un test, hay `ERROR`/`CRITICAL` en el log o un módulo no queda instalado |
+| Tests | `bash scripts/test.sh <modulo>[,<modulo>]` | Crea BD efímera, instala los módulos **sin demo** (`--without-demo=all`; `TEST_DEMO=1` para cargarla) con `--test-enable --stop-after-init`, ejecuta solo los tests de esos módulos (`TEST_TAGS` para cambiarlo), borra la BD y devuelve ≠ 0 si falla un test, hay `ERROR`/`CRITICAL` en el log, un módulo no queda instalado o el log contiene otra BD `erp_test_*`. Ejecuciones concurrentes (varios agentes) se **serializan** con el candado `~/.cache/erp-lce/test.lock` (mkdir atómico; espera con aviso "Esperando a otra ejecución de tests..." hasta `ERP_TEST_LOCK_TIMEOUT`=3600 s; se libera en salida, fallo o Ctrl+C; huérfanos se retiran solos). Contenedor propio `erp-test-<BD>`; el resumen solo muestra los resultados de su BD |
 | Completa | `bash scripts/check.sh --all` | Calidad estática + tests de todos los módulos de `addons/` + `pip-audit` de `requirements-dev.txt` y de los requirements de addons |
+
+## 5.1 Ciclo de auditoría (decisión del usuario, 2026-10-30)
+
+- Toda historia que toque interfaz (vistas, QWeb, OWL, SCSS, menús, mensajes al usuario) pasa por **tres auditores en paralelo**: QA-FUNC, QA-TECH y **QA-UX** (`auditor-ux-ui`). Los usuarios finales son numerosos y poco técnicos: la interfaz debe ser evidente, accesible (WCAG 2.2 AA) y consistente.
+- QA-UX bloquea con hallazgos **Críticos o Altos** (equivale a 🔴); los Medios/Bajos quedan como pendientes salvo que sean baratos de corregir en la misma ronda.
+- QA-UX audita en vivo en `erp_dev` (sesión ya iniciada en Chrome, sin escribir credenciales ni guardar datos). Si el tipo `auditor-ux-ui` no está cargado en la sesión, se lanza un agente general que lee y sigue `.claude/agents/auditor-ux-ui.md`.
+- Las historias de solo backend/infraestructura sin efecto visible no necesitan QA-UX.
 
 ## 6. Reglas específicas por rol
 
@@ -96,6 +104,7 @@ Convención dentro de cada módulo de `addons/<modulo>/`:
 
 - 2026-10-29: entorno Docker y scripts de verificación creados (US-001 completada con pendientes). Motor de nómina: OCA `payroll` 18.0 como submódulo `third_party/payroll` (ADR-001), extendido en `addons/erp_payroll_ec` (US-006 completada con pendientes). Empresa: LAARCOURIER EXPRESS S.A. (RUC 1791705726001), una sola empresa. Marca: ERP LCE. Prioridad: RRHH/Nómina antes que facturación SRI (ver índice de historias).
 - 2026-10-29: US-007 completada con pendientes: `addons/erp_establishment` (catálogo de 178 establecimientos SRI con región y régimen de décimo cuarto; plantilla de importación y guía en `docs/guias/carga-establecimientos.md`) y `addons/erp_hr_ec` (datos de Ecuador del empleado, cargas, modalidad de décimos/fondos de reserva con vigencia, datos adicionales configurables, tipos de contrato y máximo semanal). US-008 debe hacer depender `erp_payroll_ec` de `erp_hr_ec` y usar `_get_benefit_mode`, `erp_decimo_cuarto_regime`, `erp_labor_relationship` y `_erp_get_work_time_rate`.
+- 2026-10-30: US-010 (Sin instructor, Jefe inmediato), US-008 (rol de pagos Ecuador: parámetros con vigencia, conceptos propios, cálculo por contrato, asiento propio) y US-017 (mejoras UX/UI, signup desactivado) completadas con pendientes. ADR-002 aceptada (Odoo 18, opción C1); US-002 pausada. Auditor UX/UI fijo en el ciclo (§5.1). `scripts/test.sh` serializa ejecuciones con candado.
 - Primera historia obligatoria: **Historia Técnica de base de la plataforma** (entorno Docker reproducible, estructura `addons/` y `third_party/`, `scripts/check.sh` y `scripts/test.sh`, módulo `erp_base` con dependencias de `l10n_ec`, idioma `es_EC`, zona horaria y moneda, y módulo `erp_branding`).
 - Pendiente de confirmar con el usuario: valores "a validar" de US-007 y datos de US-008 (catálogo de bonos y descuentos, política de préstamos).
 

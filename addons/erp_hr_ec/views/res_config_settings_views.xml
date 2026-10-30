@@ -46,14 +46,22 @@
             company_dependent="1"
             help="Máximo de horas semanales que admite la jornada de un contrato. Valor inicial (40 h, Código del Trabajo) a validar con la normativa vigente."
           >
+            <!--
+              «40,00 horas»: unidad después (US-017) y los decimales del
+              modelo (2), sin redondear (37,5 h se ve 37,50 y no 38).
+            -->
             <div class="content-group">
-              <div class="row mt-2">
+              <div class="mt-2">
                 <label
                   for="erp_max_weekly_hours"
-                  string="Horas"
-                  class="col-lg-5 o_light_label"
+                  string="Máximo de horas semanales"
+                  class="visually-hidden"
                 />
-                <field name="erp_max_weekly_hours" class="col-lg-3" />
+                <field
+                  name="erp_max_weekly_hours"
+                  class="oe_inline o_erp_max_weekly_hours"
+                />
+                <span class="ms-1">horas</span>
               </div>
             </div>
           </setting>

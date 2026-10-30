@@ -23,7 +23,6 @@ export class ErpCoachMany2XAutocomplete extends AvatarMany2XAutocomplete {
   static props = {
     ...AvatarMany2XAutocomplete.props,
     erpSelectNoCoach: {type: Function, optional: true},
-    erpHasValue: {type: Boolean, optional: true},
   };
 
   get optionsSource() {
@@ -47,7 +46,14 @@ export class ErpCoachMany2XAutocomplete extends AvatarMany2XAutocomplete {
         classList: "o_m2o_dropdown_option o_erp_no_coach_option",
         action: () => selectNoCoach(),
       },
-      {request, hasValue: Boolean(this.props.erpHasValue)}
+      {
+        request,
+        noResultOption: {
+          label: _t("No records"),
+          classList: "o_m2o_no_result",
+          unselectable: true,
+        },
+      }
     );
   }
 }
@@ -88,7 +94,6 @@ export class ErpCoachMany2OneField extends Many2OneAvatarUserField {
     const props = super.Many2XAutocompleteProps;
     if (this.erpCanUseNoCoach && !this.erpIsNoCoach) {
       props.erpSelectNoCoach = () => this.erpSelectNoCoach();
-      props.erpHasValue = Boolean(this.value);
     }
     return props;
   }

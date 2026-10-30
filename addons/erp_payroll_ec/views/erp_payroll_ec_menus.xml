@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!-- Nómina > Bonos y descuentos asignados (usuario: consulta; responsable: CRUD) -->
+  <menuitem
+    id="erp_payroll_ec_menu_employee_concept"
+    name="Bonos y descuentos asignados"
+    parent="payroll.payroll_menu_root"
+    action="erp_payroll_employee_concept_action"
+    groups="payroll.group_payroll_user"
+    sequence="40"
+  />
+  <!-- Nómina > Configuración (solo responsable de nómina, menú de OCA) -->
+  <menuitem
+    id="erp_payroll_ec_menu_parameter"
+    name="Parámetros normativos"
+    parent="payroll.payroll_menu_configuration"
+    action="erp_payroll_parameter_action"
+    groups="payroll.group_payroll_manager"
+    sequence="20"
+  />
+  <menuitem
+    id="erp_payroll_ec_menu_concept"
+    name="Bonos y descuentos"
+    parent="payroll.payroll_menu_configuration"
+    action="erp_payroll_concept_action"
+    groups="payroll.group_payroll_manager"
+    sequence="21"
+  />
+</odoo>

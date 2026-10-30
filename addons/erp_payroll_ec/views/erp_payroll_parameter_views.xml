@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Parámetros normativos de nómina (US-008, CA-1). Solo el responsable de
+    nómina crea, edita o archiva (ACL); al usuario de nómina el cliente web le
+    muestra las vistas en solo lectura (Odoo quita create/edit/delete según la
+    ACL). Los cambios quedan en el historial (chatter con tracking).
+    El valor se muestra con 2 decimales (digits en la vista; el campo guarda
+    4). La suma del valor en las filas de grupo la decide el campo
+    (aggregator), no la vista: se quita en el modelo.
+  -->
+  <record id="erp_payroll_parameter_view_list" model="ir.ui.view">
+    <field name="name">erp.payroll.parameter.list</field>
+    <field name="model">erp.payroll.parameter</field>
+    <field name="arch" type="xml">
+      <list
+        string="Parámetros normativos"
+        decoration-muted="not active"
+        default_order="code, date_from desc"
+      >
+        <field name="code" />
+        <field name="name" />
+        <field name="value_type" string="Tipo" optional="show" />
+        <field name="value" digits="[16, 2]" />
+        <field name="date_from" string="Desde" />
+        <field
+          name="state"
+          widget="badge"
+          decoration-warning="state == 'to_validate'"
+          decoration-success="state == 'validated'"
+        />
+        <field name="norm" optional="hide" />
+        <field name="company_id" groups="base.group_multi_company" optional="show" />
+        <field name="active" column_invisible="1" />
+      </list>
+    </field>
+  </record>
+
+  <record id="erp_payroll_parameter_view_form" model="ir.ui.view">
+    <field name="name">erp.payroll.parameter.form</field>
+    <field name="model">erp.payroll.parameter</field>
+    <field name="arch" type="xml">
+      <form string="Parámetro normativo">
+        <!--
+          US-017 (CA-10): validar es una acción deliberada (botón con
+          confirmación, solo responsable de nómina); la barra de estado solo
+          informa (no es clicable: el servidor rechaza el cambio directo).
+        -->
+        <header>
+          <button
+            name="action_validate"
+            type="object"
+            string="Marcar como validado"
+            class="btn-primary"
+            invisible="state == 'validated'"
+            groups="payroll.group_payroll_manager"
+            confirm="¿Confirma que el valor coincide con la norma vigente?"
+          />
+          <button
+            name="action_set_to_validate"
+            type="object"
+            string="Devolver a revisión"
+            invisible="state != 'validated'"
+            groups="payroll.group_payroll_manager"
+          />
+          <field
+            name="state"
+            widget="statusbar"
+            statusbar_visible="to_validate,validated"
+          />
+        </header>
+        <sheet>
+          <widget
+            name="web_ribbon"
+            title="Archivado"
+            bg_color="text-bg-danger"
+            invisible="active"
+          />
+          <div class="oe_title">
+            <label for="name" />
+            <h1>
+              <field name="name" placeholder="p. ej. Salario básico unificado" />
+            </h1>
+          </div>
+          <group>
+            <group name="value" string="Valor">
+              <field name="code" placeholder="p. ej. SBU" />
+              <field name="value_type" />
+              <field name="value" digits="[16, 2]" />
+              <field name="date_from" />
+            </group>
+            <group name="scope" string="Alcance">
+              <field
+                name="company_id"
+                groups="base.group_multi_company"
+                options="{'no_create': True}"
+                placeholder="Todas las empresas"
+              />
+              <!-- Casilla (no interruptor verde): archivar es poco frecuente. -->
+              <field name="active" widget="boolean" />
+            </group>
+          </group>
+          <group name="norm" string="Norma / fuente">
+            <field
+              name="norm"
+              nolabel="1"
+              colspan="2"
+              placeholder="Norma y artículo, acuerdo ministerial o resolución que respalda el valor"
+            />
+          </group>
+          <group name="note" string="Notas">
+            <field name="note" nolabel="1" colspan="2" />
+          </group>
+        </sheet>
+        <chatter />
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_payroll_parameter_view_search" model="ir.ui.view">
+    <field name="name">erp.payroll.parameter.search</field>
+    <field name="model">erp.payroll.parameter</field>
+    <field name="arch" type="xml">
+      <search string="Buscar parámetros normativos">
+        <field
+          name="code"
+          string="Parámetro"
+          filter_domain="['|', ('code', 'ilike', self), ('name', 'ilike', self)]"
+        />
+        <field name="code" />
+        <field name="norm" />
+        <filter
+          name="to_validate"
+          string="A validar"
+          domain="[('state', '=', 'to_validate')]"
+        />
+        <filter
+          name="validated"
+          string="Validados"
+          domain="[('state', '=', 'validated')]"
+        />
+        <separator />
+        <filter
+          name="in_force"
+          string="Vigentes desde hoy o antes"
+          domain="[('date_from', '&lt;=', context_today().strftime('%Y-%m-%d'))]"
+        />
+        <filter
+          name="future"
+          string="Futuros"
+          domain="[('date_from', '&gt;', context_today().strftime('%Y-%m-%d'))]"
+        />
+        <separator />
+        <filter name="inactive" string="Archivados" domain="[('active', '=', False)]" />
+        <group expand="0" string="Agrupar por">
+          <filter name="group_by_code" string="Código" context="{'group_by': 'code'}" />
+          <filter
+            name="group_by_state"
+            string="Estado"
+            context="{'group_by': 'state'}"
+          />
+          <filter
+            name="group_by_company"
+            string="Empresa"
+            context="{'group_by': 'company_id'}"
+            groups="base.group_multi_company"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="erp_payroll_parameter_action" model="ir.actions.act_window">
+    <field name="name">Parámetros normativos</field>
+    <field name="res_model">erp.payroll.parameter</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="erp_payroll_parameter_view_search" />
+    <!-- Abre sin agrupar y con lo pendiente de revisar (US-017, CA-10). -->
+    <field name="context">{'search_default_to_validate': 1}</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        No hay parámetros normativos pendientes de validar
+      </p>
+      <p>
+        Quite el filtro <strong>A validar</strong> para ver todos. Para un
+        cambio legal, cree un valor nuevo con su fecha «Desde» en lugar de
+        modificar el anterior: el rol de pagos usa el valor vigente en el
+        periodo.
+      </p>
+    </field>
+  </record>
+</odoo>

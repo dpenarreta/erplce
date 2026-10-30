@@ -148,8 +148,22 @@ TEST_KEEP_LOG=1 bash scripts/test.sh erp_base             # conservar el log
 - Por defecto solo ejecuta los tests **de los módulos pedidos** (`--test-tags=/mod1,/mod2`);
   sus dependencias se instalan sin ejecutar sus tests.
 - Falla (código 1) si Odoo devuelve ≠ 0, si el log tiene líneas `ERROR`/`CRITICAL`,
-  o si algún módulo pedido no queda `installed` (incluido módulo inexistente).
-  Odoo puede devolver 0 con un módulo inexistente; por eso se hacen las tres comprobaciones.
+  si algún módulo pedido no queda `installed` (incluido módulo inexistente) o si el log
+  contiene salida de otra BD `erp_test_*`. Odoo puede devolver 0 con un módulo
+  inexistente; por eso se hacen todas estas comprobaciones.
+- **Ejecuciones concurrentes** (varias terminales o agentes): se **serializan** con un
+  candado del host, el directorio `~/.cache/erp-lce/test.lock` (creado con `mkdir`, que es
+  atómico; Git Bash de Windows no trae `flock`). Mientras otra ejecución lo tiene, el script
+  muestra `Esperando a otra ejecución de tests... (Ns; dueño: PID …, módulos …)` cada minuto
+  y espera hasta `ERP_TEST_LOCK_TIMEOUT` segundos (por defecto 3600; al agotarse sale con 2).
+  El candado se libera al terminar (OK, fallo, Ctrl+C) y, si quedara uno huérfano (el PID
+  dueño ya no existe), la siguiente ejecución lo retira sola. `ERP_TEST_LOCK_DIR` cambia su ruta.
+- Cada ejecución usa un contenedor con nombre propio `erp-test-<BD>`, espera a que termine
+  antes de evaluar el resultado y el resumen muestra solo las líneas `odoo.tests.result`
+  de **su** BD.
+- Solución de problemas: si un test queda "esperando" sin que haya otra ejecución
+  (`docker ps --filter name=erp-test-` vacío), revisa `~/.cache/erp-lce/test.lock/owner`
+  y borra el directorio `test.lock`.
 - La imagen oficial no incluye Chrome/Chromium: los tests `HttpCase` que abren navegador
   (`browser_js`, tours) no pueden ejecutarse en este entorno (Odoo los marca como omitidos;
   pendiente de confirmar con el primer tour real). Los `HttpCase` sin navegador (`url_open`) sí funcionan.

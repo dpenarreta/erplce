@@ -18,3 +18,24 @@ msgstr ""
 #: model:ir.model,name:erp_branding.model_ir_http
 msgid "HTTP Routing"
 msgstr "Enrutamiento HTTP"
+
+#. module: erp_branding
+#: model_terms:ir.ui.view,arch_db:erp_branding.auth_signup_fields
+#: model_terms:ir.ui.view,arch_db:erp_branding.auth_signup_reset_password
+msgid "Su correo electrónico"
+msgstr "Su correo electrónico"
+
+#. module: erp_branding
+#: model_terms:ir.ui.view,arch_db:erp_branding.auth_signup_fields
+msgid "Su nombre"
+msgstr "Su nombre"
+
+#. module: erp_branding
+#: model_terms:ir.ui.view,arch_db:erp_branding.auth_signup_fields
+msgid "p. ej. Juan Pérez"
+msgstr "p. ej. Juan Pérez"
+
+#. module: erp_branding
+#: model_terms:ir.ui.view,arch_db:erp_branding.auth_signup_fields
+msgid "Confirme la contraseña"
+msgstr "Confirme la contraseña"

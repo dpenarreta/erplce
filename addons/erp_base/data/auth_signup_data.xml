@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-017 (CA-2): el ERP es interno, sin registro libre de cuentas.
+    auth_signup lo instala Odoo de todos modos (dependencia de portal, que
+    viene con account / l10n_ec) y deja «b2c» (registro libre).
+  -->
+  <data noupdate="0">
+    <!--
+      «b2b» (solo por invitación): /web/signup sin token redirige al inicio de
+      sesión y el login no muestra «¿No tiene una cuenta?». noupdate="0": se
+      vuelve a imponer en cada actualización del módulo (set_param es
+      idempotente).
+    -->
+    <function
+      model="ir.config_parameter"
+      name="set_param"
+      eval="('auth_signup.invitation_scope', 'b2b')"
+    />
+  </data>
+  <data noupdate="1">
+    <!--
+      «Restablecer contraseña» activado solo al instalar: si el administrador
+      lo desactiva después, una actualización del módulo lo respeta.
+    -->
+    <function
+      model="ir.config_parameter"
+      name="set_param"
+      eval="('auth_signup.reset_password', 'True')"
+    />
+  </data>
+</odoo>

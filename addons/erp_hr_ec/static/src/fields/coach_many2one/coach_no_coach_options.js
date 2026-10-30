@@ -36,42 +36,38 @@ export function matchesWordStart(label, request) {
 /**
  * Inserta la entrada "Sin instructor" en las opciones del autocompletado.
  *
- * - Búsqueda vacía y campo sin instructor (CA-1): primera.
- * - Búsqueda vacía y campo con instructor: al final, para que Tab/Intro sobre
- *   la primera opción activa no marque "Sin instructor".
- * - Con texto: solo si coincide por inicio de palabra, y después de los
- *   empleados (así "in" + Tab elige "Inés", no "Sin instructor").
+ * Siempre al final de la lista (US-017, CA-7; sustituye la regla de US-010
+ * que la ponía primera con la búsqueda vacía): después de los empleados, de
+ * "Buscar más..." y de las opciones de crear. Así nunca es la primera opción
+ * activa y Tab/Intro al abrir el campo no la selecciona.
  *
- * Cuando la entrada aparece, se quita "Sin resultados" (sobraría).
+ * - Con texto: solo aparece si coincide por inicio de palabra ("sin",
+ *   "instr").
+ * - Si no hay ninguna otra opción, va precedida de ``noResultOption`` (no
+ *   seleccionable, "Sin registros"), para que tampoco entonces sea la
+ *   primera opción activa.
  *
  * @param {Object[]} options opciones del núcleo (los empleados llevan ``value``)
  * @param {Object} noCoachOption entrada "Sin instructor" (con ``label``)
  * @param {Object} params
  * @param {String} [params.request] texto escrito
- * @param {Boolean} [params.hasValue] el campo ya tiene instructor
+ * @param {Object} [params.noResultOption] línea no seleccionable para una
+ *   lista sin otras opciones
  * @returns {Object[]}
  */
 export function insertNoCoachOption(
   options,
   noCoachOption,
-  {request = "", hasValue = false} = {}
+  {request = "", noResultOption = null} = {}
 ) {
   const hasRequest = Boolean(normalizeSearchText(request));
   if (hasRequest && !matchesWordStart(noCoachOption.label, request)) {
     return options;
   }
-  const result = options.filter(
-    (option) => !(option.classList || "").includes("o_m2o_no_result")
-  );
-  if (!hasRequest) {
-    return hasValue ? [...result, noCoachOption] : [noCoachOption, ...result];
+  const result = [...options];
+  if (!result.length && noResultOption) {
+    result.push(noResultOption);
   }
-  let lastRecord = -1;
-  result.forEach((option, index) => {
-    if ("value" in option) {
-      lastRecord = index;
-    }
-  });
-  result.splice(lastRecord + 1, 0, noCoachOption);
+  result.push(noCoachOption);
   return result;
 }

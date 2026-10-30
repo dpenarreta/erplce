@@ -1,5 +1,6 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.tools.misc import format_date, formatLang
 
 # Columna que guarda el valor según el tipo del dato adicional.
 VALUE_FIELD_BY_TYPE = {
@@ -10,6 +11,11 @@ VALUE_FIELD_BY_TYPE = {
     "boolean": "value_boolean",
     "selection": "option_id",
 }
+# Decimales mostrados en «Valor» para el tipo decimal: al menos 2 (como el
+# widget float de Odoo) y hasta 6 si el valor los tiene (no se redondea un
+# 1,375 a 1,38).
+DISPLAY_FLOAT_MIN_DIGITS = 2
+DISPLAY_FLOAT_MAX_DIGITS = 6
 # Valor vacío de cada columna de valor.
 EMPTY_VALUES = {
     "value_char": False,
@@ -71,6 +77,24 @@ class ErpHrExtraValue(models.Model):
         string="Opción",
         index="btree_not_null",
         ondelete="restrict",
+    )
+    # No almacenado: el texto depende del idioma del usuario (formato de
+    # números y fechas, «Sí»/«No»), así que guardarlo congelaría un idioma; la
+    # lista de datos adicionales del empleado es corta y se ordena por la
+    # secuencia del dato, no por el valor.
+    value_display = fields.Char(
+        string="Valor",
+        compute="_compute_value_display",
+        help="Valor legible del dato según su tipo, en el formato del idioma "
+        "del usuario.",
+    )
+    # Ayuda del dato visible en el formulario emergente del valor (US-017,
+    # CA-6). Related no almacenado: siempre la ayuda actual del dato, de solo
+    # lectura (readonly por defecto en un related; no edita el dato).
+    field_help = fields.Text(
+        related="field_id.help",
+        string="Ayuda del dato",
+        readonly=True,
     )
     company_id = fields.Many2one(
         related="employee_id.company_id",
@@ -138,6 +162,46 @@ class ErpHrExtraValue(models.Model):
                 self._erp_clean_value_vals(dict(vals), value_type, clear_all=False)
             )
         return result
+
+    # ------------------------------------------------------------------
+    # Valor legible (US-017, CA-6)
+    # ------------------------------------------------------------------
+    @api.depends(
+        "value_type",
+        "value_char",
+        "value_integer",
+        "value_float",
+        "value_date",
+        "value_boolean",
+        "option_id.name",
+    )
+    @api.depends_context("lang")
+    def _compute_value_display(self):
+        for value in self:
+            value.value_display = value._erp_format_value()
+
+    def _erp_format_value(self):
+        """Texto del valor según el tipo del dato, con el formato del idioma
+        del contexto (``es_EC``: 1.234,50 y 31/12/2026). Cadena vacía si el
+        dato no tiene tipo o el valor de texto/fecha/opción está vacío."""
+        self.ensure_one()
+        value_type = self.value_type
+        if value_type == "char":
+            return self.value_char or ""
+        if value_type == "integer":
+            return formatLang(self.env, self.value_integer, digits=0)
+        if value_type == "float":
+            decimals = f"{self.value_float:.{DISPLAY_FLOAT_MAX_DIGITS}f}"
+            decimals = decimals.split(".")[1].rstrip("0")
+            digits = max(DISPLAY_FLOAT_MIN_DIGITS, len(decimals))
+            return formatLang(self.env, self.value_float, digits=digits)
+        if value_type == "date":
+            return format_date(self.env, self.value_date) if self.value_date else ""
+        if value_type == "boolean":
+            return _("Sí") if self.value_boolean else _("No")
+        if value_type == "selection":
+            return self.option_id.name or ""
+        return ""
 
     @api.constrains("field_id", "option_id")
     def _check_option(self):

@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Catálogo de bonos y descuentos propios (US-008, CA-7). Se entrega vacío;
+    lo administra el responsable de nómina (ACL). Cada tipo usa una sola cuenta
+    propia: ingreso → «Cuenta deudora», descuento → «Cuenta acreedora». La
+    otra cuenta (y las casillas de base, en los descuentos) se ocultan: al
+    cambiar el tipo, el onchange del modelo vacía lo que deja de aplicar.
+  -->
+  <record id="erp_payroll_concept_view_list" model="ir.ui.view">
+    <field name="name">erp.payroll.concept.list</field>
+    <field name="model">erp.payroll.concept</field>
+    <field name="arch" type="xml">
+      <list string="Bonos y descuentos" decoration-muted="not active">
+        <field name="name" />
+        <field name="code" />
+        <field
+          name="concept_type"
+          widget="badge"
+          decoration-success="concept_type == 'income'"
+          decoration-danger="concept_type == 'deduction'"
+        />
+        <field name="amount_kind" />
+        <!-- Encabezados cortos (US-017, CA-11); la etiqueta completa sigue
+             en el formulario y en la ayuda del campo. -->
+        <field name="iess_base" string="Base IESS" optional="show" />
+        <field name="thirteenth_base" string="Base 13.º" optional="show" />
+        <field name="account_debit_id" optional="hide" />
+        <field name="account_credit_id" optional="hide" />
+        <field name="company_id" groups="base.group_multi_company" optional="show" />
+        <field name="active" column_invisible="1" />
+      </list>
+    </field>
+  </record>
+
+  <record id="erp_payroll_concept_view_form" model="ir.ui.view">
+    <field name="name">erp.payroll.concept.form</field>
+    <field name="model">erp.payroll.concept</field>
+    <field name="arch" type="xml">
+      <form string="Bono o descuento">
+        <sheet>
+          <widget
+            name="web_ribbon"
+            title="Archivado"
+            bg_color="text-bg-danger"
+            invisible="active"
+          />
+          <div class="oe_title">
+            <label for="name" />
+            <h1>
+              <field name="name" placeholder="p. ej. Bono de alimentación" />
+            </h1>
+          </div>
+          <group>
+            <group name="definition" string="Definición">
+              <field name="code" placeholder="p. ej. BONO_ALIMENTACION" />
+              <field name="concept_type" widget="radio" />
+              <field name="amount_kind" widget="radio" />
+            </group>
+            <group
+              name="bases"
+              string="Bases de cálculo"
+              invisible="concept_type == 'deduction'"
+            >
+              <field name="iess_base" />
+              <field name="thirteenth_base" />
+            </group>
+          </group>
+          <group>
+            <group name="accounting" string="Contabilidad">
+              <field
+                name="account_debit_id"
+                invisible="concept_type != 'income'"
+                options="{'no_create': True}"
+                placeholder="Cuenta de la regla «Otros ingresos»"
+                help="Solo ingresos: cuenta de gasto que se carga con el importe. Si se deja vacía se usa la cuenta deudora de la regla «Otros ingresos» del rol."
+              />
+              <field
+                name="account_credit_id"
+                invisible="concept_type != 'deduction'"
+                options="{'no_create': True}"
+                placeholder="Cuenta de la regla «Otros descuentos»"
+                help="Solo descuentos: cuenta que se abona con lo descontado (pasivo o cuenta por cobrar al empleado). Si se deja vacía se usa la cuenta de la regla «Otros descuentos» del rol."
+              />
+            </group>
+            <group name="scope" string="Alcance">
+              <field
+                name="company_id"
+                groups="base.group_multi_company"
+                options="{'no_create': True}"
+              />
+              <field name="active" widget="boolean_toggle" />
+            </group>
+          </group>
+          <div
+            class="alert alert-info"
+            role="status"
+            invisible="amount_kind != 'variable'"
+          >
+            Concepto variable: no se asigna al empleado. Regístrelo en cada rol
+            de pagos, pestaña «Días trabajados y entradas», eligiéndolo en la
+            columna «Concepto» de las entradas (el código <strong>
+            <field name="code" class="oe_inline" readonly="1" />
+          </strong>
+            se rellena solo) con el importe del mes en positivo.
+          </div>
+          <notebook>
+            <page
+              name="assignments"
+              string="Asignaciones"
+              invisible="amount_kind != 'fixed'"
+            >
+              <field
+                name="employee_concept_ids"
+                readonly="1"
+                context="{'active_test': False}"
+              >
+                <!-- Como la pestaña del empleado: sin interruptor «Activo»
+                     visible (las archivadas se ven atenuadas). -->
+                <list decoration-muted="not active">
+                  <field name="employee_id" />
+                  <field name="amount" />
+                  <field name="date_from" string="Desde" />
+                  <field name="date_to" string="Hasta" />
+                  <field name="active" widget="boolean" optional="hide" />
+                  <field name="currency_id" column_invisible="1" />
+                </list>
+              </field>
+              <p class="text-muted">
+                Las asignaciones se registran en la ficha del empleado
+                (pestaña «Bonos y descuentos fijos») o en Nómina &gt; Bonos y
+                descuentos asignados.
+              </p>
+            </page>
+            <page name="note" string="Notas">
+              <field name="note" placeholder="Notas internas del concepto" />
+            </page>
+          </notebook>
+        </sheet>
+        <chatter />
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_payroll_concept_view_search" model="ir.ui.view">
+    <field name="name">erp.payroll.concept.search</field>
+    <field name="model">erp.payroll.concept</field>
+    <field name="arch" type="xml">
+      <search string="Buscar bonos y descuentos">
+        <field
+          name="name"
+          string="Concepto"
+          filter_domain="['|', ('name', 'ilike', self), ('code', 'ilike', self)]"
+        />
+        <field name="code" />
+        <filter
+          name="income"
+          string="Ingresos"
+          domain="[('concept_type', '=', 'income')]"
+        />
+        <filter
+          name="deduction"
+          string="Descuentos"
+          domain="[('concept_type', '=', 'deduction')]"
+        />
+        <separator />
+        <filter name="fixed" string="Fijos" domain="[('amount_kind', '=', 'fixed')]" />
+        <filter
+          name="variable"
+          string="Variables"
+          domain="[('amount_kind', '=', 'variable')]"
+        />
+        <separator />
+        <filter name="inactive" string="Archivados" domain="[('active', '=', False)]" />
+        <group expand="0" string="Agrupar por">
+          <filter
+            name="group_by_type"
+            string="Tipo"
+            context="{'group_by': 'concept_type'}"
+          />
+          <filter
+            name="group_by_kind"
+            string="Importe"
+            context="{'group_by': 'amount_kind'}"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="erp_payroll_concept_action" model="ir.actions.act_window">
+    <field name="name">Bonos y descuentos</field>
+    <field name="res_model">erp.payroll.concept</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="erp_payroll_concept_view_search" />
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Defina los bonos y descuentos de la empresa
+      </p>
+      <p>
+        El catálogo se entrega vacío: la empresa define sus propios conceptos
+        (p. ej. bono de alimentación, descuento de uniforme). Los ingresos
+        pueden sumar a la base de aportes al IESS y a la del décimo tercero.
+      </p>
+      <p>
+        Un concepto <strong>fijo</strong> se asigna al empleado con importe y
+        vigencia y entra en cada rol; uno <strong>variable</strong> se elige
+        como entrada en el rol de pagos de cada mes.
+      </p>
+    </field>
+  </record>
+</odoo>

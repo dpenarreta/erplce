@@ -6,8 +6,9 @@ import {
 } from "@erp_hr_ec/fields/coach_many2one/coach_no_coach_options";
 
 /**
- * US-010: posición de la entrada "Sin instructor" en el desplegable del
- * Instructor. Se ejecuta en /web/tests (hoot, requiere navegador).
+ * US-010 / US-017 (CA-7): posición de la entrada "Sin instructor" en el
+ * desplegable del Instructor: siempre al final. Se ejecuta en /web/tests
+ * (hoot, requiere navegador).
  */
 describe.current.tags("headless");
 
@@ -42,23 +43,16 @@ test("coincide solo por inicio de palabra", () => {
   }
 });
 
-test("búsqueda vacía y campo sin instructor: primera (CA-1)", () => {
-  const result = insertNoCoachOption([INES, MARINA, SEARCH_MORE], NO_COACH, {
-    request: "",
-    hasValue: false,
-  });
-  expect(labels(result)).toEqual([
-    "Sin instructor",
-    "Inés Andrade",
-    "Marina Insuasti",
-    "Buscar más...",
-  ]);
-});
+const NO_RESULT_PLACEHOLDER = {
+  label: "Sin registros",
+  classList: "o_m2o_no_result",
+  unselectable: true,
+};
 
-test("búsqueda vacía y campo con instructor: al final", () => {
+test("búsqueda vacía: al final, después de «Buscar más» (US-017 CA-7)", () => {
   const result = insertNoCoachOption([INES, MARINA, SEARCH_MORE], NO_COACH, {
     request: "",
-    hasValue: true,
+    noResultOption: NO_RESULT_PLACEHOLDER,
   });
   expect(labels(result)).toEqual([
     "Inés Andrade",
@@ -66,31 +60,39 @@ test("búsqueda vacía y campo con instructor: al final", () => {
     "Buscar más...",
     "Sin instructor",
   ]);
+  // Tab/Intro al abrir el campo: la primera opción activa es un empleado.
+  expect(result[0]).toBe(INES);
 });
 
-test("con texto que coincide: después de los empleados", () => {
+test("con texto que coincide: al final, después de «Buscar más»", () => {
   const result = insertNoCoachOption([INES, MARINA, SEARCH_MORE], NO_COACH, {
     request: "in",
-    hasValue: false,
   });
   expect(labels(result)).toEqual([
     "Inés Andrade",
     "Marina Insuasti",
-    "Sin instructor",
     "Buscar más...",
+    "Sin instructor",
   ]);
   // "in" + Tab: la primera opción sigue siendo un empleado.
   expect(result[0]).toBe(INES);
 });
 
-test("con texto que coincide y sin empleados: sustituye 'Sin registros'", () => {
+test("sin empleados: «Sin registros» primero, nunca «Sin instructor»", () => {
   expect(labels(insertNoCoachOption([NO_RESULT], NO_COACH, {request: "sin"}))).toEqual([
+    "Sin registros",
     "Sin instructor",
   ]);
   expect(labels(insertNoCoachOption([CREATE], NO_COACH, {request: "sin"}))).toEqual([
-    "Sin instructor",
     'Crear "sin"',
+    "Sin instructor",
   ]);
+  const empty = insertNoCoachOption([], NO_COACH, {
+    request: "",
+    noResultOption: NO_RESULT_PLACEHOLDER,
+  });
+  expect(empty).toEqual([NO_RESULT_PLACEHOLDER, NO_COACH]);
+  expect(empty[0].unselectable).toBe(true);
 });
 
 test("con texto que no coincide: no aparece", () => {

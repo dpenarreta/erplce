@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!--
+        Estructura «Rol mensual Ecuador» (US-008). Categorías, reglas y
+        estructura como datos noupdate: el responsable de nómina puede
+        ajustarlos sin que una actualización del módulo los pise.
+
+        Las reglas no contienen lógica: llaman a métodos de hr.payslip (capa
+        de negocio), probados en Python y no en safe_eval:
+          - condición: payslip._erp_rule_applies(CÓDIGO, contract) -> bool
+          - importe:   payslip._erp_rule_amount(CÓDIGO, contract, categories,
+                       result_rules) -> float redondeado a centavos USD, con el
+                       signo del motor (descuentos en negativo).
+        Ningún porcentaje ni importe legal aquí: se leen de
+        erp.payroll.parameter.
+
+        Las cuentas contables por defecto (plan l10n_ec, a validar) no se
+        pueden referenciar por xmlid (se crean por empresa al cargar el plan):
+        las asigna hr.salary.rule._erp_set_default_accounts
+        (models/hr_salary_rule.py).
+
+        Categorías y reglas sin empresa (comunes a todas); la estructura, en la
+        empresa principal (company_id es obligatorio en OCA).
+    -->
+
+  <!-- Categorías -->
+  <record id="categ_ec_basic" model="hr.salary.rule.category">
+    <field name="name">Sueldo básico</field>
+    <field name="code">BASIC</field>
+    <field name="company_id" eval="False" />
+    <field name="note">Sueldo del contrato.</field>
+  </record>
+  <record id="categ_ec_alw" model="hr.salary.rule.category">
+    <field name="name">Otros ingresos</field>
+    <field name="code">ALW</field>
+    <field name="company_id" eval="False" />
+    <field
+      name="note"
+    >Ingresos del rol distintos del sueldo: conceptos propios, fondos de reserva y décimos mensualizados.</field>
+  </record>
+  <record id="categ_ec_gross" model="hr.salary.rule.category">
+    <field name="name">Total ingresos</field>
+    <field name="code">GROSS</field>
+    <field name="company_id" eval="False" />
+    <field name="note">Total de ingresos del rol.</field>
+  </record>
+  <record id="categ_ec_ded" model="hr.salary.rule.category">
+    <field name="name">Descuentos</field>
+    <field name="code">DED</field>
+    <field name="company_id" eval="False" />
+    <field
+      name="note"
+    >Descuentos al empleado (importes negativos): aporte personal IESS y conceptos propios.</field>
+  </record>
+  <record id="categ_ec_net" model="hr.salary.rule.category">
+    <field name="name">Neto</field>
+    <field name="code">NET</field>
+    <field name="company_id" eval="False" />
+    <field name="note">Neto a recibir por el empleado.</field>
+  </record>
+  <record id="categ_ec_comp" model="hr.salary.rule.category">
+    <field name="name">Aportes y provisiones de la empresa</field>
+    <field name="code">COMP</field>
+    <field name="company_id" eval="False" />
+    <field
+      name="note"
+    >Costos de la empresa que no afectan el neto: aporte patronal, fondos de reserva acumulados y provisiones de décimos.</field>
+  </record>
+
+  <!-- Reglas: ingresos -->
+  <record id="rule_ec_basic" model="hr.salary.rule">
+    <field name="name">Sueldo</field>
+    <field name="code">BASIC</field>
+    <field name="sequence">10</field>
+    <field name="category_id" ref="categ_ec_basic" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">none</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("BASIC", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Sueldo del contrato prorrateado por días trabajados (días base del mes).</field>
+  </record>
+  <record id="rule_ec_inc_other" model="hr.salary.rule">
+    <field name="name">Otros ingresos (conceptos propios)</field>
+    <field name="code">INC_OTHER</field>
+    <field name="sequence">20</field>
+    <field name="category_id" ref="categ_ec_alw" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("INC_OTHER", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("INC_OTHER", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Suma de los conceptos propios de ingreso: asignaciones fijas vigentes y entradas variables del rol.</field>
+  </record>
+  <record id="rule_ec_fr_paid" model="hr.salary.rule">
+    <field name="name">Fondos de reserva</field>
+    <field name="code">FR_PAID</field>
+    <field name="sequence">30</field>
+    <field name="category_id" ref="categ_ec_alw" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("FR_PAID", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("FR_PAID", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Fondos de reserva pagados en el rol: modalidad mensualizada, servicio suficiente y relación laboral.</field>
+  </record>
+  <record id="rule_ec_d13_paid" model="hr.salary.rule">
+    <field name="name">Décimo tercer sueldo mensualizado</field>
+    <field name="code">D13_PAID</field>
+    <field name="sequence">40</field>
+    <field name="category_id" ref="categ_ec_alw" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("D13_PAID", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("D13_PAID", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Décimo tercero pagado en el rol: modalidad mensualizada y relación laboral.</field>
+  </record>
+  <record id="rule_ec_d14_paid" model="hr.salary.rule">
+    <field name="name">Décimo cuarto sueldo mensualizado</field>
+    <field name="code">D14_PAID</field>
+    <field name="sequence">50</field>
+    <field name="category_id" ref="categ_ec_alw" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("D14_PAID", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("D14_PAID", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Décimo cuarto pagado en el rol: modalidad mensualizada y relación laboral.</field>
+  </record>
+  <record id="rule_ec_gross" model="hr.salary.rule">
+    <field name="name">Total ingresos</field>
+    <field name="code">GROSS</field>
+    <field name="sequence">90</field>
+    <field name="category_id" ref="categ_ec_gross" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">none</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("GROSS", contract, categories, result_rules)</field>
+    <field name="note">Total de ingresos del rol (sueldo + otros ingresos).</field>
+  </record>
+
+  <!-- Reglas: descuentos y neto -->
+  <record id="rule_ec_iess_personal" model="hr.salary.rule">
+    <field name="name">Aporte personal IESS</field>
+    <field name="code">IESS_PERSONAL</field>
+    <field name="sequence">100</field>
+    <field name="category_id" ref="categ_ec_ded" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("IESS_PERSONAL", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("IESS_PERSONAL", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Aporte personal al IESS sobre la base IESS (importe negativo: descuento).</field>
+  </record>
+  <record id="rule_ec_ded_other" model="hr.salary.rule">
+    <field name="name">Otros descuentos (conceptos propios)</field>
+    <field name="code">DED_OTHER</field>
+    <field name="sequence">110</field>
+    <field name="category_id" ref="categ_ec_ded" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("DED_OTHER", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("DED_OTHER", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Suma de los conceptos propios de descuento: asignaciones fijas vigentes y entradas variables del rol (importe negativo).</field>
+  </record>
+  <record id="rule_ec_net" model="hr.salary.rule">
+    <field name="name">Neto a recibir</field>
+    <field name="code">NET</field>
+    <field name="sequence">200</field>
+    <field name="category_id" ref="categ_ec_net" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">none</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("NET", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Neto a recibir: total ingresos + descuentos (los descuentos son negativos).</field>
+  </record>
+
+  <!-- Reglas: aportes y provisiones de la empresa (no afectan el neto) -->
+  <record id="rule_ec_iess_patronal" model="hr.salary.rule">
+    <field name="name">Aporte patronal IESS</field>
+    <field name="code">IESS_PATRONAL</field>
+    <field name="sequence">300</field>
+    <field name="category_id" ref="categ_ec_comp" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("IESS_PATRONAL", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("IESS_PATRONAL", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Aporte patronal al IESS sobre la base IESS: costo de la empresa, no afecta el neto.</field>
+  </record>
+  <record id="rule_ec_fr_accrued" model="hr.salary.rule">
+    <field name="name">Fondos de reserva acumulados (depósito IESS)</field>
+    <field name="code">FR_ACCRUED</field>
+    <field name="sequence">310</field>
+    <field name="category_id" ref="categ_ec_comp" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("FR_ACCRUED", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("FR_ACCRUED", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Fondos de reserva en modalidad acumulada: obligación de la empresa a depositar en el IESS, no afecta el neto.</field>
+  </record>
+  <record id="rule_ec_d13_prov" model="hr.salary.rule">
+    <field name="name">Provisión décimo tercer sueldo</field>
+    <field name="code">D13_PROV</field>
+    <field name="sequence">320</field>
+    <field name="category_id" ref="categ_ec_comp" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("D13_PROV", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("D13_PROV", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Provisión del décimo tercero en modalidad acumulada, no afecta el neto.</field>
+  </record>
+  <record id="rule_ec_d14_prov_costa" model="hr.salary.rule">
+    <field name="name">Provisión décimo cuarto sueldo (Costa / Galápagos)</field>
+    <field name="code">D14_PROV_COSTA</field>
+    <field name="sequence">330</field>
+    <field name="category_id" ref="categ_ec_comp" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("D14_PROV_COSTA", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("D14_PROV_COSTA", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Provisión del décimo cuarto en modalidad acumulada para el régimen Costa / Galápagos del establecimiento, no afecta el neto.</field>
+  </record>
+  <record id="rule_ec_d14_prov_sierra" model="hr.salary.rule">
+    <field name="name">Provisión décimo cuarto sueldo (Sierra / Amazonía)</field>
+    <field name="code">D14_PROV_SIERRA</field>
+    <field name="sequence">340</field>
+    <field name="category_id" ref="categ_ec_comp" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("D14_PROV_SIERRA", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("D14_PROV_SIERRA", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Provisión del décimo cuarto en modalidad acumulada para el régimen Sierra / Amazonía del establecimiento, no afecta el neto.</field>
+  </record>
+
+  <!-- Estructura -->
+  <record id="structure_ec_monthly" model="hr.payroll.structure">
+    <field name="name">Rol mensual Ecuador</field>
+    <field name="code">EC_MONTHLY</field>
+    <field name="parent_id" eval="False" />
+    <field name="company_id" ref="base.main_company" />
+    <field
+      name="note"
+    >Rol de pagos mensual: sueldo, conceptos propios, aportes IESS, fondos de reserva y décimos (pagados o provisionados según la modalidad de cada empleado).</field>
+    <field
+      name="rule_ids"
+      eval="[Command.set([
+                ref('rule_ec_basic'),
+                ref('rule_ec_inc_other'),
+                ref('rule_ec_fr_paid'),
+                ref('rule_ec_d13_paid'),
+                ref('rule_ec_d14_paid'),
+                ref('rule_ec_gross'),
+                ref('rule_ec_iess_personal'),
+                ref('rule_ec_ded_other'),
+                ref('rule_ec_net'),
+                ref('rule_ec_iess_patronal'),
+                ref('rule_ec_fr_accrued'),
+                ref('rule_ec_d13_prov'),
+                ref('rule_ec_d14_prov_costa'),
+                ref('rule_ec_d14_prov_sierra'),
+            ])]"
+    />
+  </record>
+</odoo>

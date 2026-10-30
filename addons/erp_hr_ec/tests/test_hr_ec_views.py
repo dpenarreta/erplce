@@ -92,7 +92,21 @@ class TestHrEcViews(TransactionCase):
                     self.assertIn(name, form_fields)
                 form_arch = etree.fromstring(views["form"]["arch"])
                 self.assertTrue(form_arch.xpath("//page[@name='erp_ecuador']"))
-                self.assertTrue(form_arch.xpath("//page[@name='erp_extra_data']"))
+                # US-017 (CA-5): «Datos adicionales» es una sección de la
+                # pestaña Ecuador, no una pestaña propia.
+                self.assertFalse(form_arch.xpath("//page[@name='erp_extra_data']"))
+                self.assertTrue(
+                    form_arch.xpath(
+                        "//page[@name='erp_ecuador']"
+                        "/separator[@name='erp_extra_data']"
+                    )
+                )
+                self.assertTrue(
+                    form_arch.xpath(
+                        "//page[@name='erp_ecuador']"
+                        "/field[@name='erp_extra_value_ids']"
+                    )
+                )
                 # El establecimiento está en Información de trabajo.
                 self.assertTrue(
                     form_arch.xpath(
@@ -314,6 +328,111 @@ class TestHrEcViews(TransactionCase):
         self.assertEqual(
             values[self.field_list].option_id, self.field_list.option_ids[0]
         )
+
+    def test_ecuador_tab_layout(self):
+        """US-017 (CA-5, CA-6, CA-11): ayudas de una línea, datos adicionales
+        en formulario emergente con un único «Valor» visible por tipo y
+        encabezados cortos."""
+        arch = etree.fromstring(
+            self.env["hr.employee"]
+            .with_user(self.hr_user)
+            .get_views([(False, "form")])["views"]["form"]["arch"]
+        )
+        page = arch.xpath("//page[@name='erp_ecuador']")[0]
+        for paragraph in page.xpath("./p[contains(@class, 'text-muted')]"):
+            text = " ".join("".join(paragraph.itertext()).split())
+            with self.subTest(help=text):
+                self.assertLessEqual(len(text), 130)
+                self.assertLessEqual(text.count(". "), 0)
+        values = page.xpath("./field[@name='erp_extra_value_ids']")[0]
+        row = values.xpath("./list")[0]
+        self.assertIsNone(row.get("editable"))
+        # Una sola columna «Valor» (texto calculado de solo lectura).
+        self.assertEqual(
+            [node.get("name") for node in row.xpath("./field")],
+            ["field_id", "value_display"],
+        )
+        form = values.xpath("./form")[0]
+        value_fields = {
+            "char": "value_char",
+            "integer": "value_integer",
+            "float": "value_float",
+            "date": "value_date",
+            "boolean": "value_boolean",
+            "selection": "option_id",
+        }
+        for value_type, name in value_fields.items():
+            with self.subTest(value_type=value_type):
+                visible = [
+                    node.get("name")
+                    for node in form.xpath(".//field[@string='Valor']")
+                    if not safe_eval(node.get("invisible"), {"value_type": value_type})
+                ]
+                self.assertEqual(visible, [name])
+        option = form.xpath(".//field[@name='option_id']")[0]
+        self.assertEqual(option.get("domain"), "[('field_id', '=', field_id)]")
+        # Ayuda del dato (M-3): texto atenuado de solo lectura, oculto si el
+        # dato no tiene ayuda.
+        help_node = form.xpath(".//field[@name='field_help']")[0]
+        self.assertIn("text-muted", help_node.get("class"))
+        self.assertTrue(safe_eval(help_node.get("readonly")))
+        self.assertTrue(safe_eval(help_node.get("invisible"), {"field_help": False}))
+        self.assertFalse(
+            safe_eval(help_node.get("invisible"), {"field_help": "Según Logística"})
+        )
+        dependents = page.xpath("./field[@name='erp_dependent_ids']/list")[0]
+        self.assertEqual(
+            dependents.xpath("./field[@name='birthdate']")[0].get("string"),
+            "Nacimiento",
+        )
+        elections = page.xpath("./field[@name='erp_benefit_election_ids']/list")[0]
+        self.assertEqual(
+            elections.xpath("./field[@name='date_from']")[0].get("string"), "Desde"
+        )
+
+    def test_configuration_forms_have_title(self):
+        """US-017 (CA-8): formularios con título (oe_title + h1)."""
+        for model in ("erp.hr.extra.field", "erp.establishment"):
+            with self.subTest(model=model):
+                arch = etree.fromstring(
+                    self.env[model]
+                    .with_user(self.admin)
+                    .get_views([(False, "form")])["views"]["form"]["arch"]
+                )
+                title = arch.xpath("//div[contains(@class, 'oe_title')]")
+                self.assertEqual(len(title), 1)
+                self.assertTrue(title[0].xpath("./label[@for='name']"))
+                self.assertTrue(title[0].xpath("./h1/field[@name='name']"))
+                # Sin repetir el nombre en los grupos (las subvistas, como la
+                # lista de opciones, tienen su propio «name»).
+                self.assertEqual(
+                    len(arch.xpath("//field[@name='name'][not(ancestor::field)]")), 1
+                )
+        list_arch = etree.fromstring(
+            self.env["erp.hr.extra.field"]
+            .with_user(self.admin)
+            .get_views([(False, "list")])["views"]["list"]["arch"]
+        )
+        self.assertEqual(
+            list_arch.xpath("//field[@name='active']")[0].get("optional"), "hide"
+        )
+
+    def test_settings_weekly_hours_unit(self):
+        """US-017 (CA-8): unidad «horas» después del número, que se muestra
+        con los decimales del modelo (37,5 no se redondea a 38)."""
+        arch = etree.fromstring(
+            self.env["res.config.settings"]
+            .with_user(self.admin)
+            .get_views([(False, "form")])["views"]["form"]["arch"]
+        )
+        setting = arch.xpath("//setting[@id='erp_max_weekly_hours_setting']")[0]
+        field = setting.xpath(".//field[@name='erp_max_weekly_hours']")[0]
+        self.assertIsNone(field.get("digits"))
+        field_def = self.env["res.company"]._fields["erp_max_weekly_hours"]
+        self.assertGreaterEqual(field_def.get_digits(self.env)[1], 1)
+        self.assertEqual(field.getnext().text.strip(), "horas")
+        label = setting.xpath(".//label[@for='erp_max_weekly_hours']")[0]
+        self.assertIn("visually-hidden", label.get("class"))
 
     def test_extra_field_form_as_hr_manager(self):
         form = Form(self.env["erp.hr.extra.field"].with_user(self.hr_manager))

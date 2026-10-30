@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+        Líneas del rol de pagos (US-008, CA-8): el usuario de nómina solo las
+        lee; las genera el cálculo del rol. Se modifica la ACL de OCA por su
+        xmlid (sin tocar third_party): este archivo no es noupdate, así que se
+        vuelve a aplicar en cada actualización de erp_payroll_ec, y Odoo
+        actualiza también este módulo cuando se actualiza payroll (dependiente).
+        El responsable de nómina conserva el CRUD con su propia ACL
+        (access_hr_payslip_line_manager). uninstall_hook restaura los permisos.
+    -->
+  <record id="payroll.access_hr_payslip_line" model="ir.model.access">
+    <field name="perm_read" eval="True" />
+    <field name="perm_write" eval="False" />
+    <field name="perm_create" eval="False" />
+    <field name="perm_unlink" eval="False" />
+  </record>
+
+  <!--
+        Configuración del motor (US-008, CA-9): el usuario de nómina solo lee
+        estructuras y categorías de reglas (las reglas ya son de solo lectura
+        en OCA); el responsable conserva el CRUD con sus propias ACL
+        (access_hr_payroll_structure_manager,
+        access_hr_salary_rule_category_manager). Mismo mecanismo que la ACL
+        de las líneas; uninstall_hook restaura los permisos de OCA.
+    -->
+  <record id="payroll.access_hr_payroll_structure" model="ir.model.access">
+    <field name="perm_read" eval="True" />
+    <field name="perm_write" eval="False" />
+    <field name="perm_create" eval="False" />
+    <field name="perm_unlink" eval="False" />
+  </record>
+  <record id="payroll.access_hr_salary_rule_category" model="ir.model.access">
+    <field name="perm_read" eval="True" />
+    <field name="perm_write" eval="False" />
+    <field name="perm_create" eval="False" />
+    <field name="perm_unlink" eval="False" />
+  </record>
+
+  <!-- Reglas multiempresa -->
+  <record id="erp_payroll_parameter_company_rule" model="ir.rule">
+    <field name="name">Parámetro de nómina: multiempresa</field>
+    <field name="model_id" ref="model_erp_payroll_parameter" />
+    <field name="domain_force">
+            ['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]
+        </field>
+  </record>
+  <record id="erp_payroll_concept_company_rule" model="ir.rule">
+    <field name="name">Concepto de nómina: multiempresa</field>
+    <field name="model_id" ref="model_erp_payroll_concept" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="erp_payroll_employee_concept_company_rule" model="ir.rule">
+    <field name="name">Concepto asignado al empleado: multiempresa</field>
+    <field name="model_id" ref="model_erp_payroll_employee_concept" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+</odoo>

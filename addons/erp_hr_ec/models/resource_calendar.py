@@ -1,9 +1,36 @@
 from odoo import api, models
 from odoo.tools import float_is_zero, float_round
 
+# Jornada por defecto que crea el núcleo (``resource.resource_calendar_std`` y
+# ``res.company._init_data_resource_calendar``) y su nombre en español de
+# Ecuador. ``resource.calendar.name`` no es traducible: se renombra el registro.
+DEFAULT_CALENDAR_ORIGINAL_NAME = "Standard 40 hours/week"
+DEFAULT_CALENDAR_ES_NAME = "Estándar 40 horas/semana"
+
 
 class ResourceCalendar(models.Model):
     _inherit = "resource.calendar"
+
+    @api.model
+    def _erp_rename_default_calendars(self):
+        """Renombra a «Estándar 40 horas/semana» las jornadas que conservan el
+        nombre original del núcleo «Standard 40 hours/week» (de todas las
+        empresas, archivadas incluidas). Idempotente: una jornada renombrada
+        por el usuario no se toca. Lo llama ``data/resource_calendar_data.xml``
+        en cada instalación y actualización del módulo.
+
+        :return: jornadas renombradas
+        """
+        # sudo(): proceso de instalación de datos; afecta solo al nombre de las
+        # jornadas que conservan el nombre por defecto del núcleo.
+        calendars = (
+            self.sudo()
+            .with_context(active_test=False)
+            .search([("name", "=", DEFAULT_CALENDAR_ORIGINAL_NAME)])
+        )
+        if calendars:
+            calendars.write({"name": DEFAULT_CALENDAR_ES_NAME})
+        return calendars
 
     def _erp_get_weekly_hours(self):
         """Horas semanales de trabajo de la jornada (promedio semanal).

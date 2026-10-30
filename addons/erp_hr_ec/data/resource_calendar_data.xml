@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="0">
+  <!--
+        Nombre en español de la jornada por defecto de la empresa (US-017,
+        QA-UX). El núcleo la crea como «Standard 40 hours/week» (campo no
+        traducible). Se ejecuta en cada instalación y actualización y solo
+        renombra las jornadas que conservan el nombre original: si el usuario
+        ya la renombró, no se toca (idempotente).
+    -->
+  <function model="resource.calendar" name="_erp_rename_default_calendars" />
+</odoo>

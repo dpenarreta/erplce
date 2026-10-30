@@ -516,11 +516,12 @@ class TestPayslipComputeSheet(TransactionCase):
                 }
             )
         )
-        with self.assertRaises(UserError) as error:
-            wizard.compute_sheet()
-        message = str(error.exception)
+        # US-008: el lote ya no es «todo o nada»; el empleado sin contrato se
+        # omite y se informa, y el resto se calcula.
+        action = wizard.compute_sheet()
+        message = action["params"]["message"]
         self.assertIn("Ángel Ibáñez Cañizares", message)
         self.assertNotIn("José Ñúñez Peña", message)
-        self.assertFalse(
-            self.env["hr.payslip"].search([("payslip_run_id", "=", run.id)])
-        )
+        payslips = self.env["hr.payslip"].search([("payslip_run_id", "=", run.id)])
+        self.assertEqual(payslips.employee_id, self.employee)
+        self.assertEqual(payslips.state, "verify")

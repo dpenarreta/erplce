@@ -16,6 +16,7 @@
         "security/erp_hr_ec_security.xml",
         "security/ir.model.access.csv",
         "data/hr_contract_type_data.xml",
+        "data/resource_calendar_data.xml",
         "views/erp_hr_extra_field_views.xml",
         "views/hr_employee_views.xml",
         "views/hr_employee_coach_views.xml",

@@ -35,7 +35,12 @@
         />
       </xpath>
 
-      <!-- Pestañas de Ecuador después de Información privada -->
+      <!--
+        Pestaña «Ecuador» después de Información privada (US-017, CA-5: como
+        máximo 6 pestañas en la ficha; «Datos adicionales» es una sección de
+        esta pestaña y no una pestaña propia). Ayudas en una línea; el detalle
+        está en el help de cada campo.
+      -->
       <xpath expr="//page[@name='personal_information']" position="after">
         <page name="erp_ecuador" string="Ecuador" groups="hr.group_hr_user">
           <group>
@@ -56,16 +61,14 @@
               <field name="name" />
               <field name="identification" />
               <field name="relationship" />
-              <field name="birthdate" />
+              <field name="birthdate" string="Nacimiento" />
               <field name="disability" />
             </list>
           </field>
           <separator name="erp_benefits" string="Décimos y fondos de reserva" />
           <p class="text-muted">
-            Registre aquí solo los cambios de modalidad del empleado, con la
-            fecha desde la que rigen. Mientras no tenga una elección vigente
-            para un beneficio, se aplica la modalidad por defecto de la empresa
-            (Empleados &gt; Configuración &gt; Ajustes, bloque Ecuador).
+            Registre solo los cambios de modalidad, con su fecha; sin elección
+            vigente se aplica la modalidad por defecto de la empresa.
           </p>
           <field name="erp_benefit_election_ids" nolabel="1">
             <list
@@ -75,63 +78,77 @@
             >
               <field name="benefit" />
               <field name="mode" />
-              <field name="date_from" />
+              <field name="date_from" string="Desde" />
               <field name="note" />
             </list>
           </field>
-        </page>
-        <page
-          name="erp_extra_data"
-          string="Datos adicionales"
-          groups="hr.group_hr_user"
-        >
+          <!--
+            Datos adicionales (CA-6): la lista muestra una sola columna «Valor»
+            (value_display, texto calculado de solo lectura) y cada dato se
+            edita en un formulario emergente con un único campo «Valor»
+            visible según el tipo y, debajo, la ayuda del dato (field_help,
+            related de field_id.help) como texto atenuado, solo si existe.
+          -->
+          <separator name="erp_extra_data" string="Datos adicionales" />
           <p class="text-muted">
-            Los datos disponibles los define un responsable de RRHH en
-            Empleados &gt; Configuración &gt; Datos adicionales. Registre un
-            valor por dato.
+            Los datos disponibles se definen en Empleados &gt; Configuración
+            &gt; Datos adicionales.
           </p>
           <field name="erp_extra_value_ids" nolabel="1">
-            <list string="Datos adicionales" editable="bottom">
-              <field
-                name="field_id"
-                domain="[('active', '=', True)]"
-                options="{'no_create': True, 'no_open': True}"
-              />
-              <field name="value_type" column_invisible="1" />
-              <field
-                name="value_char"
-                string="Valor (texto)"
-                invisible="value_type != 'char'"
-              />
-              <field
-                name="value_integer"
-                string="Valor (entero)"
-                invisible="value_type != 'integer'"
-              />
-              <field
-                name="value_float"
-                string="Valor (decimal)"
-                invisible="value_type != 'float'"
-              />
-              <field
-                name="value_date"
-                string="Valor (fecha)"
-                invisible="value_type != 'date'"
-              />
-              <field
-                name="value_boolean"
-                string="Valor (sí/no)"
-                invisible="value_type != 'boolean'"
-              />
-              <field
-                name="option_id"
-                string="Valor (opción)"
-                domain="[('field_id', '=', field_id)]"
-                invisible="value_type != 'selection'"
-                required="value_type == 'selection'"
-                options="{'no_create': True, 'no_open': True}"
-              />
+            <list string="Datos adicionales">
+              <field name="field_id" />
+              <field name="value_display" />
             </list>
+            <form string="Dato adicional">
+              <group>
+                <field
+                  name="field_id"
+                  domain="[('active', '=', True)]"
+                  options="{'no_create': True, 'no_open': True}"
+                />
+                <field name="value_type" invisible="1" />
+                <field
+                  name="value_char"
+                  string="Valor"
+                  invisible="value_type != 'char'"
+                />
+                <field
+                  name="value_integer"
+                  string="Valor"
+                  invisible="value_type != 'integer'"
+                />
+                <field
+                  name="value_float"
+                  string="Valor"
+                  invisible="value_type != 'float'"
+                />
+                <field
+                  name="value_date"
+                  string="Valor"
+                  invisible="value_type != 'date'"
+                />
+                <field
+                  name="value_boolean"
+                  string="Valor"
+                  invisible="value_type != 'boolean'"
+                />
+                <field
+                  name="option_id"
+                  string="Valor"
+                  domain="[('field_id', '=', field_id)]"
+                  invisible="value_type != 'selection'"
+                  required="value_type == 'selection'"
+                  options="{'no_create': True, 'no_open': True}"
+                />
+              </group>
+              <field
+                name="field_help"
+                class="text-muted"
+                readonly="1"
+                nolabel="1"
+                invisible="not field_help"
+              />
+            </form>
           </field>
         </page>
       </xpath>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!--
+        Parámetros normativos de nómina (US-008, CA-1). Son VALORES POR DEFECTO
+        DE PARTIDA en estado «A validar»: el responsable de nómina o el
+        contador debe confirmarlos (estado «Validado») o corregirlos antes de
+        usarlos. No se garantiza que estén vigentes. noupdate: las
+        actualizaciones del módulo no pisan los cambios del usuario.
+        Sin empresa: comunes a todas las empresas. «Vigente desde» es el inicio
+        de uso en este sistema (2026-01-01), no la fecha de vigencia legal.
+    -->
+  <record id="param_sbu_2026" model="erp.payroll.parameter">
+    <field name="code">SBU</field>
+    <field name="name">Salario básico unificado (SBU)</field>
+    <field name="value_type">amount</field>
+    <field name="value">482.0</field>
+    <field name="date_from">2026-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, arts. 117 y 118 (fijación del salario básico unificado por el Consejo Nacional de Trabajo y Salarios / Ministerio del Trabajo). SBU 2026: USD 482 fijado por consenso del Consejo Nacional de Trabajo y Salarios según el boletín del Ministerio del Trabajo del 15/12/2025. Número del acuerdo ministerial de fijación: a confirmar.</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Confirmar con el acuerdo ministerial publicado en el Registro Oficial.</field>
+  </record>
+  <record id="param_iess_personal_2026" model="erp.payroll.parameter">
+    <field name="code">IESS_PERSONAL</field>
+    <field name="name">Aporte personal al IESS</field>
+    <field name="value_type">percent</field>
+    <field name="value">9.45</field>
+    <field name="date_from">2026-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Ley de Seguridad Social (arts. 11 y 15: materia gravada y cálculo de aportaciones) y resoluciones del Consejo Directivo del IESS sobre tasas de aportación (incluye 0,10 % de la Ley Orgánica de Discapacidades, Resolución C.D. 464). Tabla «Tasas de aportación» del IESS, sector privado en relación de dependencia: personal 9,45 %.</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Aplica al sector privado en relación de dependencia.</field>
+  </record>
+  <record id="param_iess_patronal_2026" model="erp.payroll.parameter">
+    <field name="code">IESS_PATRONAL</field>
+    <field name="name">Aporte patronal al IESS</field>
+    <field name="value_type">percent</field>
+    <field name="value">11.15</field>
+    <field name="date_from">2026-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Ley de Seguridad Social (arts. 11 y 15) y resoluciones del Consejo Directivo del IESS sobre tasas de aportación. Tabla «Tasas de aportación» del IESS, sector privado en relación de dependencia: patronal 11,15 %.</field>
+    <field
+      name="note"
+    >Valor de partida a validar. No incluye los aportes IECE (0,5 %) y SECAP (0,5 %) que algunas planillas suman al patronal (12,15 %): el contador debe decidir si se incluyen.</field>
+  </record>
+  <record id="param_reserve_fund_rate_2026" model="erp.payroll.parameter">
+    <field name="code">RESERVE_FUND_RATE</field>
+    <field name="name">Fondos de reserva (porcentaje)</field>
+    <field name="value_type">percent</field>
+    <field name="value">8.33</field>
+    <field name="date_from">2026-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, arts. 196 y 197 (fondo de reserva: un mes de remuneración por cada año completo después del primero) y Ley para el Pago Mensual del Fondo de Reserva y el Régimen Solidario de Cesantía por parte del Estado (Registro Oficial 644, 29/07/2009), art. 1: 8,33 % de la remuneración aportada al IESS.</field>
+    <field name="note">Valor de partida a validar.</field>
+  </record>
+  <record id="param_thirteenth_divisor_2026" model="erp.payroll.parameter">
+    <field name="code">THIRTEENTH_DIVISOR</field>
+    <field name="name">Divisor del décimo tercer sueldo</field>
+    <field name="value_type">number</field>
+    <field name="value">12</field>
+    <field name="date_from">2026-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 111 (décima tercera remuneración: la doceava parte de las remuneraciones percibidas en el año calendario) y art. 95 (remuneración computable).</field>
+    <field name="note">Valor de partida a validar.</field>
+  </record>
+  <record id="param_fourteenth_months_2026" model="erp.payroll.parameter">
+    <field name="code">FOURTEENTH_MONTHS</field>
+    <field name="name">Meses del décimo cuarto sueldo</field>
+    <field name="value_type">number</field>
+    <field name="value">12</field>
+    <field name="date_from">2026-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 113 (décima cuarta remuneración: un salario básico unificado anual; mensualizado o provisionado como SBU / 12).</field>
+    <field name="note">Valor de partida a validar.</field>
+  </record>
+  <record id="param_month_days_2026" model="erp.payroll.parameter">
+    <field name="code">MONTH_DAYS</field>
+    <field name="name">Días base del mes</field>
+    <field name="value_type">number</field>
+    <field name="value">30</field>
+    <field name="date_from">2026-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Convención de mes laboral de 30 días para el prorrateo del sueldo por días trabajados (práctica de cálculo de remuneraciones; sin artículo expreso identificado, a confirmar por el contador).</field>
+    <field name="note">Valor de partida a validar.</field>
+  </record>
+  <record id="param_reserve_fund_min_months_2026" model="erp.payroll.parameter">
+    <field name="code">RESERVE_FUND_MIN_MONTHS</field>
+    <field name="name">Meses de servicio para fondos de reserva</field>
+    <field name="value_type">number</field>
+    <field name="value">12</field>
+    <field name="date_from">2026-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 196 (derecho al fondo de reserva del trabajador que preste servicios por más de un año).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. El fondo de reserva se genera desde el día en que se cumple este periodo de servicio (contado desde la fecha del primer contrato); en ese mes se paga o provisiona en proporción a los días con derecho (a confirmar).</field>
+  </record>
+</odoo>

@@ -94,3 +94,37 @@
     color: $erp-brand-black;
   }
 }
+
+// Required fields visible without focus or hover (WCAG 1.3.1 / 3.3.2). The
+// core hides the bottom border of every input in forms until hover/focus
+// (--o-input-border-color: transparent, 8 classes of specificity); required
+// and editable ones keep a black border (21:1). Prefixed with .o_web_client
+// to be more specific (9 classes) without !important.
+.o_web_client
+  .o_form_view
+  .o_field_widget.o_required_modifier:not(.o_readonly_modifier):not(.o_field_invalid)
+  .o_input:not(:hover):not(:focus) {
+  --o-input-border-color: #{$erp-brand-black};
+}
+
+// Empty-state illustrations ("no content" help of the actions): the core
+// SVGs use Odoo's purple; replaced by a neutral gray document with the brand
+// yellow accent (decorative background, no text).
+.o_view_nocontent .o_nocontent_help {
+  .o_view_nocontent_smiling_face:before,
+  .o_view_nocontent_neutral_face:before {
+    background-image: url(/erp_branding/static/img/empty_state.svg);
+  }
+}
+
+// Placeholders (WCAG 1.4.3): the core color comes from
+// $input-placeholder-color (solid #5c636a, see primary_variables.scss). This
+// rule also fixes the opacity (Firefox and Bootstrap may lower it), so the
+// measured contrast is 6.1:1 on white and 5.1:1 on #e9ecef.
+.o_web_client {
+  input::placeholder,
+  textarea::placeholder {
+    color: $erp-brand-muted;
+    opacity: 1;
+  }
+}

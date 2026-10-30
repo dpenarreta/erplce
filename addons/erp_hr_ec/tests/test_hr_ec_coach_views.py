@@ -226,6 +226,27 @@ class TestHrEcCoachViews(TransactionCase):
                 'import {unaccent} from "@web/core/utils/strings"', source.read()
             )
 
+    def test_widget_no_coach_option_always_last(self):
+        """US-017 (CA-7): "Sin instructor" siempre al final, nunca primera
+        opción activa (sin la regla anterior de ponerla primera). La lógica
+        la prueban los tests hoot; aquí se vigila el código fuente porque la
+        imagen no trae navegador."""
+        with file_open(
+            "erp_hr_ec/static/src/fields/coach_many2one/coach_no_coach_options.js"
+        ) as source:
+            content = source.read()
+        body = content[content.index("export function insertNoCoachOption") :]
+        self.assertNotIn("[noCoachOption, ...", body)
+        self.assertNotIn("hasValue", content)
+        self.assertIn("result.push(noCoachOption);\n  return result;", body)
+        with file_open(
+            "erp_hr_ec/static/src/fields/coach_many2one/coach_many2one_field.js"
+        ) as source:
+            field = source.read()
+        self.assertIn("noResultOption", field)
+        self.assertIn("unselectable: true", field)
+        self.assertNotIn("erpHasValue", field)
+
     # ------------------------------------------------------------------
     # Filtros (CA-5)
     # ------------------------------------------------------------------

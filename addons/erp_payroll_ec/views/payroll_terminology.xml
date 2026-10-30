@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-017 (CA-9): menús y acciones de OCA payroll con la terminología de
+    Ecuador («Roles de pagos», «Lotes de roles», «Líneas del rol»).
+
+    Son registros de payroll: se escriben en español de Ecuador
+    (context lang es_EC, idioma que activa erp_base) sin tocar el inglés.
+    Escribir aquí, y no solo en i18n/es.po, es necesario porque al instalar o
+    actualizar el módulo Odoo no sobrescribe una traducción ya cargada (la de
+    payroll: «Nóminas del empleado»). i18n/es.po repite estos valores para
+    que tampoco se pierdan al recargar las traducciones con «Sobrescribir
+    términos existentes» (se carga después del de payroll).
+  -->
+  <record id="payroll.hr_payslip_menu" model="ir.ui.menu" context="{'lang': 'es_EC'}">
+    <field name="name">Roles de pagos</field>
+  </record>
+  <record
+    id="payroll.hr_payslip_run_menu"
+    model="ir.ui.menu"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Lotes de roles</field>
+  </record>
+
+  <record
+    id="payroll.hr_payslip_action"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Roles de pagos</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Cree el primer rol de pagos</p>
+      <p>
+        Un rol de pagos calcula los ingresos, descuentos y aportes de un
+        empleado en un periodo. Para todos los empleados a la vez, use
+        <strong>Nómina &gt; Lotes de roles</strong>.
+      </p>
+    </field>
+  </record>
+  <record
+    id="payroll.hr_payslip_action_employee"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Roles de pagos</field>
+  </record>
+  <record
+    id="payroll.hr_payslip_run_action"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Lotes de roles</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Cree el primer lote de roles</p>
+      <p>
+        Un lote genera y calcula a la vez los roles de pagos de varios
+        empleados para el mismo periodo.
+      </p>
+    </field>
+  </record>
+  <!-- Título del asistente que abre «Generar roles» en el lote. -->
+  <record
+    id="payroll.action_hr_payslip_by_employees"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Generar roles</field>
+  </record>
+  <record
+    id="payroll.hr_payslip_line_action_computation_details"
+    model="ir.actions.act_window"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="name">Líneas del rol</field>
+  </record>
+
+  <!--
+    Etiquetas de campos de OCA (US-017, M-1) que se ven fuera de las vistas
+    heredadas (filtros y agrupaciones personalizados, exportación, mensajes):
+    solo se escribe la traducción es_EC de field_description (escritura de
+    solo traducción, que Odoo permite en campos base); el inglés y la
+    definición del campo no cambian.
+  -->
+  <record
+    id="payroll.field_hr_payslip__credit_note"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Rol rectificativo</field>
+  </record>
+  <record
+    id="payroll.field_hr_payslip_run__credit_note"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Rol rectificativo</field>
+  </record>
+  <record
+    id="payroll.field_hr_payslip__name"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Descripción del rol</field>
+  </record>
+  <record
+    id="payroll.field_hr_employee__payroll_structure_id"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Estructura salarial por defecto</field>
+  </record>
+  <record
+    id="payroll.field_res_company__payroll_structure_id"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Estructura salarial por defecto</field>
+  </record>
+  <record
+    id="payroll.field_res_config_settings__payroll_structure_id"
+    model="ir.model.fields"
+    context="{'lang': 'es_EC'}"
+  >
+    <field name="field_description">Estructura salarial por defecto</field>
+  </record>
+</odoo>

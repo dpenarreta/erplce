@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Rol de pagos (vista de OCA payroll/payroll_account) adaptado a US-008:
+    - Confirmar, Reembolsar (confirma el reembolso) y Anular un rol confirmado
+      solo los ve el responsable de nómina (el servidor lo impone igualmente:
+      AccessError en action_payslip_done / action_payslip_cancel).
+    - «Volver a borrador» ya está oculto en confirmado en OCA (solo en
+      verificar/anulado) y el servidor lo rechaza; no se toca.
+    - Entradas: columna «Concepto» (erp_concept_id) para elegir un concepto
+      variable del catálogo; sin dominio en la vista para conservar el del
+      campo (variables + empresa del rol, check_company). Al elegirlo, el
+      onchange rellena código y descripción y el código queda de solo
+      lectura (force_save: el cliente lo envía igualmente; el servidor lo
+      vuelve a sincronizar con el concepto). Sin concepto, el código se puede
+      escribir a mano como en OCA (el servidor enlaza el concepto si existe).
+    - Cabecera: régimen de décimo cuarto del empleado (solo lectura) y
+      asiento contable; líneas del cálculo de solo lectura.
+    - Entradas, días trabajados y nota: OCA ya los deja de solo lectura fuera
+      de borrador (readonly="state != 'draft'"), así que en un rol confirmado
+      no se editan; el servidor lo impone igualmente.
+    - Anular confirmado: se localiza por el nombre del botón y por depender
+      del ajuste «Permitir anular roles» (allow_cancel_payslips), que es lo
+      que lo distingue del «Anular» de borrador. No se usa la posición: si OCA
+      reordena los botones, un xpath posicional aplicaría en silencio el grupo
+      de responsable al «Anular» de borrador; con este, un cambio de OCA hace
+      fallar la instalación (ruidoso) y test_payslip_form_buttons_by_group
+      comprueba la semántica evaluando los dominios de visibilidad.
+  -->
+  <record id="hr_payslip_view_form_inherit_erp_payroll_ec" model="ir.ui.view">
+    <field name="name">hr.payslip.form.inherit.erp_payroll_ec</field>
+    <field name="model">hr.payslip</field>
+    <field name="inherit_id" ref="payroll.hr_payslip_view_form" />
+    <field name="arch" type="xml">
+      <xpath expr="//header/button[@name='action_payslip_done']" position="attributes">
+        <attribute name="groups">payroll.group_payroll_manager</attribute>
+      </xpath>
+      <xpath expr="//header/button[@name='refund_sheet']" position="attributes">
+        <attribute name="groups">payroll.group_payroll_manager</attribute>
+      </xpath>
+      <xpath
+        expr="//header/button[@name='action_payslip_cancel'][contains(@invisible, 'allow_cancel_payslips')]"
+        position="attributes"
+      >
+        <attribute name="groups">payroll.group_payroll_manager</attribute>
+        <attribute
+          name="confirm"
+        >Se anulará el rol confirmado y se revertirá su asiento contable. ¿Desea continuar?</attribute>
+      </xpath>
+
+      <!--
+        US-017 (CA-9): terminología de Ecuador sobre las etiquetas de OCA
+        («Nómina», «Calcular hoja», «Factura rectificativa»...). Se fija con
+        string en la herencia (fuente en español), así no depende de las
+        traducciones de payroll ni se pierde al recargarlas.
+      -->
+      <xpath expr="//header/button[@name='compute_sheet']" position="attributes">
+        <attribute name="string">Calcular rol</attribute>
+      </xpath>
+      <xpath
+        expr="//header/button[@name='action_payslip_cancel'][not(contains(@invisible, 'allow_cancel_payslips'))]"
+        position="attributes"
+      >
+        <attribute name="string">Anular rol</attribute>
+      </xpath>
+      <xpath
+        expr="//header/button[@name='action_payslip_cancel'][contains(@invisible, 'allow_cancel_payslips')]"
+        position="attributes"
+      >
+        <attribute name="string">Anular rol</attribute>
+      </xpath>
+      <xpath expr="//header/button[@name='refund_sheet']" position="attributes">
+        <attribute name="string">Rectificar rol</attribute>
+      </xpath>
+      <xpath expr="//header/button[@name='onchange_employee']" position="attributes">
+        <attribute name="string">Recargar datos</attribute>
+      </xpath>
+      <xpath
+        expr="//div[@name='button_box']//field[@name='payslip_count']"
+        position="attributes"
+      >
+        <attribute name="string">Líneas del rol</attribute>
+        <attribute name="help">Detalle del cálculo del rol</attribute>
+      </xpath>
+      <!-- Título con nombre accesible (etiqueta visible) y ejemplo. -->
+      <xpath expr="//div[hasclass('oe_title')]/h1" position="before">
+        <label for="name" string="Descripción del rol" />
+      </xpath>
+      <xpath
+        expr="//div[hasclass('oe_title')]//field[@name='name']"
+        position="attributes"
+      >
+        <attribute
+          name="placeholder"
+        >p. ej. Rol de pagos de octubre de 2026 de Ana Pérez</attribute>
+      </xpath>
+      <xpath expr="//field[@name='credit_note']" position="attributes">
+        <attribute name="string">Rol rectificativo</attribute>
+      </xpath>
+      <xpath expr="//page[@name='input']" position="attributes">
+        <attribute name="string">Días trabajados y entradas</attribute>
+      </xpath>
+      <xpath expr="//separator[@name='other']" position="attributes">
+        <attribute name="string">Bonos y descuentos variables</attribute>
+      </xpath>
+      <xpath expr="//page[@name='computation']" position="attributes">
+        <attribute name="string">Cálculo del rol</attribute>
+      </xpath>
+
+      <!-- Régimen de décimo cuarto y asiento contable en la cabecera -->
+      <xpath expr="//group[@name='right']" position="inside">
+        <field
+          name="erp_decimo_cuarto_regime"
+          readonly="1"
+          invisible="not employee_id"
+          groups="payroll.group_payroll_user"
+        />
+      </xpath>
+
+      <!-- Entradas variables: conceptos del catálogo por código -->
+      <xpath expr="//separator[@name='other']" position="after">
+        <!-- Aviso fijo, no un mensaje de estado: role="note" y sin clases
+             alert-* (que Odoo reserva a role alert/status). -->
+        <div
+          class="alert bg-info-subtle text-info-emphasis border-info-subtle mb-2"
+          role="note"
+        >
+          Registre aquí los <strong>bonos y descuentos variables</strong> del
+          mes: elija el concepto en la columna «Concepto» e indique el importe
+          en positivo (para cambiar un rol ya calculado, vuelva primero a
+          borrador). Los bonos y descuentos fijos de la ficha del empleado se
+          añaden solos al calcular el rol.
+        </div>
+      </xpath>
+      <xpath
+        expr="//field[@name='input_line_ids']/list/field[@name='name']"
+        position="before"
+      >
+        <field name="erp_concept_id" options="{'no_create': True}" />
+        <field name="company_id" column_invisible="1" />
+      </xpath>
+      <xpath
+        expr="//field[@name='input_line_ids']/list/field[@name='name']"
+        position="attributes"
+      >
+        <attribute name="placeholder">p. ej. Comisión de octubre</attribute>
+      </xpath>
+      <xpath
+        expr="//field[@name='input_line_ids']/list/field[@name='code']"
+        position="attributes"
+      >
+        <attribute name="readonly">erp_concept_id</attribute>
+        <attribute name="force_save">1</attribute>
+        <attribute name="placeholder">Se rellena al elegir el concepto</attribute>
+      </xpath>
+      <xpath
+        expr="//field[@name='input_line_ids']/form//field[@name='name']"
+        position="before"
+      >
+        <field name="erp_concept_id" options="{'no_create': True}" />
+        <field name="company_id" invisible="1" />
+      </xpath>
+      <xpath
+        expr="//field[@name='input_line_ids']/form//field[@name='code']"
+        position="attributes"
+      >
+        <attribute name="readonly">erp_concept_id</attribute>
+        <attribute name="force_save">1</attribute>
+      </xpath>
+
+      <!-- Líneas del cálculo: las genera el cálculo, nunca el usuario -->
+      <xpath
+        expr="//field[@name='dynamic_filtered_payslip_lines']"
+        position="attributes"
+      >
+        <attribute name="readonly">1</attribute>
+      </xpath>
+    </field>
+  </record>
+
+  <!--
+    Lista de roles (US-017, M-1/M-4): «Descripción del rol» (no «Nombre de la
+    nómina») y encabezados cortos «Desde»/«Hasta» que no se truncan. Con
+    string en la herencia (fuente en español) no depende de las traducciones
+    de payroll.
+  -->
+  <record id="hr_payslip_view_tree_inherit_erp_payroll_ec" model="ir.ui.view">
+    <field name="name">hr.payslip.list.inherit.erp_payroll_ec</field>
+    <field name="model">hr.payslip</field>
+    <field name="inherit_id" ref="payroll.hr_payslip_view_tree" />
+    <field name="arch" type="xml">
+      <field name="name" position="attributes">
+        <attribute name="string">Descripción del rol</attribute>
+      </field>
+      <field name="date_from" position="attributes">
+        <attribute name="string">Desde</attribute>
+      </field>
+      <field name="date_to" position="attributes">
+        <attribute name="string">Hasta</attribute>
+      </field>
+    </field>
+  </record>
+
+  <!--
+    Asiento contable: payroll_account lo muestra en la pestaña «Información
+    contable» tras «Pagado». Se mueve (no se duplica) a la cabecera, junto al
+    régimen de décimo cuarto, para que se vea sin cambiar de pestaña; el nodo
+    sigue siendo el de OCA. Hereda de la vista de payroll_account para
+    aplicarse siempre después de ella.
+  -->
+  <record id="hr_payslip_view_form_account_inherit_erp_payroll_ec" model="ir.ui.view">
+    <field name="name">hr.payslip.form.account.inherit.erp_payroll_ec</field>
+    <field name="model">hr.payslip</field>
+    <field name="inherit_id" ref="payroll_account.hr_payslip_view_form" />
+    <field name="arch" type="xml">
+      <xpath expr="//group[@name='right']" position="inside">
+        <xpath
+          expr="//page[@name='accounting']//field[@name='move_id']"
+          position="move"
+        />
+      </xpath>
+      <xpath expr="//group[@name='right']/field[@name='move_id']" position="attributes">
+        <attribute name="string">Asiento contable</attribute>
+        <attribute name="invisible">not move_id</attribute>
+      </xpath>
+    </field>
+  </record>
+
+  <!--
+    Detalle de líneas (botón «Líneas del rol»): la descripción solo es
+    editable si el ajuste de OCA «Permitir editar líneas» está activo, como
+    cantidad, tasa e importe. El servidor bloquea además las líneas de un rol
+    confirmado y la ACL deja las líneas en solo lectura al usuario de nómina.
+  -->
+  <record id="hr_payslip_line_view_tree_inherit_erp_payroll_ec" model="ir.ui.view">
+    <field name="name">hr.payslip.line.list.inherit.erp_payroll_ec</field>
+    <field name="model">hr.payslip.line</field>
+    <field name="inherit_id" ref="payroll.hr_payslip_line_view_tree" />
+    <field name="arch" type="xml">
+      <field name="name" position="attributes">
+        <attribute name="readonly">not allow_edit_payslip_lines</attribute>
+      </field>
+      <field name="code" position="attributes">
+        <attribute name="readonly">1</attribute>
+      </field>
+      <field name="category_id" position="attributes">
+        <attribute name="readonly">1</attribute>
+      </field>
+      <field name="sequence" position="attributes">
+        <attribute name="readonly">1</attribute>
+      </field>
+    </field>
+  </record>
+  <record id="hr_payslip_line_view_form_inherit_erp_payroll_ec" model="ir.ui.view">
+    <field name="name">hr.payslip.line.form.inherit.erp_payroll_ec</field>
+    <field name="model">hr.payslip.line</field>
+    <field name="inherit_id" ref="payroll.hr_payslip_line_view_form" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='name']" position="attributes">
+        <attribute name="readonly">1</attribute>
+      </xpath>
+    </field>
+  </record>
+</odoo>

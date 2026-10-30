@@ -3,6 +3,14 @@
   <!-- Base HTML layout (login, web client bootstrap and other public pages):
          brand name as default document title and own favicon. -->
   <template id="layout" inherit_id="web.layout" name="ERP Branding: layout">
+    <!-- Document language (WCAG 3.1.1) for screen readers and spell checkers:
+         the one of the current request/user, as a BCP 47 tag (es_EC ->
+         es-EC). Pages that already set it in html_data (website) keep theirs. -->
+    <xpath expr="//html" position="attributes">
+      <attribute
+        name="t-att-lang"
+      >(html_data or {}).get('lang') or (env.lang or 'es_EC').replace('_', '-')</attribute>
+    </xpath>
     <xpath expr="//head/title" position="attributes">
       <attribute name="t-esc">title or env['ir.http'].get_erp_brand_name()</attribute>
     </xpath>
@@ -74,6 +82,66 @@
     <!-- Without the "Powered by" link the separator border is not needed. -->
     <xpath expr="//a[@href='/web/database/manager']" position="attributes">
       <attribute name="class" />
+    </xpath>
+  </template>
+
+  <!-- Internal system: the "¿No tiene una cuenta?" link is never rendered,
+       whatever auth_signup.invitation_scope says (registration itself is
+       disabled by configuration). "Restablecer contraseña" is kept. -->
+  <template
+    id="auth_signup_login"
+    inherit_id="auth_signup.login"
+    name="ERP Branding: no sign up link"
+  >
+    <xpath expr="//a[contains(@t-attf-href, '/web/signup')]/.." position="attributes">
+      <attribute name="t-if">False</attribute>
+    </xpath>
+  </template>
+
+  <!-- Reset password / invitation form: formal "usted" labels (the es_419
+       translation used by es_EC says "Tu correo", "Tu nombre"). The core
+       label is not rendered (t-if) and a new one follows it, instead of a
+       "replace" that other modules' xpaths could not anchor on. -->
+  <template
+    id="auth_signup_fields"
+    inherit_id="auth_signup.fields"
+    name="ERP Branding: account form labels"
+  >
+    <xpath expr="//label[@for='login']" position="attributes">
+      <attribute name="t-if">False</attribute>
+    </xpath>
+    <xpath expr="//label[@for='login']" position="after">
+      <label for="login">Su correo electrónico</label>
+    </xpath>
+    <xpath expr="//label[@for='name']" position="attributes">
+      <attribute name="t-if">False</attribute>
+    </xpath>
+    <xpath expr="//label[@for='name']" position="after">
+      <label for="name">Su nombre</label>
+    </xpath>
+    <xpath expr="//input[@name='name']" position="attributes">
+      <attribute name="placeholder">p. ej. Juan Pérez</attribute>
+    </xpath>
+    <xpath expr="//label[@for='confirm_password']" position="attributes">
+      <attribute name="t-if">False</attribute>
+    </xpath>
+    <xpath expr="//label[@for='confirm_password']" position="after">
+      <label for="confirm_password">Confirme la contraseña</label>
+    </xpath>
+  </template>
+  <template
+    id="auth_signup_reset_password"
+    inherit_id="auth_signup.reset_password"
+    name="ERP Branding: reset password labels"
+  >
+    <xpath
+      expr="//div[hasclass('field-login')]/label[@for='login']"
+      position="attributes"
+    >
+      <attribute name="t-if">False</attribute>
+    </xpath>
+    <xpath expr="//div[hasclass('field-login')]/label[@for='login']" position="after">
+      <label for="login" class="col-form-label">Su correo electrónico</label>
     </xpath>
   </template>
 </odoo>

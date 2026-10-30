@@ -30,11 +30,14 @@ BRAND_HUE_TOLERANCE = 1.5
 
 # Selectors whose text is not on a light web-client background:
 # - the black navbar (yellow text is the intended accent there),
+# - Bootstrap's dark color mode ([data-bs-theme="dark"], light links),
 # - dark utility backgrounds,
 # - ".o_cc*" color combinations of the HTML editor content (their palette is
 #   configured in the editor itself; reviewed and discarded by QA in US-001).
 DARK_CONTEXTS = (
     "o_main_navbar",
+    'data-bs-theme="dark"',
+    "data-bs-theme=dark",
     "bg-black",
     "bg-dark",
     "text-bg-dark",
@@ -242,3 +245,182 @@ def find_contrast_issues(css, selector_filter=None):
             ):
                 issues.append((kind, selector, f"{prop}: {detail}"))
     return issues
+
+
+# ---------------------------------------------------------------------------
+# US-017: Odoo colors, resolved component states and measured contrast.
+# ---------------------------------------------------------------------------
+
+# Odoo's own brand colors that must not show up in ERP LCE pages:
+# purple (#714B67 enterprise, #71639e community) and the frontend secondary
+# blue-gray #2D3142, plus their lighten()/darken()/mix() derivatives.
+_RGB_TRIPLE_RE = re.compile(r"^\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*$")
+_VAR_ANY_RE = re.compile(r"var\(\s*(--[\w-]+)\s*(?:,\s*([^)]*))?\)")
+WHITE = (255, 255, 255)
+
+
+# (hue in degrees, HLS saturation) of each Odoo color; derivatives keep the
+# hue and roughly the saturation, so lightness is only bounded loosely.
+ODOO_COLORS = {
+    "#714B67": (315.5, 0.20),
+    "#71639E": (254.2, 0.23),
+    "#2D3142": (228.6, 0.19),
+}
+
+
+def is_odoo_color(rgb):
+    """Color of the Odoo purple / frontend blue-gray families."""
+    if rgb is None:
+        return False
+    hue, light, sat = colorsys.rgb_to_hls(*(c / 255 for c in rgb))
+    if not 0.1 < light < 0.62:
+        return False
+    return any(
+        abs(hue * 360 - base_hue) <= 6 and abs(sat - base_sat) <= 0.12
+        for base_hue, base_sat in ODOO_COLORS.values()
+    )
+
+
+def parse_any_color(value):
+    """Like parse_color, also accepting bare "r, g, b" (--*-rgb props)."""
+    match = _RGB_TRIPLE_RE.match(value or "")
+    if match:
+        return tuple(int(match.group(i)) for i in (1, 2, 3))
+    return parse_color(value)
+
+
+def parse_rgba(value):
+    """Return ((r, g, b), alpha) of the first color of a CSS value, or None."""
+    value = (value or "").strip()
+    match = _RGB_RE.search(value)
+    if match:
+        alpha = float(match.group(4)) if match.group(4) is not None else 1.0
+        return tuple(int(match.group(i)) for i in (1, 2, 3)), alpha
+    rgb = parse_color(value)
+    return (rgb, 1.0) if rgb else None
+
+
+def blend(rgb, alpha, background=WHITE):
+    """Composite a translucent color over an opaque background."""
+    return tuple(
+        round(c * alpha + b * (1 - alpha))
+        for c, b in zip(rgb, background, strict=False)
+    )
+
+
+def find_odoo_colors(css, selector_filter=None):
+    """Return [(selector, prop, value)] declaring an Odoo brand color.
+
+    Rules of DARK_CONTEXTS are kept (an Odoo color is never wanted); the
+    ``selector_filter`` limits the audit to the rules of one page.
+    """
+    hits = []
+    for _index, selectors, decls in parse_rules(css):
+        if selector_filter:
+            selectors = [s for s in selectors if selector_filter(s)]
+        if not selectors:
+            continue
+        for prop, (value, _important) in decls.items():
+            colors = [parse_any_color(value)]
+            colors += [parse_color(m.group(0)) for m in _HEX_RE.finditer(value)]
+            if any(is_odoo_color(color) for color in colors):
+                hits.append((selectors[0], prop, value))
+    return hits
+
+
+def custom_property_values(rules):
+    """Last value of every custom property declared on :root-like rules."""
+    values = {}
+    for _index, selectors, decls in rules:
+        if not any(
+            s in (":root", "html", "body", "[data-bs-theme=light]") for s in selectors
+        ):
+            continue
+        for prop, (value, _important) in decls.items():
+            if prop.startswith("--"):
+                values[prop] = value
+    return values
+
+
+def resolve_declarations(css, target, context_filter=None):
+    """Cascade of the declarations that apply to ``target`` (a selector).
+
+    Takes the rules whose selector is exactly ``target`` or ``<prefix>
+    target`` where the prefix is accepted by ``context_filter`` (e.g. the
+    login page body class). Later rules win, except over ``!important``.
+    Returns ({prop: value}, rules) so values can be resolved with
+    resolve_value().
+    """
+    rules = parse_rules(css)
+    result = {}
+    important = set()
+    for _index, selectors, decls in rules:
+        applies = False
+        for selector in selectors:
+            if selector == target:
+                applies = True
+            elif selector.endswith(" " + target) and context_filter:
+                applies = applies or context_filter(selector[: -len(target)].strip())
+        if not applies:
+            continue
+        for prop, (value, is_important) in decls.items():
+            if prop in important and not is_important:
+                continue
+            result[prop] = value
+            if is_important:
+                important.add(prop)
+    return result, rules
+
+
+def resolve_value(value, declarations, root_values, depth=0):
+    """Replace var(--x[, fallback]) by its value (rule first, then :root)."""
+    match = _VAR_ANY_RE.search(value or "")
+    if not match or depth > 5:
+        return value
+    name, fallback = match.group(1), match.group(2)
+    replacement = declarations.get(name, root_values.get(name, fallback or ""))
+    return resolve_value(
+        value[: match.start()] + replacement + value[match.end() :],
+        declarations,
+        root_values,
+        depth + 1,
+    )
+
+
+BUTTON_STATES = ("", "hover-", "active-", "disabled-")
+
+
+def button_state_contrasts(css, target, context_filter=None, background=WHITE):
+    """Measured text/background contrast of each button state.
+
+    Returns {state: (text_rgb, bg_rgb, ratio)}; a transparent background
+    (link buttons) is measured against ``background``.
+    """
+    declarations, rules = resolve_declarations(css, target, context_filter)
+    root_values = custom_property_values(rules)
+    result = {}
+    for state in BUTTON_STATES:
+        text = resolve_value(
+            declarations.get(f"--btn-{state}color", ""), declarations, root_values
+        )
+        bg_value = resolve_value(
+            declarations.get(f"--btn-{state}bg", "transparent"),
+            declarations,
+            root_values,
+        )
+        text_rgba = parse_rgba(text)
+        if not text_rgba:
+            continue
+        bg_rgba = parse_rgba(bg_value)
+        bg_rgb = blend(*bg_rgba, background) if bg_rgba else background
+        text_rgb = blend(*text_rgba, bg_rgb)
+        result[state or "normal"] = (text_rgb, bg_rgb, contrast(text_rgb, bg_rgb))
+    focus = declarations.get("--btn-focus-shadow-rgb")
+    if focus:
+        result["focus-shadow"] = (parse_any_color(focus), None, None)
+    return result
+
+
+def svg_colors(svg_text):
+    """All hex colors used in an SVG document."""
+    return [parse_color(m.group(0)) for m in _HEX_RE.finditer(svg_text)]

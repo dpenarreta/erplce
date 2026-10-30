@@ -73,6 +73,10 @@ class TestEstablishmentViews(TransactionCase):
         action = self.env.ref("erp_establishment.erp_establishment_action")
         self.assertEqual(action.res_model, "erp.establishment")
         self.assertIn("Importar registros", action.help)
+        # US-017 (CA-8): la importación está en el engranaje de la vista,
+        # no en un «menú de acciones».
+        self.assertIn("engranaje", action.help)
+        self.assertNotIn("menú de", action.help)
         menu = self.env.ref("erp_establishment.erp_establishment_menu_settings")
         self.assertEqual(menu.parent_id, self.env.ref("base.menu_users"))
         self.assertEqual(menu.groups_id, self.env.ref("base.group_system"))
@@ -98,3 +102,18 @@ class TestEstablishmentViews(TransactionCase):
         with self.assertRaises(AssertionError):
             # Campo de solo lectura en el formulario.
             form.decimo_cuarto_regime = "costa_galapagos"
+
+    def test_form_title_and_short_filters(self):
+        """US-017 (CA-8): título con el nombre y filtros con etiquetas cortas
+        (el desplegable de filtros las trunca)."""
+        views = self.env["erp.establishment"].get_views(
+            [(False, "form"), (False, "search")]
+        )["views"]
+        form = etree.fromstring(views["form"]["arch"])
+        self.assertTrue(
+            form.xpath("//div[contains(@class, 'oe_title')]/h1/field[@name='name']")
+        )
+        search = etree.fromstring(views["search"]["arch"])
+        for node in search.iter("filter"):
+            with self.subTest(filter=node.get("name")):
+                self.assertLessEqual(len(node.get("string")), 26)
