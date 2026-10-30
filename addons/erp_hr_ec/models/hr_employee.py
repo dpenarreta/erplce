@@ -24,6 +24,14 @@ if set(BENEFIT_COMPANY_DEFAULT_FIELD) != {key for key, _label in BENEFIT_SELECTI
 # (``171003406-5``, ``1710 0340 65``).
 _CEDULA_WITH_SEPARATORS_RE = re.compile(r"^[0-9][0-9 \-]*$")
 
+# Etiqueta y ayuda de parent_id (US-010, CA-7), compartidas por hr.employee
+# y hr.employee.public.
+PARENT_ID_STRING = "Jefe inmediato"
+PARENT_ID_HELP = (
+    "Persona a la que reporta directamente el empleado; define la línea de "
+    "supervisión y el organigrama."
+)
+
 # Índice único parcial: identificación única entre empleados activos de una
 # misma empresa (respaldo en BD de _check_erp_identification_unique).
 IDENTIFICATION_UNIQUE_INDEX = "hr_employee_erp_identification_company_active_uniq"
@@ -100,6 +108,29 @@ class HrEmployee(models.Model):
         groups="hr.group_hr_user",
     )
 
+    # US-010 (CA-7): el núcleo llama "Manager" ("Gerente" en español) a la
+    # relación de supervisión directa; en la empresa es el "Jefe inmediato".
+    # Solo cambian etiqueta y ayuda (cómputo, dominio y almacenamiento siguen
+    # siendo los del núcleo). Se redefine aquí y en hr.employee.public, y no en
+    # hr.employee.base: hr.employee.public redeclara parent_id con su propio
+    # string en su clase, que prevalece sobre una extensión del modelo base.
+    # hr.department.manager_id ("Gerente" del departamento) no cambia.
+    parent_id = fields.Many2one(
+        string=PARENT_ID_STRING,
+        help=PARENT_ID_HELP,
+    )
+
+    # US-010: sin ``groups``, como ``coach_id`` (campo público). Por eso
+    # también se declara en ``hr.employee.public`` (ver final del archivo):
+    # un campo de hr.employee sin grupo que no exista en el perfil público
+    # entraría en el prefetch de un usuario sin acceso a hr.employee y la
+    # lectura fallaría con AccessError.
+    erp_no_coach = fields.Boolean(
+        string="Sin instructor",
+        tracking=True,
+        help="El empleado no necesita capacitación ni instructor asignado.",
+    )
+
     _sql_constraints = [
         (
             "erp_disability_percentage_range",
@@ -153,6 +184,31 @@ class HrEmployee(models.Model):
                     percentage=percentage,
                 )
             )
+        self._erp_prepare_coach_vals(vals)
+        return vals
+
+    @api.model
+    def _erp_prepare_coach_vals(self, vals):
+        """Coherencia entre ``coach_id`` y ``erp_no_coach`` (US-010, CA-4).
+
+        Modifica ``vals`` en sitio: el llamador (``_erp_prepare_vals``) ya
+        trabaja sobre una copia.
+
+        - Instructor explícito (``coach_id`` verdadero): quita la marca, aunque
+          venga ``erp_no_coach = True`` en los mismos valores (prevalece el
+          instructor).
+        - Marca sin instructor explícito: vacía el instructor. Al ir
+          ``coach_id`` en los valores, el ORM no lo recalcula con el Gerente
+          aunque ``parent_id`` cambie en la misma escritura.
+        - ``coach_id = False`` sin la marca en los valores no la toca: borrar
+          el instructor de un empleado "Sin instructor" lo deja igual; para
+          dejarlo "sin asignar" hay que escribir ``erp_no_coach = False``
+          (lo hace el widget del formulario).
+        """
+        if vals.get("coach_id"):
+            vals["erp_no_coach"] = False
+        elif vals.get("erp_no_coach"):
+            vals["coach_id"] = False
         return vals
 
     @api.model_create_multi
@@ -233,6 +289,39 @@ class HrEmployee(models.Model):
                 SQL.identifier(self._table),
             )
         )
+
+    # ------------------------------------------------------------------
+    # Instructor (US-010)
+    # ------------------------------------------------------------------
+    @api.depends("parent_id")
+    def _compute_coach(self):
+        """Los empleados "Sin instructor" no reciben el Gerente como
+        instructor; el resto sigue el comportamiento estándar de Odoo.
+
+        No depende de ``erp_no_coach``: marcarla ya vacía el instructor en
+        create/write/onchange, y desmarcarla no debe rellenarlo con el Gerente
+        (el usuario lo deja "sin asignar" o elige uno). La marca que se lee es
+        la del registro en ese momento, también si se escribe junto con
+        ``parent_id``.
+        """
+        no_coach = self.filtered("erp_no_coach")
+        no_coach.coach_id = False
+        # super() sobre el resto: el cálculo del núcleo asigna el Gerente.
+        return super(HrEmployee, self - no_coach)._compute_coach()
+
+    @api.onchange("erp_no_coach")
+    def _onchange_erp_no_coach(self):
+        """Formulario: marcar "Sin instructor" vacía el instructor."""
+        for employee in self:
+            if employee.erp_no_coach:
+                employee.coach_id = False
+
+    @api.onchange("coach_id")
+    def _onchange_coach_id_erp_no_coach(self):
+        """Formulario: elegir un instructor quita la marca."""
+        for employee in self:
+            if employee.coach_id:
+                employee.erp_no_coach = False
 
     # ------------------------------------------------------------------
     # Validaciones
@@ -444,3 +533,13 @@ class HrEmployee(models.Model):
         if election:
             return election.mode
         return self.sudo().company_id[BENEFIT_COMPANY_DEFAULT_FIELD[benefit]]
+
+
+class HrEmployeePublic(models.Model):
+    _inherit = "hr.employee.public"
+
+    # Columna de la vista SQL del perfil público (US-010): ver la nota de
+    # erp_no_coach en hr.employee. Permite además filtrar el directorio.
+    erp_no_coach = fields.Boolean(string="Sin instructor", readonly=True)
+    # Etiqueta "Jefe inmediato" (ver parent_id en hr.employee).
+    parent_id = fields.Many2one(string=PARENT_ID_STRING, help=PARENT_ID_HELP)

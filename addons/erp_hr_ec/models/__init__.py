@@ -6,5 +6,6 @@ from . import erp_hr_benefit_election
 from . import erp_hr_extra_field
 from . import erp_hr_extra_value
 from . import hr_employee
+from . import res_users
 from . import resource_calendar
 from . import hr_contract

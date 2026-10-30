@@ -1,0 +1,11 @@
+// Instructor "Sin instructor" (US-010): el texto del campo editable se ve
+// atenuado (no es un empleado). Colores del tema, sin valores fijos.
+.o_field_widget .o_erp_no_coach_edit .o_input_dropdown input {
+  color: $text-muted;
+  font-style: italic;
+}
+
+.o_erp_no_coach_icon {
+  width: 1.5em;
+  text-align: center;
+}

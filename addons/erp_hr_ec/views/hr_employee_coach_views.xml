@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-010: Instructor con la opción "Sin instructor" (widget
+    erp_coach_many2one, que lee y escribe erp_no_coach) y etiqueta
+    "Jefe inmediato" de parent_id en filtros y agrupaciones (CA-7).
+
+    erp_no_coach no lleva groups (como coach_id) y existe también en
+    hr.employee.public: estas vistas valen para todos los usuarios internos.
+    Las etiquetas de los campos en form/list salen del modelo; aquí solo se
+    cambian los textos fijos "Manager" de las vistas de búsqueda del núcleo.
+  -->
+
+  <!-- Empleados (RRHH) -->
+  <record id="hr_employee_view_form_inherit_erp_hr_ec_coach" model="ir.ui.view">
+    <field name="name">hr.employee.form.inherit.erp_hr_ec.coach</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="hr.view_employee_form" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='coach_id']" position="attributes">
+        <attribute name="widget">erp_coach_many2one</attribute>
+      </xpath>
+      <xpath expr="//field[@name='coach_id']" position="after">
+        <field name="erp_no_coach" invisible="1" />
+      </xpath>
+    </field>
+  </record>
+
+  <record id="hr_employee_view_list_inherit_erp_hr_ec_coach" model="ir.ui.view">
+    <field name="name">hr.employee.list.inherit.erp_hr_ec.coach</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="hr.view_employee_tree" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='coach_id']" position="attributes">
+        <attribute name="widget">erp_coach_many2one</attribute>
+      </xpath>
+      <xpath expr="//field[@name='coach_id']" position="after">
+        <field name="erp_no_coach" column_invisible="1" />
+      </xpath>
+    </field>
+  </record>
+
+  <record id="hr_employee_view_search_inherit_erp_hr_ec_coach" model="ir.ui.view">
+    <field name="name">hr.employee.search.inherit.erp_hr_ec.coach</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="hr.view_employee_filter" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='parent_id']" position="attributes">
+        <attribute name="string">Jefe inmediato</attribute>
+      </xpath>
+      <xpath expr="//filter[@name='group_manager']" position="attributes">
+        <attribute name="string">Jefe inmediato</attribute>
+      </xpath>
+      <xpath expr="//filter[@name='newly_hired']" position="after">
+        <separator />
+        <filter
+          name="erp_no_coach"
+          string="Sin instructor"
+          domain="[('erp_no_coach', '=', True)]"
+        />
+        <filter
+          name="erp_coach_unassigned"
+          string="Instructor sin asignar"
+          domain="[('coach_id', '=', False), ('erp_no_coach', '=', False)]"
+        />
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Directorio (perfil público, usuarios sin RRHH): solo lectura -->
+  <record id="hr_employee_public_view_form_inherit_erp_hr_ec_coach" model="ir.ui.view">
+    <field name="name">hr.employee.public.form.inherit.erp_hr_ec.coach</field>
+    <field name="model">hr.employee.public</field>
+    <field name="inherit_id" ref="hr.hr_employee_public_view_form" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='coach_id']" position="attributes">
+        <attribute name="widget">erp_coach_many2one</attribute>
+      </xpath>
+      <xpath expr="//field[@name='coach_id']" position="after">
+        <field name="erp_no_coach" invisible="1" />
+      </xpath>
+    </field>
+  </record>
+
+  <record id="hr_employee_public_view_list_inherit_erp_hr_ec_coach" model="ir.ui.view">
+    <field name="name">hr.employee.public.list.inherit.erp_hr_ec.coach</field>
+    <field name="model">hr.employee.public</field>
+    <field name="inherit_id" ref="hr.hr_employee_public_view_tree" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='coach_id']" position="attributes">
+        <attribute name="widget">erp_coach_many2one</attribute>
+      </xpath>
+      <xpath expr="//field[@name='coach_id']" position="after">
+        <field name="erp_no_coach" column_invisible="1" />
+      </xpath>
+    </field>
+  </record>
+
+  <record
+    id="hr_employee_public_view_search_inherit_erp_hr_ec_coach"
+    model="ir.ui.view"
+  >
+    <field name="name">hr.employee.public.search.inherit.erp_hr_ec.coach</field>
+    <field name="model">hr.employee.public</field>
+    <field name="inherit_id" ref="hr.hr_employee_public_view_search" />
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='parent_id']" position="attributes">
+        <attribute name="string">Jefe inmediato</attribute>
+      </xpath>
+      <xpath expr="//filter[@name='group_manager']" position="attributes">
+        <attribute name="string">Jefe inmediato</attribute>
+      </xpath>
+      <xpath expr="//filter[@name='newly_hired']" position="after">
+        <separator />
+        <filter
+          name="erp_no_coach"
+          string="Sin instructor"
+          domain="[('erp_no_coach', '=', True)]"
+        />
+        <filter
+          name="erp_coach_unassigned"
+          string="Instructor sin asignar"
+          domain="[('coach_id', '=', False), ('erp_no_coach', '=', False)]"
+        />
+      </xpath>
+    </field>
+  </record>
+</odoo>

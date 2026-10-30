@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+  <t
+    t-name="erp_hr_ec.CoachMany2OneField"
+    t-inherit="mail.Many2OneAvatarUserField"
+    t-inherit-mode="primary"
+  >
+    <xpath expr="//div[@t-att-data-tooltip]" position="attributes">
+      <attribute
+        name="t-att-class"
+      >{'o_erp_no_coach_edit': erpIsNoCoach and !props.readonly and !state.isFloating}</attribute>
+    </xpath>
+    <xpath expr="//span[hasclass('o_m2o_avatar_empty')]" position="attributes">
+      <attribute
+        name="t-if"
+      >props.record.data[props.name] === false and !props.readonly and !erpIsNoCoach</attribute>
+    </xpath>
+    <xpath expr="//span[hasclass('o_m2o_avatar_empty')]" position="after">
+      <i
+        t-if="erpIsNoCoach"
+        class="fa fa-user-times text-muted o_erp_no_coach_icon"
+        aria-hidden="true"
+      />
+    </xpath>
+    <xpath expr="//t[@t-call='web.Many2OneField']" position="replace">
+      <span
+        t-if="props.readonly and erpIsNoCoach"
+        class="o_erp_no_coach text-muted fst-italic"
+        t-esc="erpNoCoachLabel"
+      />
+      <t t-else="" t-call="web.Many2OneField" />
+    </xpath>
+  </t>
+
+  <t t-name="erp_hr_ec.CoachMany2XAutocompleteOption">
+    <span
+      t-if="option.erpNoCoach"
+      class="o_erp_no_coach_option_label d-flex align-items-center fst-italic"
+    >
+      <i class="fa fa-user-times me-1" aria-hidden="true" />
+      <t t-esc="option.label" />
+    </span>
+    <t t-else="" t-call="web.AvatarMany2XAutocomplete" />
+  </t>
+</templates>
