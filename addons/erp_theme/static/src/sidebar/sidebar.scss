@@ -1,0 +1,434 @@
+// ERP Theme - sidebar (US-018).
+//
+// Black brand surface with light text; yellow only as an indicator (active
+// option bar, current app bar in icons-only mode) and as the focus outline.
+// Measured contrast (WCAG 2.1 AA, checked by erp_theme/tests):
+// - text #e1e1e1 on #000000: 16.1:1; on hover #1f1f1f: 12.6:1;
+// - active/hover text #ffffff on #262626 / #1f1f1f: 15.2:1 / 16.5:1;
+// - yellow indicator and focus outline #fce200 on #000000 / #262626 / #1f1f1f:
+//   16.0:1 / 11.4:1 / 12.5:1 (>= 3:1 for non-text elements).
+
+$erp-sidebar-width: 240px;
+$erp-sidebar-collapsed-width: 64px;
+$erp-sidebar-bg: $erp-brand-black;
+$erp-sidebar-text: $erp-brand-gray;
+$erp-sidebar-text-strong: $erp-brand-white;
+$erp-sidebar-hover-bg: #1f1f1f;
+$erp-sidebar-active-bg: #262626;
+$erp-sidebar-separator: #333333;
+$erp-sidebar-indicator: $erp-brand-yellow;
+$erp-sidebar-item-radius: 8px;
+$erp-sidebar-icon-plate: #f2f2f2;
+
+// ---------------------------------------------------------------------------
+// Layout: the web client leaves room for the fixed sidebar (>= 992 px).
+// ---------------------------------------------------------------------------
+@include media-only(screen) {
+  @include media-breakpoint-up(lg) {
+    body.o_web_client.o_erp_theme_has_sidebar {
+      padding-left: $erp-sidebar-width;
+
+      &.o_erp_theme_sidebar_collapsed {
+        padding-left: $erp-sidebar-collapsed-width;
+      }
+    }
+  }
+}
+
+.o_erp_sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: $zindex-fixed;
+  display: flex;
+  flex-direction: column;
+  width: $erp-sidebar-width;
+  background-color: $erp-sidebar-bg;
+  color: $erp-sidebar-text;
+  font-size: 0.875rem;
+  line-height: 1.3;
+
+  &.o_erp_sidebar_collapsed {
+    width: $erp-sidebar-collapsed-width;
+  }
+
+  // < 992 px: overlay panel, hidden (and out of the tab order) until opened.
+  &.o_erp_sidebar_drawer {
+    z-index: $zindex-offcanvas;
+    width: 300px;
+    max-width: 85vw;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
+
+    &.o_erp_sidebar_open {
+      transform: none;
+      visibility: visible;
+      box-shadow: 0 0 24px rgba($erp-brand-black, 0.4);
+      transition: transform 0.2s ease;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &.o_erp_sidebar_drawer,
+    &.o_erp_sidebar_drawer.o_erp_sidebar_open {
+      transition: none;
+    }
+  }
+}
+
+.o_erp_sidebar_backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: $zindex-offcanvas-backdrop;
+  background-color: rgba($erp-brand-black, 0.5);
+}
+
+// ---------------------------------------------------------------------------
+// Header (logo) and footer (collapse button)
+// ---------------------------------------------------------------------------
+.o_erp_sidebar_header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 8px 0 16px;
+  border-bottom: 1px solid $erp-sidebar-separator;
+
+  .o_erp_sidebar_collapsed & {
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+.o_erp_sidebar_logo {
+  display: inline-flex;
+  align-items: center;
+  border-radius: $erp-sidebar-item-radius;
+
+  img {
+    display: block;
+    height: auto;
+  }
+}
+
+.o_erp_sidebar_close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: $erp-sidebar-item-radius;
+  background: transparent;
+  color: $erp-sidebar-text;
+  font-size: 1.25rem;
+
+  &:hover {
+    background-color: $erp-sidebar-hover-bg;
+    color: $erp-sidebar-text-strong;
+  }
+}
+
+.o_erp_sidebar_footer {
+  flex: 0 0 auto;
+  padding: 8px;
+  border-top: 1px solid $erp-sidebar-separator;
+}
+
+// ---------------------------------------------------------------------------
+// Lists
+// ---------------------------------------------------------------------------
+.o_erp_sidebar_apps {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #555555 transparent;
+  scrollbar-width: thin;
+}
+
+.o_erp_sidebar_app_item + .o_erp_sidebar_app_item {
+  margin-top: 2px;
+}
+
+.o_erp_sidebar_menu {
+  margin: 2px 0 6px;
+  padding: 0;
+}
+
+// Every interactive row: app, section, action and the collapse button.
+.o_erp_sidebar_app,
+.o_erp_sidebar_section,
+.o_erp_sidebar_link,
+.o_erp_sidebar_collapse {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: $erp-sidebar-item-radius;
+  background: transparent;
+  color: $erp-sidebar-text;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $erp-sidebar-hover-bg;
+    color: $erp-sidebar-text-strong;
+    text-decoration: none;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+// Visible keyboard focus with the brand yellow (16:1 on black).
+.o_erp_sidebar a,
+.o_erp_sidebar button {
+  &:focus-visible {
+    outline: 2px solid $erp-sidebar-indicator;
+    outline-offset: -2px;
+  }
+}
+
+.o_erp_sidebar_app {
+  font-weight: 500;
+}
+
+.o_erp_sidebar_current_app > .o_erp_sidebar_app {
+  color: $erp-sidebar-text-strong;
+  font-weight: 600;
+}
+
+.o_erp_sidebar_section,
+.o_erp_sidebar_link {
+  min-height: 36px;
+  padding-left: calc(50px + (var(--erp-sidebar-depth, 1) - 1) * 14px);
+}
+
+.o_erp_sidebar_section {
+  font-weight: 600;
+}
+
+.o_erp_sidebar_label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.o_erp_sidebar_chevron {
+  flex: 0 0 auto;
+  transition: transform 0.15s ease;
+
+  [aria-expanded="true"] > & {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+// Active option: yellow bar + darker surface, white bold text.
+.o_erp_sidebar_link.o_erp_sidebar_active {
+  background-color: $erp-sidebar-active-bg;
+  color: $erp-sidebar-text-strong;
+  font-weight: 600;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 0;
+    width: 4px;
+    border-radius: 2px;
+    background-color: $erp-sidebar-indicator;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Icons
+// ---------------------------------------------------------------------------
+// Light plate behind every app icon (CA-8): the Odoo icons are designed for
+// light backgrounds; on the plate they keep their colors and the plate
+// itself stands out on black (#f2f2f2 on #000000: 18.1:1).
+.o_erp_sidebar_icon {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background-color: $erp-sidebar-icon-plate;
+
+  img {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    object-fit: contain;
+  }
+}
+
+.o_erp_sidebar_icon_font {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+}
+
+.o_erp_sidebar_icon_default {
+  color: $erp-sidebar-active-bg;
+}
+
+// ---------------------------------------------------------------------------
+// Icons-only mode (desktop)
+// ---------------------------------------------------------------------------
+.o_erp_sidebar_collapsed {
+  .o_erp_sidebar_apps,
+  .o_erp_sidebar_footer {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .o_erp_sidebar_app,
+  .o_erp_sidebar_collapse {
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 0;
+  }
+
+  // Current app: yellow bar on the left.
+  .o_erp_sidebar_current_app > .o_erp_sidebar_app {
+    background-color: $erp-sidebar-active-bg;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 8px;
+      bottom: 8px;
+      left: 0;
+      width: 4px;
+      border-radius: 2px;
+      background-color: $erp-sidebar-indicator;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Overlay panel (< 992 px): touch targets of at least 44 px (CA-5).
+// ---------------------------------------------------------------------------
+.o_erp_sidebar_drawer {
+  .o_erp_sidebar_app,
+  .o_erp_sidebar_section,
+  .o_erp_sidebar_link {
+    min-height: 44px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// "Skip to content" link (WCAG 2.4.1): hidden until it gets the focus.
+// Black text on the brand yellow (16.0:1), black outline.
+// ---------------------------------------------------------------------------
+.o_erp_skip_link:focus,
+.o_erp_skip_link:focus-visible {
+  position: fixed !important;
+  top: 8px;
+  left: 8px;
+  z-index: $zindex-tooltip;
+  padding: 10px 16px;
+  border: 2px solid $erp-brand-black;
+  border-radius: $erp-sidebar-item-radius;
+  background-color: $erp-brand-yellow;
+  color: $erp-brand-black;
+  font-weight: 600;
+  text-decoration: none;
+  outline: 2px solid $erp-brand-white;
+  outline-offset: 0;
+}
+
+// ---------------------------------------------------------------------------
+// Popover of the icons-only mode (white surface, black text).
+// Active option: brand yellow surface with black text (16.0:1) and a black
+// bar (21:1 on white).
+// ---------------------------------------------------------------------------
+.o_erp_sidebar_flyout {
+  min-width: 220px;
+  max-width: 300px;
+  max-height: 70vh;
+  padding: 8px;
+  overflow-y: auto;
+  color: $erp-brand-black;
+  font-size: 0.875rem;
+}
+
+.o_erp_sidebar_flyout_title {
+  padding: 4px 10px 8px;
+  border-bottom: 1px solid $erp-brand-gray;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.o_erp_sidebar_flyout_section {
+  padding: 8px 10px 2px calc(10px + var(--erp-sidebar-depth, 0) * 12px);
+  color: $erp-brand-muted;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.o_erp_sidebar_flyout_link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 10px 6px calc(10px + var(--erp-sidebar-depth, 0) * 12px);
+  border-radius: $erp-sidebar-item-radius;
+  color: $erp-brand-black;
+  text-decoration: none;
+
+  &:hover {
+    background-color: #ededed;
+    color: $erp-brand-black;
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $erp-brand-black;
+    outline-offset: -2px;
+  }
+
+  &.o_erp_sidebar_flyout_active {
+    background-color: $erp-brand-yellow;
+    color: $erp-brand-black;
+    font-weight: 600;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      left: 0;
+      width: 4px;
+      border-radius: 2px;
+      background-color: $erp-brand-black;
+    }
+  }
+}

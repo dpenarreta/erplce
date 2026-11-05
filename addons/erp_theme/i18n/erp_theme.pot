@@ -1,0 +1,56 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* erp_theme
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: erp_theme
+#. odoo-javascript
+#: code:addons/erp_theme/static/src/sidebar/sidebar.js:0
+msgid "Close menu"
+msgstr ""
+
+#. module: erp_theme
+#. odoo-javascript
+#: code:addons/erp_theme/static/src/sidebar/sidebar.js:0
+msgid "Collapse menu"
+msgstr ""
+
+#. module: erp_theme
+#. odoo-javascript
+#: code:addons/erp_theme/static/src/sidebar/sidebar.js:0
+msgid "Expand menu"
+msgstr ""
+
+#. module: erp_theme
+#. odoo-javascript
+#: code:addons/erp_theme/static/src/sidebar/sidebar.js:0
+msgid "Go to the home page"
+msgstr ""
+
+#. module: erp_theme
+#. odoo-javascript
+#: code:addons/erp_theme/static/src/sidebar/sidebar.js:0
+msgid "Main menu"
+msgstr ""
+
+#. module: erp_theme
+#. odoo-javascript
+#: code:addons/erp_theme/static/src/navbar/navbar_patch.js:0
+msgid "Open menu"
+msgstr ""
+
+#. module: erp_theme
+#. odoo-javascript
+#: code:addons/erp_theme/static/src/sidebar/sidebar.js:0
+msgid "Skip to content"
+msgstr ""

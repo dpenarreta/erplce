@@ -1,0 +1,374 @@
+// ERP Theme - look of the backend web client (US-018).
+//
+// Brand colors come from erp_branding ($erp-brand-*, primary_variables.scss).
+// Yellow is only a surface (always with black text) or an indicator; it is
+// never used as a text color on light backgrounds.
+//
+// Layout: light gray work area; list, form sheet, kanban records and search
+// panel shown as white rounded cards with a soft shadow. Card edges are
+// decorative (the white surface on the gray background already separates
+// them); interactive borders (inputs, focus) keep >= 3:1.
+
+$erp-theme-surface: #f2f2f2; // work area: neutral light gray
+$erp-theme-card-border: #dcdcdc;
+$erp-theme-card-radius: 12px;
+$erp-theme-control-radius: 6px;
+$erp-theme-card-shadow:
+  0 1px 2px rgba($erp-brand-black, 0.06),
+  0 2px 8px rgba($erp-brand-black, 0.06);
+$erp-theme-gutter: 16px;
+$erp-theme-font-family:
+  "Inter",
+  system-ui,
+  -apple-system,
+  "Segoe UI",
+  Roboto,
+  "Helvetica Neue",
+  Arial,
+  "Noto Sans",
+  "Odoo Unicode Support Noto",
+  sans-serif,
+  "Apple Color Emoji",
+  "Segoe UI Emoji",
+  "Segoe UI Symbol",
+  "Noto Color Emoji";
+
+// ---------------------------------------------------------------------------
+// Typography and base surface
+// ---------------------------------------------------------------------------
+// Same selector as the core rule (.o_web_client background) plus "body" to win
+// regardless of the bundle order.
+body.o_web_client {
+  --font-sans-serif: #{$erp-theme-font-family};
+  --body-font-family: #{$erp-theme-font-family};
+  // Bootstrap components (buttons, inputs, dropdowns, badges) read their
+  // radius from this property: one coherent radius for every control.
+  --border-radius: #{$erp-theme-control-radius};
+  font-family: $erp-theme-font-family;
+  background-color: $erp-theme-surface;
+}
+
+// Headings use their own family in the core ("SF Pro Display"): follow the
+// body one.
+.o_web_client {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .h1,
+  .h2,
+  .h3,
+  .h4,
+  .h5,
+  .h6 {
+    font-family: inherit;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Top bar (light, see primary_variables.scss): the app/apps buttons are gone,
+// so the app name gets its own left padding; visible focus in black (the
+// yellow outline of erp_branding is meant for the black navbar: 1.1:1 on
+// white).
+// ---------------------------------------------------------------------------
+.o_main_navbar {
+  .o_menu_brand {
+    padding-left: $erp-theme-gutter;
+    font-weight: 600;
+  }
+
+  .o_menu_brand,
+  .o_nav_entry,
+  .dropdown-toggle,
+  button {
+    &:focus-visible {
+      outline: 2px solid $erp-brand-black;
+      outline-offset: -2px;
+    }
+  }
+}
+
+// Hamburger button (< 992 px): opens the sidebar as an overlay panel.
+// Touch target of 44 x 44 px (WCAG 2.5.5 / CA-4).
+.o_main_navbar .o_erp_sidebar_toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 2px 4px;
+  padding: 0;
+  border: 0;
+  border-radius: $erp-theme-control-radius;
+  background: transparent;
+  color: $erp-brand-black;
+  font-size: 1.25rem;
+
+  &:hover {
+    background-color: #ededed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $erp-brand-black;
+    outline-offset: -2px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Work area
+// ---------------------------------------------------------------------------
+.o_web_client {
+  .o_action_manager {
+    background-color: $erp-theme-surface;
+  }
+
+  // Control panel on the gray surface; the search box keeps its white
+  // background (core --SearchBar-background-color). Opaque (same gray), not
+  // transparent: on phones it stays on top while the form scrolls below it.
+  .o_action_manager .o_control_panel {
+    background-color: $erp-theme-surface;
+  }
+
+  // Screen title bolder (CA-6). The core already makes it large (fs-4) on
+  // list screens; in forms it shares the row with the smart buttons, so its
+  // size is kept to show as much of the record name as possible.
+  .o_control_panel .o_breadcrumb .o_last_breadcrumb_item {
+    font-weight: 600;
+  }
+
+  .o_control_panel .o_breadcrumb .breadcrumb-item a {
+    font-weight: 500;
+  }
+
+  // Breadcrumbs on the gray surface (Bootstrap paints them white).
+  .o_control_panel .breadcrumb {
+    --breadcrumb-bg: transparent;
+  }
+
+  // Form title (record name).
+  .o_form_view .oe_title h1 {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+}
+
+// Form sheet as a card (the core already draws a 1 px border from md).
+// Not inside dialogs: they keep their flat look.
+body.o_web_client .o_action_manager .o_form_view .o_form_sheet {
+  --formView-sheet-border-radius-md: #{$erp-theme-card-radius};
+  border-color: $erp-theme-card-border;
+
+  @include media-breakpoint-up(md) {
+    box-shadow: $erp-theme-card-shadow;
+  }
+}
+
+// Kanban records: rounded cards with a soft shadow.
+body.o_web_client
+  .o_kanban_renderer
+  .o_kanban_record:not(.o_legacy_kanban_record):not(.o_kanban_ghost) {
+  border-color: $erp-theme-card-border;
+  border-radius: 10px;
+  box-shadow: $erp-theme-card-shadow;
+}
+
+body.o_web_client .o_action_manager .o_kanban_view .o_kanban_renderer {
+  --Kanban-background: #{$erp-theme-surface};
+}
+
+// Lists and search panel as cards (desktop and tablets; on phones the list
+// keeps the full width and scrolls inside its own container).
+@include media-breakpoint-up(md) {
+  body.o_web_client .o_action_manager .o_list_view > .o_content {
+    padding: 0 $erp-theme-gutter $erp-theme-gutter;
+  }
+
+  body.o_web_client .o_action_manager .o_list_view > .o_content > .o_list_renderer {
+    --ListRenderer-thead-bg-color: #{$erp-brand-white};
+    border: 1px solid $erp-theme-card-border;
+    border-radius: $erp-theme-card-radius;
+    background-color: $erp-brand-white;
+    box-shadow: $erp-theme-card-shadow;
+  }
+
+  body.o_web_client .o_action_manager .o_content > .o_search_panel {
+    margin: 0 $erp-theme-gutter $erp-theme-gutter 0;
+    border: 1px solid $erp-theme-card-border;
+    border-radius: $erp-theme-card-radius;
+    background-color: $erp-brand-white;
+    box-shadow: $erp-theme-card-shadow;
+  }
+
+  body.o_web_client
+    .o_action_manager
+    .o_kanban_view
+    > .o_content.o_component_with_search_panel {
+    padding-left: $erp-theme-gutter;
+  }
+}
+
+// More breathing room in list rows (CA-6), without changing editable rows.
+body.o_web_client
+  .o_action_manager
+  .o_list_view
+  .o_list_table
+  > tbody
+  > .o_data_row:not(.o_selected_row)
+  > .o_data_cell {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+
+body.o_web_client .o_action_manager .o_list_view .o_list_table > thead > tr > th {
+  font-weight: 600;
+}
+
+// ---------------------------------------------------------------------------
+// Readable status colors on the light surfaces (CA-8 / CA-9).
+// The core text utilities are !important (.text-success #008818,
+// .text-warning #9a6b01, .text-danger #d23f3a: 4.6:1 on white, but only
+// 4.1-4.4:1 on #f8f9fa / #f2f2f2). Darker shades of the same hues where
+// they are drawn on those backgrounds:
+//   success #006b13, warning #7a5500, danger #b3261e: >= 5.5:1 on #e9ecef,
+//   #f2f2f2, #f8f9fa and white.
+// ---------------------------------------------------------------------------
+$erp-theme-success-text: #006b13;
+$erp-theme-warning-text: #7a5500;
+$erp-theme-danger-text: #b3261e;
+
+// Chatter top bar: "Follow" (.text-600, #6c757d: 4.45:1 on #f8f9fa) and the
+// "Following" / "Unfollow" (hover) button (.text-success / .text-warning).
+.o_web_client .o-mail-Chatter-follow.text-600 {
+  --color: #{$erp-brand-muted};
+  color: $erp-brand-muted !important;
+}
+
+.o_web_client .o-mail-Chatter-topbar {
+  .text-success {
+    --color: #{$erp-theme-success-text};
+    color: $erp-theme-success-text !important;
+  }
+
+  .text-warning {
+    --color: #{$erp-theme-warning-text};
+    color: $erp-theme-warning-text !important;
+  }
+
+  .text-danger {
+    --color: #{$erp-theme-danger-text};
+    color: $erp-theme-danger-text !important;
+  }
+}
+
+// Link buttons of the chatter top bar (search, attachments, followers
+// counter): .text-action is gray #6c757d there (4.45:1 on #f8f9fa); brand
+// muted gray instead (5.8:1 on #f8f9fa, 5.1:1 on #e9ecef).
+.o_web_client .o-mail-Chatter-topbar .text-action {
+  --color: #{$erp-brand-muted};
+  color: $erp-brand-muted !important;
+}
+
+// Chatter on the side of the form or on phones: its buttons wrap instead of
+// scrolling horizontally ("Following" stays visible; the core topbar is
+// .overflow-x-auto, !important).
+.o_web_client .o-mail-Form-chatter.o-aside .o-mail-Chatter-topbar {
+  flex-wrap: wrap;
+  overflow-x: visible !important;
+}
+
+@include media-breakpoint-down(md) {
+  .o_web_client .o-mail-Chatter-topbar {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    overflow-x: visible !important;
+  }
+}
+
+// Smart buttons (control panel of forms, on the gray surface): white card
+// background on the buttons themselves (not on the box nor on the wrapper of
+// the "More" dropdown, a div.oe_stat_button.btn) and darker status colors (e.g. "Contratos 0" in red).
+.o_web_client .o_control_panel .o-form-buttonbox button.btn.oe_stat_button {
+  background-color: $erp-brand-white;
+}
+
+.o_web_client .o-form-buttonbox {
+  .text-success {
+    --color: #{$erp-theme-success-text};
+    color: $erp-theme-success-text !important;
+  }
+
+  .text-warning {
+    --color: #{$erp-theme-warning-text};
+    color: $erp-theme-warning-text !important;
+  }
+
+  .text-danger {
+    --color: #{$erp-theme-danger-text};
+    color: $erp-theme-danger-text !important;
+  }
+}
+
+// Search panel: selected value with the brand gray and black text (15.4:1)
+// instead of Odoo's light blue.
+.o_web_client .o_search_panel .list-group {
+  --list-group-active-bg: #{$erp-brand-gray};
+  --list-group-active-color: #{$erp-brand-black};
+  --list-group-active-border-color: #{$erp-brand-gray};
+}
+
+// ---------------------------------------------------------------------------
+// Phones: media-breakpoint-down(md) compiles to "max-width: 767.98px"
+// (Bootstrap 5: below the md breakpoint itself). No horizontal page scroll
+// (CA-10): long values (emails, identifiers) wrap instead of widening the
+// sheet; wide content (lists, tables) scrolls inside its own container.
+// ---------------------------------------------------------------------------
+@include media-breakpoint-down(md) {
+  body.o_web_client .o_action_manager .o_form_view {
+    .o_field_widget {
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    .o_field_x2many,
+    .o_list_renderer {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+  }
+}
+
+// Bigger touch targets on phones (WCAG 2.5.5 / CA-10): main actions of the
+// control panel and the save / discard buttons of an edited form (the core
+// ones are 26 x 18 px and touching each other).
+@include media-breakpoint-down(md) {
+  body.o_web_client
+    .o_action_manager
+    .o_control_panel
+    .o_control_panel_main_buttons
+    .btn {
+    min-height: 44px;
+  }
+
+  body.o_web_client .o_form_status_indicator_buttons {
+    gap: 8px;
+    align-items: center;
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
+  // Kanban cards (e.g. employees) with side margins instead of edge to edge.
+  body.o_web_client .o_action_manager .o_kanban_renderer {
+    padding-left: $erp-theme-gutter;
+    padding-right: $erp-theme-gutter;
+  }
+}

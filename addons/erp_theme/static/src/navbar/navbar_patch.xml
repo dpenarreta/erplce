@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+  <!--
+    Top bar (US-018). Nodes are not removed (t-if="false" instead of
+    "replace") so that other modules can still anchor xpaths on them.
+    - Apps grid button / mobile apps menu: replaced by the sidebar.
+    - Section menus of the app: inside the sidebar.
+    - Hamburger button (< 992 px) that opens the sidebar as an overlay.
+  -->
+  <t t-inherit="web.NavBar" t-inherit-mode="extension">
+    <xpath expr="//t[@t-call='web.NavBar.AppsMenu']" position="before">
+      <button
+        type="button"
+        class="o_erp_sidebar_toggle d-lg-none"
+        aria-controls="o_erp_sidebar"
+        t-att-aria-expanded="erpSidebarState.drawerOpen ? 'true' : 'false'"
+        t-att-aria-label="erpSidebarLabels.open"
+        t-att-title="erpSidebarLabels.open"
+        t-on-click="onErpSidebarToggle"
+      >
+        <i class="fa fa-bars" aria-hidden="true" />
+      </button>
+    </xpath>
+    <xpath expr="//t[@t-call='web.NavBar.AppsMenu']" position="attributes">
+      <attribute name="t-if">false</attribute>
+    </xpath>
+    <xpath expr="//t[@t-call='web.NavBar.SectionsMenu']" position="attributes">
+      <attribute name="t-if">false</attribute>
+    </xpath>
+  </t>
+
+</templates>

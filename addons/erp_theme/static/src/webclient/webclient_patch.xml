@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+  <!-- Sidebar before the top bar: first in the DOM and in the tab order. -->
+  <t t-inherit="web.WebClient" t-inherit-mode="extension">
+    <xpath expr="//NavBar" position="before">
+      <ErpSidebar />
+    </xpath>
+  </t>
+
+</templates>

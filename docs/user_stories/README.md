@@ -21,7 +21,11 @@ Registro de trazabilidad del proyecto. Cada requerimiento ejecutado por el equip
 | [US-015](US-015-reportes-iess-mdt.md) | Reportes legales IESS y Ministerio del Trabajo; rol individual | Historia de Usuario | Pendiente | 2026-10-30 |
 | [US-016](US-016-prestamos-anticipos.md) | Préstamos y anticipos a empleados | Historia de Usuario | Pendiente | 2026-10-30 |
 | [US-017](US-017-mejoras-ux-ui.md) | Mejoras de UX/UI y accesibilidad (auditoría 2026-10-30) | Historia de Usuario | COMPLETADA CON PENDIENTES | 2026-10-30 |
+| [US-018](US-018-tema-visual.md) | Tema visual ERP LCE: menú lateral, aspecto moderno y uso en celular | Historia de Usuario | COMPLETADA CON PENDIENTES | 2026-11-05 |
+| [US-019](US-019-despeje-pantallas.md) | Despeje de pantallas de RRHH y nómina; Inicio con indicadores | Historia de Usuario | Pendiente | 2026-11-05 |
 
-**Prioridad (actualizada 2026-10-30):** el usuario pide terminar primero todo Talento Humano (US-017 de UX/UI se intercala ahora, antes de continuar): US-008 → US-016 → US-011 → US-012 → US-013 → US-014 → US-015; luego US-002 (pausada, ADR-002 aceptada) → US-003 → US-004 → US-005 → US-009.
+**Prioridad (actualizada 2026-11-05):** el usuario prioriza ahora el rediseño de la interfaz: US-018 → US-019; luego se retoma US-012 (bloqueada) y el resto de Talento Humano.
+
+**Prioridad (2026-10-30):** el usuario pide terminar primero todo Talento Humano (US-017 de UX/UI se intercala ahora, antes de continuar): US-008 → US-016 → US-011 → US-012 → US-013 → US-014 → US-015; luego US-002 (pausada, ADR-002 aceptada) → US-003 → US-004 → US-005 → US-009.
 
 **Prioridad acordada (2026-10-29):** US-001 → US-006 → US-007 → US-008 (RRHH y nómina) → US-002 → US-003 → US-004 → US-005 (contabilidad y SRI) → US-009. La contabilización de la nómina usa el plan contable de `l10n_ec` instalado en US-001; la parametrización contable completa de US-002 puede ir en paralelo.

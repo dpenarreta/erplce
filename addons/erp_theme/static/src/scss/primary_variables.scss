@@ -1,0 +1,29 @@
+///
+/// ERP Theme - top bar (navbar) variables.
+///
+/// Loaded BEFORE erp_branding/static/src/scss/primary_variables.scss: every
+/// variable uses !default, so these definitions win over the black navbar of
+/// erp_branding. The black brand surface is now the sidebar (sidebar.scss);
+/// the top bar is light with black text.
+///
+/// The brand variables ($erp-brand-*) are declared later (erp_branding), so
+/// the colors are written as literals here.
+///
+/// Measured contrast (WCAG 2.1 AA):
+/// - entries and app name: #1a1a1a / #000000 on #ffffff: 17.4:1 / 21:1;
+///   on the hover background #ededed: 14.8:1 / 17.9:1.
+/// - badges (unread counters): black on the brand yellow #fce200: 16.0:1.
+///
+
+$o-navbar-height: 48px !default;
+$o-navbar-background: #ffffff !default;
+$o-navbar-border-bottom: 1px solid #d6d6d6 !default;
+$o-navbar-brand-color: #000000 !default;
+$o-navbar-entry-color: #1a1a1a !default;
+$o-navbar-entry-color--hover: #000000 !default;
+$o-navbar-entry-bg--hover: #ededed !default;
+$o-navbar-entry-color--active: #000000 !default;
+$o-navbar-entry-bg--active: #e1e1e1 !default;
+$o-navbar-badge-bg: #fce200 !default;
+$o-navbar-badge-color: #000000 !default;
+$o-navbar-badge-text-shadow: none !default;

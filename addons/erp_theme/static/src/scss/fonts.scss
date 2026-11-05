@@ -1,0 +1,13 @@
+// ERP Theme - Inter typeface, hosted inside the module (no external CDN: the
+// ERP runs in the intranet). Inter 4.1, variable font (weights 100-900), from
+// the official release https://github.com/rsms/inter/releases/tag/v4.1
+// (SIL Open Font License 1.1, see erp_theme/static/fonts/LICENSE.txt).
+// Italics are synthesized by the browser (the italic file is not shipped).
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/erp_theme/static/fonts/InterVariable.woff2") format("woff2");
+}

@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+  <t t-name="erp_theme.Sidebar">
+    <!-- First focusable element of the page (WCAG 2.4.1): visible on focus. -->
+    <a
+      href="#"
+      class="o_erp_skip_link visually-hidden-focusable d-print-none"
+      t-on-click="onSkipToContent"
+      t-esc="labels.skip"
+    />
+    <!-- Dark backdrop of the overlay panel (< 992 px): a click closes it. -->
+    <div
+      t-if="isDrawerOpen"
+      class="o_erp_sidebar_backdrop d-print-none"
+      t-on-click="closeDrawer"
+    />
+    <!-- While the overlay panel is open it is a modal dialog (the rest of the
+         page is made inert by the erp_theme_sidebar service). The <nav>
+         landmark is kept inside. -->
+    <div
+      class="o_erp_sidebar_container"
+      t-att-role="isDrawerOpen ? 'dialog' : false"
+      t-att-aria-modal="isDrawerOpen ? 'true' : false"
+      t-att-aria-label="isDrawerOpen ? labels.mainMenu : false"
+    >
+      <nav
+        id="o_erp_sidebar"
+        class="o_erp_sidebar d-print-none"
+        t-att-class="{
+        'o_erp_sidebar_collapsed': isCollapsed,
+        'o_erp_sidebar_drawer': !isDesktop,
+        'o_erp_sidebar_open': isDrawerOpen,
+      }"
+        t-att-aria-label="labels.mainMenu"
+        t-ref="root"
+        t-on-keydown="onKeydown"
+      >
+        <div class="o_erp_sidebar_header">
+          <a
+            href="/odoo"
+            class="o_erp_sidebar_logo"
+            t-att-aria-label="labels.home"
+            t-att-title="labels.home"
+            t-on-click="onLogoClick"
+          >
+            <img
+              t-if="isCollapsed"
+              src="/erp_branding/static/img/favicon.svg"
+              alt=""
+              width="32"
+              height="32"
+            />
+            <img
+              t-else=""
+              src="/erp_branding/static/img/logo.svg"
+              alt=""
+              width="100"
+              height="40"
+            />
+          </a>
+          <button
+            t-if="!isDesktop"
+            type="button"
+            class="o_erp_sidebar_close"
+            t-att-aria-label="labels.close"
+            t-att-title="labels.close"
+            t-on-click="closeDrawer"
+          >
+            <i class="oi oi-close" aria-hidden="true" />
+          </button>
+        </div>
+
+        <ul class="o_erp_sidebar_apps list-unstyled">
+          <li
+            t-foreach="apps"
+            t-as="app"
+            t-key="app.id"
+            class="o_erp_sidebar_app_item"
+            t-att-class="{'o_erp_sidebar_current_app': isCurrentApp(app)}"
+          >
+            <!-- Icons-only mode, app with submenus: popover with its tree. -->
+            <button
+              t-if="isCollapsed and hasChildren(app)"
+              type="button"
+              class="o_erp_sidebar_app"
+              t-att-title="app.name"
+              t-att-aria-label="app.name"
+              t-att-aria-controls="state.flyoutAppId === app.id ? 'o_erp_sidebar_flyout' : false"
+              t-att-aria-expanded="state.flyoutAppId === app.id ? 'true' : 'false'"
+              t-att-aria-current="isCurrentApp(app) ? 'true' : false"
+              t-att-data-menu-xmlid="app.xmlid"
+              t-on-click="(ev) => this.toggleFlyout(ev, app)"
+            >
+              <t t-call="erp_theme.Sidebar.AppIcon" />
+            </button>
+            <!-- App without submenus: link to the app. -->
+            <a
+              t-elif="!hasChildren(app)"
+              class="o_erp_sidebar_app"
+              t-att-href="getMenuHref(app)"
+              t-att-title="app.name"
+              t-att-aria-label="isCollapsed ? app.name : false"
+              t-att-aria-current="isCurrentApp(app) ? 'true' : false"
+              t-att-data-menu-xmlid="app.xmlid"
+              t-on-click="(ev) => this.onMenuClick(ev, app)"
+            >
+              <t t-call="erp_theme.Sidebar.AppIcon" />
+              <span t-if="!isCollapsed" class="o_erp_sidebar_label" t-esc="app.name" />
+            </a>
+            <!-- App with submenus: disclosure button. -->
+            <t t-else="">
+              <button
+                type="button"
+                class="o_erp_sidebar_app"
+                t-att-aria-expanded="isExpanded(app) ? 'true' : 'false'"
+                t-att-aria-controls="isExpanded(app) ? getSubmenuId(app) : false"
+                t-att-data-menu-xmlid="app.xmlid"
+                t-on-click="() => this.toggleApp(app)"
+              >
+                <t t-call="erp_theme.Sidebar.AppIcon" />
+                <span class="o_erp_sidebar_label" t-esc="app.name" />
+                <i class="fa fa-angle-down o_erp_sidebar_chevron" aria-hidden="true" />
+              </button>
+              <ul
+                t-if="isExpanded(app)"
+                t-att-id="getSubmenuId(app)"
+                class="o_erp_sidebar_menu list-unstyled"
+              >
+                <t t-foreach="getChildren(app)" t-as="menu" t-key="menu.id">
+                  <t t-call="erp_theme.Sidebar.MenuItem">
+                    <t t-set="depth" t-value="1" />
+                  </t>
+                </t>
+              </ul>
+            </t>
+          </li>
+        </ul>
+
+        <div t-if="isDesktop" class="o_erp_sidebar_footer">
+          <button
+            type="button"
+            class="o_erp_sidebar_collapse"
+            t-att-aria-label="collapseLabel"
+            t-att-title="collapseLabel"
+            t-att-aria-expanded="isCollapsed ? 'false' : 'true'"
+            aria-controls="o_erp_sidebar"
+            t-on-click="toggleCollapsed"
+          >
+            <i
+              class="fa"
+              t-att-class="isCollapsed ? 'fa-angle-double-right' : 'fa-angle-double-left'"
+              aria-hidden="true"
+            />
+            <span
+              t-if="!isCollapsed"
+              class="o_erp_sidebar_label"
+              t-esc="labels.collapse"
+            />
+          </button>
+        </div>
+      </nav>
+    </div>
+  </t>
+
+  <t t-name="erp_theme.Sidebar.AppIcon">
+    <t t-set="icon" t-value="getAppIcon(app)" />
+    <span class="o_erp_sidebar_icon" aria-hidden="true">
+      <img
+        t-if="icon.type === 'image'"
+        t-att-src="icon.src"
+        alt=""
+        width="24"
+        height="24"
+      />
+      <span
+        t-elif="icon.type === 'font'"
+        class="o_erp_sidebar_icon_font"
+        t-att-style="icon.style"
+      >
+        <i t-att-class="icon.iconClass" />
+      </span>
+      <span t-else="" class="o_erp_sidebar_icon_font o_erp_sidebar_icon_default">
+        <i class="fa fa-th-large" />
+      </span>
+    </span>
+  </t>
+
+  <!-- Recursive: a section with children unfolds; a leaf opens its action. -->
+  <t t-name="erp_theme.Sidebar.MenuItem">
+    <li class="o_erp_sidebar_menu_item" t-attf-style="--erp-sidebar-depth: {{depth}};">
+      <t t-if="hasChildren(menu)">
+        <button
+          type="button"
+          class="o_erp_sidebar_section"
+          t-att-aria-expanded="isExpanded(menu) ? 'true' : 'false'"
+          t-att-aria-controls="isExpanded(menu) ? getSubmenuId(menu) : false"
+          t-att-data-menu-xmlid="menu.xmlid"
+          t-on-click="() => this.toggleMenu(menu)"
+        >
+          <span class="o_erp_sidebar_label" t-esc="menu.name" />
+          <i class="fa fa-angle-down o_erp_sidebar_chevron" aria-hidden="true" />
+        </button>
+        <ul
+          t-if="isExpanded(menu)"
+          t-att-id="getSubmenuId(menu)"
+          class="o_erp_sidebar_menu list-unstyled"
+        >
+          <t t-foreach="getChildren(menu)" t-as="child" t-key="child.id">
+            <t t-call="erp_theme.Sidebar.MenuItem">
+              <t t-set="menu" t-value="child" />
+              <t t-set="depth" t-value="depth + 1" />
+            </t>
+          </t>
+        </ul>
+      </t>
+      <a
+        t-else=""
+        class="o_erp_sidebar_link"
+        t-att-class="{'o_erp_sidebar_active': menu.id === state.activeMenuId}"
+        t-att-href="getMenuHref(menu)"
+        t-att-aria-current="getAriaCurrent(menu)"
+        t-att-data-menu-xmlid="menu.xmlid"
+        t-on-click="(ev) => this.onMenuClick(ev, menu)"
+      >
+        <span class="o_erp_sidebar_label" t-esc="menu.name" />
+      </a>
+    </li>
+  </t>
+
+  <!-- Popover of the icons-only mode: sections as headings, actions as
+       links (the whole tree of the app, unfolded). -->
+  <t t-name="erp_theme.SidebarFlyout">
+    <div
+      id="o_erp_sidebar_flyout"
+      class="o_erp_sidebar_flyout"
+      t-att-aria-label="props.title"
+      t-ref="root"
+      t-on-keydown="onKeydown"
+    >
+      <div class="o_erp_sidebar_flyout_title" t-esc="props.title" />
+      <ul class="list-unstyled mb-0" t-att-aria-label="props.title">
+        <t t-foreach="props.getChildren(props.app)" t-as="menu" t-key="menu.id">
+          <t t-call="erp_theme.SidebarFlyout.Item">
+            <t t-set="depth" t-value="0" />
+          </t>
+        </t>
+      </ul>
+    </div>
+  </t>
+
+  <t t-name="erp_theme.SidebarFlyout.Item">
+    <li t-attf-style="--erp-sidebar-depth: {{depth}};">
+      <t t-if="props.getChildren(menu).length">
+        <div class="o_erp_sidebar_flyout_section" t-esc="menu.name" />
+        <ul class="list-unstyled mb-0" t-att-aria-label="menu.name">
+          <t t-foreach="props.getChildren(menu)" t-as="child" t-key="child.id">
+            <t t-call="erp_theme.SidebarFlyout.Item">
+              <t t-set="menu" t-value="child" />
+              <t t-set="depth" t-value="depth + 1" />
+            </t>
+          </t>
+        </ul>
+      </t>
+      <a
+        t-else=""
+        class="o_erp_sidebar_flyout_link"
+        t-att-class="{'o_erp_sidebar_flyout_active': props.getAriaCurrent(menu)}"
+        t-att-href="props.getMenuHref(menu)"
+        t-att-aria-current="props.getAriaCurrent(menu)"
+        t-att-data-menu-xmlid="menu.xmlid"
+        t-on-click="(ev) => props.onSelect(ev, menu)"
+        t-esc="menu.name"
+      />
+    </li>
+  </t>
+
+</templates>
