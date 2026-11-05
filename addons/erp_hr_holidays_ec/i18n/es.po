@@ -13,6 +13,10 @@
 # otro texto de origen del mismo registro para no duplicar msgid.
 # Los textos de las vistas propias y los mensajes de DEV-2 están escritos en
 # español en el código (fuente): no necesitan entrada.
+# Los textos de static/src (plantillas OWL y _t() de JS) están en inglés y se
+# traducen al final de este archivo (entradas «odoo-javascript»); cada uno es
+# una frase que no usa ningún otro módulo, porque el navegador combina las
+# traducciones de JS de todos los módulos en un único diccionario.
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
@@ -340,3 +344,67 @@ msgstr "Talento Humano"
 #: model:ir.model.fields.selection,name:hr_holidays.selection__hr_leave_allocation__allocation_type__accrual
 msgid "Accrual Allocation"
 msgstr "Acumulación automática"
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/views/calendar_controller_patch.js:0
+msgid "Absence request"
+msgstr "Solicitud de ausencia"
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/views/calendar_filter_panel_patch.xml:0
+msgid "Approved time off"
+msgstr "Aprobado"
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/dashboard/time_off_dashboard_patch.xml:0
+msgid "Balances to approve"
+msgstr "Saldos por aprobar"
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/dashboard/time_off_dashboard_patch.xml:0
+msgid "Days granted:"
+msgstr "Días otorgados:"
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/fields/localized_number_field.js:0
+msgid "Number in local format"
+msgstr "Número con formato local"
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/views/calendar_controller_patch.js:0
+msgid "Request an absence"
+msgstr "Solicitar ausencia"
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/dashboard/time_off_dashboard_patch.xml:0
+msgid ""
+"This employee has no vacation balance yet. Calculate it with \"Calcular "
+"vacaciones\" on the employee form."
+msgstr ""
+"El empleado aún no tiene saldo de vacaciones. Calcúlelo con «Calcular "
+"vacaciones» en su ficha."
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/dashboard/time_off_dashboard_patch.xml:0
+msgid "View employee balances"
+msgstr "Ver saldos del empleado"
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/dashboard/time_off_dashboard_patch.xml:0
+msgid "View my balances"
+msgstr "Ver mis saldos"
+
+#. module: erp_hr_holidays_ec
+#. odoo-javascript
+#: code:addons/erp_hr_holidays_ec/static/src/dashboard/time_off_dashboard_patch.xml:0
+msgid "You have no vacation balance yet."
+msgstr "Aún no tiene saldo de vacaciones."

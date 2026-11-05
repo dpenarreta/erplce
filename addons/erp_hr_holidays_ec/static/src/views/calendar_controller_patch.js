@@ -8,13 +8,14 @@ import {patch} from "@web/core/utils/patch";
  * personal», «Time Off Request» → «Solicitud de tiempo personal»); las
  * traducciones de JS se combinan sin orden fijo entre módulos, así que se
  * reescribe aquí: «Solicitar ausencia» (nueva) y «Solicitud de ausencia»
- * (existente), como el menú y la acción.
+ * (existente), como el menú y la acción. Fuente en inglés con frases que no
+ * usa ningún otro módulo (traducción en i18n/es.po).
  */
 export function erpLeaveDialogTitle(props) {
   if (!props || props.resModel !== "hr.leave" || !("title" in props)) {
     return null;
   }
-  return props.resId ? _t("Solicitud de ausencia") : _t("Solicitar ausencia");
+  return props.resId ? _t("Absence request") : _t("Request an absence");
 }
 
 patch(TimeOffCalendarController.prototype, {

@@ -1,6 +1,7 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
-from odoo.tools import formatLang
+
+from . import text
 
 
 class HrLeaveType(models.Model):
@@ -26,7 +27,7 @@ class HrLeaveType(models.Model):
         copy=False,
         help="Marca el tipo de las vacaciones anuales del Código del Trabajo: "
         "su saldo se asigna cada año de servicio según la antigüedad. Solo "
-        "puede haber un tipo activo así por empresa y debe requerir asignación.",
+        "puede haber un tipo activo así por empresa y debe tener «Requiere saldo».",
     )
     erp_max_duration_param_code = fields.Char(
         string="Código de duración máxima",
@@ -66,7 +67,7 @@ class HrLeaveType(models.Model):
             "erp_annual_vacation_allocation_check",
             "CHECK (erp_is_annual_vacation IS NOT TRUE "
             "OR requires_allocation = 'yes')",
-            "El tipo de vacaciones anuales debe requerir asignación (saldo).",
+            "El tipo de vacaciones anuales debe tener activado «Requiere saldo».",
         ),
         (
             # Un solo tipo activo de vacaciones anuales por empresa (o común):
@@ -126,14 +127,16 @@ class HrLeaveType(models.Model):
                     "Sin valor vigente (%(code)s)", code=code
                 )
                 continue
-            digits = 0 if float(record.value).is_integer() else 2
-            unit = (
-                _("horas por día") if leave_type.request_unit == "hour" else _("días")
-            )
-            text = f"{formatLang(self.env, record.value, digits=digits)} {unit}"
+            if leave_type.request_unit == "hour":
+                display = _(
+                    "%(hours)s por día",
+                    hours=text.format_hours(self.env, record.value),
+                )
+            else:
+                display = text.format_days(self.env, record.value)
             if record.state == "to_validate":
-                text = f"{text} {_('(a validar)')}"
-            leave_type.erp_max_duration_display = text
+                display = f"{display} {_('(a validar)')}"
+            leave_type.erp_max_duration_display = display
 
     # ------------------------------------------------------------------
     # Validaciones (US-012, CA-2)

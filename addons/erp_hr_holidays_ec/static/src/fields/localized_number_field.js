@@ -1,4 +1,5 @@
 import {Component} from "@odoo/owl";
+import {_t} from "@web/core/l10n/translation";
 import {registry} from "@web/core/registry";
 import {formatFloat} from "@web/core/utils/numbers";
 import {standardFieldProps} from "@web/views/fields/standard_field_props";
@@ -31,6 +32,6 @@ export class ErpLocalizedNumberField extends Component {
 
 registry.category("fields").add("erp_localized_number", {
   component: ErpLocalizedNumberField,
-  displayName: "Número con formato local",
+  displayName: _t("Number in local format"),
   supportedTypes: ["char"],
 });

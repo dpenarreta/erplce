@@ -2,7 +2,9 @@
 <odoo>
   <!--
     US-012 (CA-11): vacaciones gozadas antes de usar el sistema (carga
-    inicial). Solo encargados de ausencias (ACL del modelo y grupo del menú).
+    inicial), menú y acción «Carga histórica de vacaciones» en Ausencias ›
+    Vacaciones. Solo encargados de ausencias (ACL del modelo y grupo del
+    menú).
     Se importa con la plantilla del modelo (get_import_templates): engranaje
     ⚙ > Importar registros > Plantilla de vacaciones gozadas.
   -->
@@ -14,8 +16,13 @@
         <field name="employee_id" widget="many2one_avatar_employee" />
         <field name="identification" optional="show" />
         <field name="date" />
-        <field name="number_of_days" width="120px" sum="Total" />
-        <field name="service_year" width="120px" optional="show" />
+        <field name="number_of_days" sum="Total" />
+        <field
+          name="service_year"
+          optional="show"
+          invisible="not service_year"
+          help="Vacío: los días se descuentan del periodo vigente más antiguo al más nuevo."
+        />
         <field name="note" optional="show" />
         <field name="company_id" optional="hide" groups="base.group_multi_company" />
       </list>
@@ -40,19 +47,21 @@
           </div>
           <group>
             <group name="erp_history_main">
-              <field name="identification" />
+              <field name="identification" placeholder="Cédula o pasaporte" />
               <field name="date" />
               <field name="number_of_days" />
             </group>
             <group name="erp_history_period">
-              <field name="service_year" placeholder="Vacío: del más antiguo" />
-              <field name="note" />
+              <field
+                name="service_year"
+                help="Opcional. Vacío o 0: los días se descuentan del periodo vigente más antiguo al más nuevo."
+              />
+              <field name="note" placeholder="Ej.: según registro de Talento Humano" />
               <field name="company_id" readonly="1" groups="base.group_multi_company" />
             </group>
           </group>
           <div class="text-muted" role="note">
-            Los días se descuentan de los periodos vigentes en la fecha, del más
-            antiguo al más nuevo.
+            Los días se descuentan de los periodos vigentes en la fecha indicada.
           </div>
         </sheet>
         <chatter />
@@ -86,7 +95,7 @@
   </record>
 
   <record id="action_erp_hr_vacation_history" model="ir.actions.act_window">
-    <field name="name">Vacaciones gozadas antes del sistema</field>
+    <field name="name">Carga histórica de vacaciones</field>
     <field name="res_model">erp.hr.vacation.history</field>
     <field name="view_mode">list,form</field>
     <field name="search_view_id" ref="erp_hr_vacation_history_view_search" />
@@ -109,10 +118,10 @@
 
   <menuitem
     id="menu_erp_hr_vacation_history"
-    name="Vacaciones gozadas antes del sistema"
-    parent="hr_holidays.menu_hr_holidays_management"
+    name="Carga histórica de vacaciones"
+    parent="menu_erp_hr_holidays_vacations"
     action="action_erp_hr_vacation_history"
     groups="hr_holidays.group_hr_holidays_user"
-    sequence="17"
+    sequence="3"
   />
 </odoo>

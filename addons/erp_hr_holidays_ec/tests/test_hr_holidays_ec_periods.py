@@ -188,7 +188,11 @@ class TestVacationPeriods(HolidaysEcCase):
         with self.assertRaisesMessage(UserError, "único empleado"):
             self.History.create({"identification": "1799999999", "number_of_days": 2})
         with self.assertRaisesMessage(ValidationError, "no corresponde"):
-            self._history(1, identification="1700000000")
+            self._history(
+                1,
+                identification="1700000000",
+                date=self.today - relativedelta(days=1),
+            )
 
     def test_import_template(self):
         self._employee(

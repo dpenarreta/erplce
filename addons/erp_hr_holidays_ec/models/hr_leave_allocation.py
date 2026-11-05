@@ -1,9 +1,13 @@
 import logging
 from contextlib import contextmanager
 
+from dateutil.relativedelta import relativedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
-from odoo.tools import formatLang
+from odoo.tools import format_date
+
+from . import text
 
 _logger = logging.getLogger(__name__)
 
@@ -47,14 +51,14 @@ class HrLeaveAllocation(models.Model):
         readonly=True,
         copy=False,
         help="Año de servicio del empleado (1 = primer año desde la fecha de "
-        "ingreso) al que corresponde esta asignación de vacaciones. 0: no "
-        "aplica (asignación manual).",
+        "ingreso) al que corresponde este periodo de vacaciones. 0: no "
+        "aplica (saldo registrado a mano).",
     )
     erp_auto_generated = fields.Boolean(
         string="Generada automáticamente",
         readonly=True,
         copy=False,
-        help="Asignación creada por la generación anual de vacaciones por "
+        help="Periodo de vacaciones creado por el cálculo de vacaciones por "
         "antigüedad.",
     )
     erp_entry_date = fields.Date(
@@ -123,7 +127,7 @@ class HrLeaveAllocation(models.Model):
             "CHECK ((number_of_days > 0 AND allocation_type = 'regular') "
             "OR (allocation_type != 'regular') "
             "OR (erp_history_days > 0 AND number_of_days >= 0))",
-            "Los días de la asignación deben ser mayores que cero.",
+            "Los días del saldo deben ser mayores que cero.",
         ),
         (
             "erp_entitled_days_positive_check",
@@ -143,8 +147,8 @@ class HrLeaveAllocation(models.Model):
         (
             "erp_auto_requires_service_year_check",
             "CHECK (erp_auto_generated IS NOT TRUE OR erp_service_year > 0)",
-            "Una asignación automática de vacaciones debe indicar el año de "
-            "servicio que cubre.",
+            "Un periodo de vacaciones generado automáticamente debe indicar "
+            "el año de servicio que cubre.",
         ),
         (
             # Índice único parcial vía EXCLUDE (btree, igualdad): además sirve
@@ -161,8 +165,9 @@ class HrLeaveAllocation(models.Model):
             "(COALESCE(erp_entry_date, '1900-01-01'::date)) WITH =, "
             "erp_service_year WITH =) "
             "WHERE (erp_auto_generated AND state <> 'refuse')",
-            "Ya existe una asignación automática de vacaciones para este "
-            "empleado, tipo de ausencia, fecha de ingreso y año de servicio.",
+            "Ya existe un periodo de vacaciones generado automáticamente para "
+            "este empleado, tipo de ausencia, fecha de ingreso y año de "
+            "servicio.",
         ),
     ]
 
@@ -197,7 +202,8 @@ class HrLeaveAllocation(models.Model):
                 "«Generada automáticamente», «Año de servicio», «Días del "
                 "periodo» y «Gozados antes del sistema» los asignan solo el "
                 "cálculo de vacaciones por antigüedad y la carga de vacaciones "
-                "gozadas. Para dar días adicionales, cree una asignación manual."
+                "gozadas. Para dar días adicionales, registre un saldo manual "
+                "aparte."
             )
         )
 
@@ -234,6 +240,60 @@ class HrLeaveAllocation(models.Model):
     # ------------------------------------------------------------------
     # Presentación (US-012, CA-4, CA-11; QA-UX)
     # ------------------------------------------------------------------
+    @api.model
+    def _erp_period_name(self, entry_date, service_year):
+        """Nombre del periodo de vacaciones del año de servicio
+        ``service_year`` contado desde ``entry_date``: «Vacaciones – año de
+        servicio N (inicio – fin)», con el año de servicio cumplido (del
+        aniversario anterior al día antes del siguiente)."""
+        period_start = entry_date + relativedelta(years=service_year - 1)
+        period_end = entry_date + relativedelta(years=service_year, days=-1)
+        return _(
+            "Vacaciones – año de servicio %(year)s (%(start)s – %(end)s)",
+            year=service_year,
+            start=format_date(self.env, period_start),
+            end=format_date(self.env, period_end),
+        )
+
+    def _get_title(self):
+        """Descripción por defecto (campo ``name``, calculado por el núcleo
+        con ``_compute_description`` cada vez que cambian los días).
+
+        - Periodo automático: su nombre fijo (``_erp_period_name``). Antes, al
+          descontar la carga histórica (cambia ``number_of_days``), el núcleo
+          lo sustituía por «Vacaciones anuales (0.0 día(s))» (QA-FUNC O2).
+        - Resto: «<tipo> (1 día)», «<tipo> (2,5 días)» u horas, en lugar del
+          nativo «(1.0 día(s))»; sin tipo, «Nuevo saldo» en lugar de
+          «Solicitud de asignación».
+        """
+        self.ensure_one()
+        if self.erp_auto_generated and self.erp_entry_date and self.erp_service_year:
+            return self._erp_period_name(self.erp_entry_date, self.erp_service_year)
+        leave_type = self.holiday_status_id
+        if not leave_type:
+            return _("Nuevo saldo")
+        if self.type_request_unit == "hour":
+            amount = text.format_hours(
+                self.env,
+                self.number_of_days
+                * self.employee_id._get_hours_per_day(self.date_from),
+            )
+        else:
+            amount = text.format_days(self.env, self.number_of_days)
+        return _("%(type)s (%(amount)s)", type=leave_type.name, amount=amount)
+
+    @api.depends(
+        "holiday_status_id",
+        "number_of_days",
+        "erp_auto_generated",
+        "erp_entry_date",
+        "erp_service_year",
+    )
+    def _compute_description(self):
+        # Mismo cálculo que el núcleo; se añaden las dependencias del nombre
+        # del periodo automático (ver _get_title).
+        return super()._compute_description()
+
     @api.depends(
         "employee_id",
         "holiday_status_id",
@@ -249,19 +309,15 @@ class HrLeaveAllocation(models.Model):
             if not leave_type:
                 allocation.display_name = _("Nuevo saldo")
                 continue
-            hours = allocation.type_request_unit == "hour"
-            amount = (
-                allocation.number_of_hours_display
-                if hours
-                else allocation.number_of_days
-            )
-            digits = 0 if float(amount).is_integer() else 2
+            if allocation.type_request_unit == "hour":
+                amount = text.format_hours(self.env, allocation.number_of_hours_display)
+            else:
+                amount = text.format_days(self.env, allocation.number_of_days)
             allocation.display_name = _(
-                "Saldo de %(type)s: %(amount)s %(unit)s",
+                "Saldo de %(type)s: %(amount)s",
                 # sudo(): solo el nombre del tipo, como el nativo.
                 type=leave_type.sudo().name,
-                amount=formatLang(self.env, amount, digits=digits),
-                unit=_("horas") if hours else _("días"),
+                amount=amount,
             )
 
     @api.depends(
@@ -324,7 +380,7 @@ class HrLeaveAllocation(models.Model):
             raise_on_error=False, from_cutoff=True
         )
         _logger.info(
-            "Vacaciones por antigüedad: %s asignaciones creadas para %s "
+            "Vacaciones por antigüedad: %s periodos creados para %s "
             "empleados con derecho.",
             len(allocations),
             len(employees),

@@ -90,6 +90,9 @@
     context="{'lang': 'es_EC'}"
   >
     <field name="name">Saldos de vacaciones</field>
+    <!-- Menú «Vacaciones» (hr_leave_allocation_views.xml). -->
+    <field name="parent_id" ref="menu_erp_hr_holidays_vacations" />
+    <field name="sequence">1</field>
   </record>
   <record
     id="hr_holidays.menu_hr_holidays_balance"

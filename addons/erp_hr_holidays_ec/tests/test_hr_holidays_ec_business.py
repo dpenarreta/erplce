@@ -253,7 +253,13 @@ class TestVacationGeneration(HolidaysEcCase):
         employee._erp_generate_vacation_allocations(RUN_DATE)
         with self.assertRaisesMessage(UserError, "Rechace y elimine"):
             employee.erp_company_entry_date = date(2023, 1, 2)
-        # Un reingreso (fecha posterior a todos sus periodos) se admite.
+        # Adelantar la fecha con el contrato aún abierto NO es un reingreso
+        # (O-A): el saldo quedaría inflado.
+        with self.assertRaisesMessage(UserError, "Rechace y elimine"):
+            employee.erp_company_entry_date = date(2026, 9, 1)
+        # Reingreso: contrato cerrado que termina antes de la nueva fecha.
+        employee.contract_id.write({"date_end": date(2026, 8, 14), "state": "close"})
+        self._contract(employee, date(2026, 9, 1))
         employee.erp_company_entry_date = date(2026, 9, 1)
         self.assertEqual(employee.erp_company_entry_date, date(2026, 9, 1))
 

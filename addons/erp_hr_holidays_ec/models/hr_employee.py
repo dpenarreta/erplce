@@ -12,10 +12,9 @@ from odoo.tools import (
     float_is_zero,
     float_round,
     format_date,
-    formatLang,
 )
 
-from . import const
+from . import const, text
 
 _logger = logging.getLogger(__name__)
 
@@ -167,41 +166,140 @@ class HrEmployee(models.Model):
 
     def _erp_check_entry_date_change(self, new_date):
         new_date = fields.Date.to_date(new_date)
-        # sudo(): lectura de la fecha del primer contrato y conteo de
-        # asignaciones para validar el cambio; no se devuelve ningún dato.
+        # sudo(): lectura de la fecha del primer contrato y de los periodos
+        # para validar el cambio; no se devuelve ningún dato.
         changed = self.sudo().filtered(
             lambda e: e._erp_get_entry_date()
             != (new_date or e.first_contract_date or False)
         )
         if not changed:
             return
-        # Un reingreso (fecha nueva posterior a todos los periodos ya nacidos)
-        # se admite: sus periodos son otros (la fecha de ingreso es parte de
-        # la clave). Una corrección que dejaría periodos calculados con la
-        # fecha anterior solapados con los nuevos se bloquea.
-        generated = (
+        # Mismo criterio que la generación (_erp_entry_date_conflicts): un
+        # reingreso (contrato cerrado que termina antes de la nueva fecha) se
+        # admite si los periodos del empleo anterior nacieron antes; volver a
+        # la fecha con la que se calcularon los periodos (p. ej. fijar la
+        # «Fecha de ingreso a la empresa» tras cambiar el primer contrato) se
+        # admite; cualquier otro cambio con periodos activos se bloquea.
+        active_periods = changed._erp_active_vacation_periods()
+        closed_ends = changed._erp_closed_contract_ends()
+        blocked = changed.filtered(
+            lambda e: self._erp_entry_date_conflicts(
+                new_date or e.first_contract_date or False,
+                active_periods.get(e.id, []),
+                closed_ends.get(e.id, []),
+            )
+        )
+        if len(blocked) == 1:
+            raise UserError(
+                _(
+                    "No se puede cambiar la fecha de ingreso de %(employee)s: "
+                    "ya tiene periodos de vacaciones calculados con la fecha "
+                    "anterior. Rechace y elimine esos periodos, cambie la fecha "
+                    "y vuelva a calcular las vacaciones.",
+                    employee=blocked.name,
+                )
+            )
+        if blocked:
+            raise UserError(
+                _(
+                    "No se puede cambiar la fecha de ingreso de %(employees)s: "
+                    "ya tienen periodos de vacaciones calculados con la fecha "
+                    "anterior. Rechace y elimine esos periodos, cambie la fecha "
+                    "y vuelva a calcular las vacaciones.",
+                    employees=self._erp_format_names(blocked),
+                )
+            )
+
+    @api.model
+    def _erp_format_names(self, employees, limit=5):
+        """«Ana», «Ana y Luis», «Ana, Luis y Rosa» o, con más de ``limit``,
+        «Ana, Luis, …, Rosa y 3 más»."""
+        names = employees.mapped("name")
+        if len(names) > limit:
+            return _(
+                "%(names)s y %(count)s más",
+                names=", ".join(names[:limit]),
+                count=len(names) - limit,
+            )
+        if len(names) == 1:
+            return names[0]
+        return _("%(names)s y %(last)s", names=", ".join(names[:-1]), last=names[-1])
+
+    def _erp_closed_contract_ends(self):
+        """Fechas de fin de los contratos cerrados de los empleados de
+        ``self`` (una sola lectura), para reconocer un reingreso.
+
+        :return: ``{employee_id: [date_end, ...]}``
+        """
+        # sudo(): lectura de servidor de las fechas de fin de contratos para
+        # validar la fecha de ingreso; no se devuelven datos al usuario.
+        ends = defaultdict(list)
+        for contract in (
+            self.env["hr.contract"]
+            .sudo()
+            .search_fetch(
+                [
+                    ("employee_id", "in", self.ids),
+                    ("state", "=", "close"),
+                    ("date_end", "!=", False),
+                ],
+                ["employee_id", "date_end"],
+            )
+        ):
+            ends[contract.employee_id.id].append(contract.date_end)
+        return ends
+
+    def _erp_active_vacation_periods(self):
+        """Periodos automáticos no rechazados de los empleados de ``self``,
+        agrupados por empleado (una sola lectura).
+
+        :return: ``{employee_id: [hr.leave.allocation, ...]}`` (sudo)
+        """
+        # sudo(): lectura de servidor de los periodos para validar la fecha
+        # de ingreso; no se devuelven datos al usuario.
+        periods = defaultdict(list)
+        for allocation in (
             self.env["hr.leave.allocation"]
             .sudo()
             .search_fetch(
                 [
-                    ("employee_id", "in", changed.ids),
+                    ("employee_id", "in", self.ids),
                     ("erp_auto_generated", "=", True),
                     ("state", "!=", "refuse"),
-                ]
-                + ([("date_from", ">=", new_date)] if new_date else []),
-                ["employee_id"],
+                ],
+                ["employee_id", "erp_entry_date", "date_from"],
             )
-        )
-        if generated:
-            raise UserError(
-                _(
-                    "No se puede cambiar la fecha de ingreso de %(employees)s: "
-                    "ya tiene periodos de vacaciones calculados con la fecha "
-                    "anterior. Rechace y elimine esos periodos, cambie la fecha "
-                    "y vuelva a calcular las vacaciones.",
-                    employees=", ".join(generated.employee_id.mapped("name")),
-                )
-            )
+        ):
+            periods[allocation.employee_id.id].append(allocation)
+        return periods
+
+    @api.model
+    def _erp_entry_date_conflicts(self, entry, periods, closed_ends=()):
+        """Periodos de ``periods`` (automáticos, no rechazados) calculados con
+        otra fecha de ingreso que chocan con la fecha efectiva ``entry``: con
+        ella se generarían otra vez años de servicio ya cubiertos (saldo
+        duplicado; US-012, CA-R3-1).
+
+        - Reingreso (decisión del Tech Lead, O-A): solo si el empleado tiene
+          un contrato cerrado que termina antes de ``entry``. Entonces los
+          periodos nacidos antes de ``entry`` son del empleo anterior y no
+          estorban; los nacidos en ``entry`` o después sí.
+        - En cualquier otro caso (p. ej. un adelanto de la fecha con el
+          contrato aún abierto), todo periodo con otra fecha de ingreso choca.
+
+        :param entry: fecha de ingreso efectiva (``False``: ninguna; todo
+            periodo con fecha de ingreso choca)
+        :param closed_ends: fechas de fin de los contratos cerrados del
+            empleado (``_erp_closed_contract_ends``)
+        :return: lista de periodos en conflicto
+        """
+        rehire = bool(entry) and any(end < entry for end in closed_ends)
+        return [
+            period
+            for period in periods
+            if period.erp_entry_date != entry
+            and (not rehire or period.date_from >= entry)
+        ]
 
     def action_time_off_dashboard(self):
         """Calendario de ausencias del empleado (botón de la ficha) con título
@@ -339,8 +437,7 @@ class HrEmployee(models.Model):
     @api.model
     def _erp_format_number(self, value):
         """Número en el formato del idioma, sin decimales si es entero."""
-        digits = 0 if float(value).is_integer() else 2
-        return formatLang(self.env, value, digits=digits)
+        return text.format_number(self.env, value)
 
     def _erp_vacation_allocation_vals(self, vacation_type, period, base, extra, rate):
         self.ensure_one()
@@ -355,8 +452,6 @@ class HrEmployee(models.Model):
             )
             / VACATION_ROUNDING_FRACTIONS
         )
-        period_start = entry + relativedelta(years=service_year - 1)
-        period_end = anniversary - relativedelta(days=1)
         notes = _(
             "Generada automáticamente por antigüedad. Fecha de ingreso: "
             "%(entry)s. Días base: %(base)s; días adicionales: %(extra)s; "
@@ -371,11 +466,8 @@ class HrEmployee(models.Model):
             expiry=format_date(self.env, expiry),
         )
         return {
-            "name": _(
-                "Vacaciones – año de servicio %(year)s (%(start)s – %(end)s)",
-                year=service_year,
-                start=format_date(self.env, period_start),
-                end=format_date(self.env, period_end),
+            "name": self.env["hr.leave.allocation"]._erp_period_name(
+                entry, service_year
             ),
             "employee_id": self.id,
             "holiday_status_id": vacation_type.id,
@@ -393,12 +485,52 @@ class HrEmployee(models.Model):
             "notes": notes,
         }
 
+    def _erp_entry_date_conflict_error(self, entry, conflicts):
+        """Error de CA-R3-1: la fecha de ingreso efectiva cambió (p. ej. se
+        cargó o corrigió un contrato anterior y la «Fecha de ingreso a la
+        empresa» está vacía) y hay periodos calculados con la fecha anterior
+        que se duplicarían."""
+        self.ensure_one()
+        old_dates = sorted({period.erp_entry_date for period in conflicts})
+        if self.erp_company_entry_date:
+            origin = _("«Fecha de ingreso a la empresa»")
+        else:
+            origin = _("inicio del primer contrato")
+        return UserError(
+            _(
+                "La fecha de ingreso de %(employee)s cambió del %(old)s al "
+                "%(new)s (%(origin)s) y ya tiene periodos de vacaciones "
+                "calculados con la fecha anterior. No se generaron periodos "
+                "nuevos para no duplicar su saldo. Para continuar: rechace y "
+                "elimine los periodos calculados con la fecha anterior y vuelva "
+                "a calcular, o registre en la ficha del empleado la «Fecha de "
+                "ingreso a la empresa» correcta.",
+                employee=self.name,
+                old=", ".join(format_date(self.env, day) for day in old_dates),
+                new=format_date(self.env, entry),
+                origin=origin,
+            )
+        )
+
     def _erp_generate_employee_vacations(
-        self, date, vacation_type, params, existing, start_date
+        self,
+        date,
+        vacation_type,
+        params,
+        existing,
+        start_date,
+        active_periods=None,
+        closed_ends=None,
     ):
         """Crea y valida los periodos pendientes de un empleado (ver
         ``_erp_generate_vacation_allocations``).
 
+        :param active_periods: periodos automáticos no rechazados del
+            empleado (``_erp_active_vacation_periods``); ``None``: se leen.
+        :param closed_ends: fechas de fin de sus contratos cerrados
+            (``_erp_closed_contract_ends``); ``None``: se leen.
+        :raises UserError: la fecha de ingreso cambió y hay periodos
+            calculados con la anterior que se duplicarían (CA-R3-1).
         :return: asignaciones creadas
         """
         self.ensure_one()
@@ -407,13 +539,21 @@ class HrEmployee(models.Model):
             raise UserError(
                 _(
                     "No hay un tipo de ausencia activo marcado como «Vacaciones "
-                    "anuales» para la empresa %(company)s.",
+                    "anuales» para la empresa %(company)s. Márquelo en "
+                    "Ausencias > Configuración > Tipos de ausencia.",
                     company=self.company_id.name,
                 )
             )
         rate = None
         vals_list = []
         entry = self._erp_get_entry_date()
+        if active_periods is None:
+            active_periods = self._erp_active_vacation_periods().get(self.id, [])
+        if closed_ends is None:
+            closed_ends = self._erp_closed_contract_ends().get(self.id, [])
+        conflicts = self._erp_entry_date_conflicts(entry, active_periods, closed_ends)
+        if conflicts:
+            raise self._erp_entry_date_conflict_error(entry, conflicts)
         for period in self._erp_vacation_periods(date, params, start_date):
             service_year, anniversary, _expiry = period
             if (self.id, vacation_type.id, entry, service_year) in existing:
@@ -466,6 +606,11 @@ class HrEmployee(models.Model):
           primer contrato, que el núcleo reinicia tras un hueco entre
           contratos) los años de servicio vuelven a empezar en 1 y son
           periodos nuevos (la fecha de ingreso es parte de la clave).
+        - Cambio de la fecha de ingreso (CA-R3-1): si hay periodos no
+          rechazados calculados con otra fecha que nacen en la fecha actual o
+          después (p. ej. se cargó un contrato anterior y la «Fecha de ingreso
+          a la empresa» está vacía), no se genera nada para ese empleado y se
+          lanza (o, en lote, se registra) un error que explica qué hacer.
         - Si el empleado tiene vacaciones gozadas antes del sistema, se
           vuelven a repartir (FIFO) incluyendo los periodos nuevos.
         - Concurrencia: candado de transacción ``pg_advisory_xact_lock``.
@@ -497,27 +642,36 @@ class HrEmployee(models.Model):
         ):
             types_by_company[vacation_type.company_id.id] = vacation_type
         params = ErpVacationParameterTable(self.env, ALLOCATION_PARAMETER_CODES)
-        # Idempotencia: una sola lectura de las asignaciones automáticas.
-        existing = {
-            (
-                allocation.employee_id.id,
-                allocation.holiday_status_id.id,
-                allocation.erp_entry_date,
-                allocation.erp_service_year,
+        # Idempotencia: una sola lectura de las asignaciones automáticas (en
+        # cualquier estado); las no rechazadas sirven además para detectar un
+        # cambio de la fecha de ingreso que duplicaría periodos (CA-R3-1).
+        existing = set()
+        active_periods = defaultdict(list)
+        for allocation in Allocation.search_fetch(
+            [
+                ("erp_auto_generated", "=", True),
+                ("employee_id", "in", employees.ids),
+            ],
+            [
+                "employee_id",
+                "holiday_status_id",
+                "erp_entry_date",
+                "erp_service_year",
+                "date_from",
+                "state",
+            ],
+        ):
+            existing.add(
+                (
+                    allocation.employee_id.id,
+                    allocation.holiday_status_id.id,
+                    allocation.erp_entry_date,
+                    allocation.erp_service_year,
+                )
             )
-            for allocation in Allocation.search_fetch(
-                [
-                    ("erp_auto_generated", "=", True),
-                    ("employee_id", "in", employees.ids),
-                ],
-                [
-                    "employee_id",
-                    "holiday_status_id",
-                    "erp_entry_date",
-                    "erp_service_year",
-                ],
-            )
-        }
+            if allocation.state != "refuse":
+                active_periods[allocation.employee_id.id].append(allocation)
+        closed_ends = employees._erp_closed_contract_ends()
         with_history = set(
             self.env["erp.hr.vacation.history"]
             .sudo()
@@ -547,6 +701,8 @@ class HrEmployee(models.Model):
                         params,
                         existing,
                         start_date,
+                        active_periods=active_periods.get(employee.id, []),
+                        closed_ends=closed_ends.get(employee.id, []),
                     )
                     if allocations and employee.id in with_history:
                         employee._erp_apply_vacation_history()
@@ -564,7 +720,10 @@ class HrEmployee(models.Model):
 
         Un error de negocio (``UserError``) se muestra con su mensaje; uno
         técnico se registra con su traza y se informa sin detalles internos.
-        Se llama desde el bloque ``except``."""
+        Con ``raise_on_error`` (un solo empleado), el error de negocio se
+        relanza tal cual (su mensaje ya nombra lo necesario, sin repetir el
+        empleado) y el técnico como ``UserError`` con el texto genérico, sin
+        traza para el usuario. Se llama desde el bloque ``except``."""
         business = isinstance(error, UserError)
         detail = (
             error.args[0]
@@ -578,8 +737,9 @@ class HrEmployee(models.Model):
         )
         if raise_on_error:
             if business:
-                raise UserError(message) from error
-            raise error
+                raise error
+            _logger.exception("%s", message)
+            raise UserError(message) from error
         if business:
             _logger.warning("%s", message)
         else:
@@ -615,24 +775,57 @@ class HrEmployee(models.Model):
         )
         eligible = self.sudo().filtered_domain(self._erp_vacation_eligible_domain())
         skipped = len(self) - len(eligible)
-        if allocations:
+        if len(allocations) == 1:
+            message = _("Se generó 1 periodo de vacaciones.")
+            notification_type = "success"
+        elif allocations:
             message = _(
                 "Se generaron %(count)s periodos de vacaciones.",
                 count=len(allocations),
             )
             notification_type = "success"
+        elif not eligible:
+            # Ningún seleccionado tiene derecho: decir quién y qué hacer, no
+            # que «ya tienen su periodo» (QA-UX).
+            not_eligible = self.sudo() - eligible
+            if len(not_eligible) == 1:
+                message = _(
+                    "No se calcularon vacaciones: %(employees)s no tiene un "
+                    "contrato en curso con relación laboral. Registre el "
+                    "contrato y vuelva a calcular.",
+                    employees=not_eligible.name,
+                )
+            else:
+                message = _(
+                    "No se calcularon vacaciones: %(employees)s no tienen un "
+                    "contrato en curso con relación laboral. Registre los "
+                    "contratos y vuelva a calcular.",
+                    employees=self._erp_format_names(not_eligible),
+                )
+            return self._erp_generation_notification(message, "warning", errors)
         else:
             message = _(
                 "No hay periodos de vacaciones pendientes de generar: los años "
                 "de servicio cumplidos y vigentes ya tienen su periodo."
             )
             notification_type = "info"
-        if skipped:
+        if skipped == 1:
+            message += " " + _(
+                "1 empleado sin relación laboral o sin contrato en curso no "
+                "recibe vacaciones."
+            )
+        elif skipped:
             message += " " + _(
                 "%(count)s empleados sin relación laboral o sin contrato en "
                 "curso no reciben vacaciones.",
                 count=skipped,
             )
+        return self._erp_generation_notification(message, notification_type, errors)
+
+    @api.model
+    def _erp_generation_notification(self, message, notification_type, errors):
+        """Notificación del botón «Calcular vacaciones»; los errores por
+        empleado se añaden al final y la dejan fija (aviso)."""
         if errors:
             message += "\n" + "\n".join(error for _employee, error in errors)
             notification_type = "warning"
@@ -643,7 +836,7 @@ class HrEmployee(models.Model):
                 "title": _("Vacaciones por antigüedad"),
                 "message": message,
                 "type": notification_type,
-                "sticky": bool(errors),
+                "sticky": bool(errors) or notification_type == "warning",
                 "next": {"type": "ir.actions.client", "tag": "soft_reload"},
             },
         }
@@ -741,17 +934,17 @@ class HrEmployee(models.Model):
                 if float_compare(remaining, 0.0, precision_digits=2) > 0:
                     raise UserError(
                         _(
-                            "Los %(days)s días gozados de %(employee)s del "
-                            "%(date)s superan los días de sus periodos de "
+                            "Los días gozados de %(employee)s del %(date)s "
+                            "(%(days)s) superan los días de sus periodos de "
                             "vacaciones vigentes en esa fecha (faltan "
-                            "%(missing)s días). Calcule primero sus vacaciones "
+                            "%(missing)s). Calcule primero sus vacaciones "
                             "(botón «Calcular vacaciones») o revise los días, la "
                             "fecha o el año de servicio de la carga.",
-                            days=self._erp_format_number(line.number_of_days),
+                            days=text.format_days(self.env, line.number_of_days),
                             employee=employee.name,
                             date=format_date(self.env, line.date),
-                            missing=self._erp_format_number(
-                                float_round(remaining, precision_digits=2)
+                            missing=text.format_days(
+                                self.env, float_round(remaining, precision_digits=2)
                             ),
                         )
                     )
@@ -781,11 +974,11 @@ class HrEmployee(models.Model):
                     _(
                         "Con estas vacaciones gozadas antes del sistema, las "
                         "ausencias ya aprobadas de %(employee)s superan su saldo "
-                        "en %(days)s días. Revise la carga histórica o las "
+                        "en %(days)s. Revise la carga histórica o las "
                         "ausencias aprobadas.",
                         employee=employee.name,
-                        days=self._erp_format_number(
-                            float_round(excess_after - excess_before, 2)
+                        days=text.format_days(
+                            self.env, float_round(excess_after - excess_before, 2)
                         ),
                     )
                 )

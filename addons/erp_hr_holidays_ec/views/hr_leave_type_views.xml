@@ -65,6 +65,30 @@
           name="help"
         >Ausencias de este tipo (aprobadas o por aprobar) que empiezan este año.</attribute>
       </xpath>
+      <!--
+        Ayudas «?» del núcleo con «asignación», «tiempo personal» o en
+        inglés: texto propio (QA-UX).
+      -->
+      <xpath expr="//field[@name='requires_allocation']" position="attributes">
+        <attribute
+          name="help"
+        >Sí: solo se puede pedir con saldo vigente. No: se puede pedir sin saldo.</attribute>
+      </xpath>
+      <xpath expr="//field[@name='employee_requests']" position="attributes">
+        <attribute
+          name="help"
+        >Permitidas: el empleado puede pedir días adicionales de saldo para sí mismo. No permitidas: solo Talento Humano registra saldos.</attribute>
+      </xpath>
+      <xpath expr="//field[@name='show_on_dashboard']" position="attributes">
+        <attribute
+          name="help"
+        >Marcado: el saldo de este tipo se muestra en el tablero de Ausencias. Desmarcado: no se muestra, pero se puede seguir eligiendo al solicitar una ausencia.</attribute>
+      </xpath>
+      <xpath expr="//field[@name='create_calendar_meeting']" position="attributes">
+        <attribute
+          name="help"
+        >Marcado: cada ausencia de este tipo aparece también en el Calendario. Desmarcado: no se crea ninguna entrada en el Calendario.</attribute>
+      </xpath>
       <xpath expr="//group[@name='leave_validation']" position="attributes">
         <attribute name="string">Solicitudes de ausencia</attribute>
       </xpath>
@@ -112,6 +136,12 @@
     <field name="model">hr.leave.type</field>
     <field name="inherit_id" ref="hr_holidays.view_holiday_status_normal_tree" />
     <field name="arch" type="xml">
+      <xpath expr="//field[@name='leave_validation_type']" position="attributes">
+        <attribute name="string">Aprobación de la solicitud</attribute>
+      </xpath>
+      <xpath expr="//field[@name='allocation_validation_type']" position="attributes">
+        <attribute name="string">Aprobación del saldo</attribute>
+      </xpath>
       <xpath expr="//field[@name='requires_allocation']" position="after">
         <field name="unpaid" string="Sin sueldo" optional="show" />
         <field

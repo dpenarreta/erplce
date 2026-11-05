@@ -22,6 +22,7 @@
 - Kanban de empleados en tarjetas con foto, cargo, establecimiento y jefe inmediato.
 - «Inicio» con indicadores por perfil (p. ej. solicitudes por aprobar, roles en borrador, parámetros a validar).
 - Pendientes de US-018: `aria-label` de botones móviles del núcleo (atrás, rayo, engranaje) y de Guardar/Descartar en inglés; miga de pan truncada con muchos botones inteligentes; anchos de columnas de Empleados («Nombre» legible, «Actividades»/«Siguiente fecha límite» opcionales); menús redundantes «Empleados > Empleados» y «Configuración > Configuración»; tarjeta en calendario de Ausencias y Ajustes.
+- Pendiente US-012: lista «Saldos de vacaciones» se desborda 11 px a 1536 px y corta «Empleado».
 - Pendiente US-017: líneas del horario en inglés («Monday Morning…»), encabezado truncado y zona horaria UTC de la jornada por defecto; `help` propio de `payroll.hr_payslip_action_employee`; «nómina» → «rol de pagos» en Ajustes; texto del UserError del parámetro.
 
 Criterios de aceptación detallados al iniciar la historia (con propuesta de QA-UX sobre las pantallas reales).

@@ -15,7 +15,7 @@ Registro de trazabilidad del proyecto. Cada requerimiento ejecutado por el equip
 | [US-009](US-009-respaldo-despliegue.md) | Respaldo, restauración y despliegue de producción | Historia Técnica | Pendiente | 2026-10-29 |
 | [US-010](US-010-sin-instructor.md) | Opción "Sin instructor" y campo "Jefe inmediato" en la ficha de empleado | Historia de Usuario | COMPLETADA CON PENDIENTES | 2026-10-30 |
 | [US-011](US-011-horas-extra-asistencias.md) | Horas extra y asistencias | Historia de Usuario | Pendiente | 2026-10-30 |
-| [US-012](US-012-vacaciones-permisos.md) | Vacaciones y permisos | Historia de Usuario | BLOQUEADA (2 correcciones pendientes; retomar) | 2026-10-30 |
+| [US-012](US-012-vacaciones-permisos.md) | Vacaciones y permisos | Historia de Usuario | COMPLETADA CON PENDIENTES | 2026-10-30 |
 | [US-013](US-013-liquidacion-finiquito.md) | Liquidación de haberes y finiquito; pago de décimos acumulados | Historia de Usuario | Pendiente | 2026-10-30 |
 | [US-014](US-014-utilidades.md) | Utilidades | Historia de Usuario | Pendiente | 2026-10-30 |
 | [US-015](US-015-reportes-iess-mdt.md) | Reportes legales IESS y Ministerio del Trabajo; rol individual | Historia de Usuario | Pendiente | 2026-10-30 |
@@ -24,7 +24,7 @@ Registro de trazabilidad del proyecto. Cada requerimiento ejecutado por el equip
 | [US-018](US-018-tema-visual.md) | Tema visual ERP LCE: menú lateral, aspecto moderno y uso en celular | Historia de Usuario | COMPLETADA CON PENDIENTES | 2026-11-05 |
 | [US-019](US-019-despeje-pantallas.md) | Despeje de pantallas de RRHH y nómina; Inicio con indicadores | Historia de Usuario | Pendiente | 2026-11-05 |
 
-**Prioridad (actualizada 2026-11-05):** el usuario prioriza ahora el rediseño de la interfaz: US-018 → US-019; luego se retoma US-012 (bloqueada) y el resto de Talento Humano.
+**Prioridad (actualizada 2026-11-05):** el usuario prioriza ahora el rediseño de la interfaz: US-018 → US-019; US-012 completada el 2026-11-05; sigue el resto de Talento Humano (US-016, US-011 según políticas del usuario; US-013, US-014, US-015).
 
 **Prioridad (2026-10-30):** el usuario pide terminar primero todo Talento Humano (US-017 de UX/UI se intercala ahora, antes de continuar): US-008 → US-016 → US-011 → US-012 → US-013 → US-014 → US-015; luego US-002 (pausada, ADR-002 aceptada) → US-003 → US-004 → US-005 → US-009.
 

@@ -1,0 +1,14 @@
+// US-012 (QA-UX): touch targets of at least 44 x 44 px on phones (WCAG 2.5.5,
+// same criterion as erp_theme) for the buttons of this module: "Calcular
+// vacaciones" (employee form and list header) and "Ver mis saldos" of the
+// Time Off dashboard (a 26 px high link button in the core layout).
+// media-breakpoint-down(md) compiles to "max-width: 767.98px". Only minimum
+// sizes: a <button> already centers its label vertically, and the class also
+// reaches the button when the header moves it into a dropdown on phones.
+@include media-breakpoint-down(md) {
+  .o_web_client .o_erp_generate_vacations,
+  .o_web_client .o_timeoff_dashboard .o_erp_open_balances {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

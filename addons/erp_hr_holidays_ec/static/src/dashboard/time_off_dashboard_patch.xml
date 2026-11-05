@@ -2,32 +2,47 @@
 <templates xml:space="preserve">
   <!--
     US-012 (QA-UX): textos del tablero de Ausencias que vienen del JS de
-    hr_holidays. Las traducciones de JS se combinan en el navegador sin orden
-    fijo entre módulos, por lo que una entrada en i18n/es.po no las garantiza:
-    se reescriben aquí por herencia de plantillas (extensión).
+    hr_holidays, reescritos por herencia de plantillas (extensión).
+    Los textos de la plantilla están en inglés y se traducen en i18n/es.po
+    (entradas «odoo-javascript»). Las traducciones de JS se combinan en el
+    navegador en un único diccionario sin orden fijo entre módulos: por eso
+    cada texto propio es una frase inglesa que no usa ningún otro módulo
+    (lo comprueba test_owl_terms_do_not_collide).
     - «Solicitudes pendientes» (solicitudes de saldo) solo se muestra si hay
       alguna, con el nombre «Saldos por aprobar».
     - «Nueva solicitud de asignación» / «Otorgar tiempo» → «Ver mis saldos» /
-      «Ver saldos del empleado» (botón accesible por teclado).
+      «Ver saldos del empleado» (botón accesible por teclado, 44 px de alto en
+      el celular).
+    - Sin saldo, un mensaje lo dice en lugar de dejar el tablero vacío.
   -->
   <t t-inherit="hr_holidays.TimeOffDashboard" t-inherit-mode="extension">
     <xpath expr="//strong[hasclass('o_timeoff_name')]" position="replace">
       <strong
         t-if="state.allocationRequests"
         class="o_timeoff_name o_erp_pending_balances"
-      >Saldos por aprobar</strong>
+      >Balances to approve</strong>
     </xpath>
     <xpath expr="//span[@t-on-click='openPendingRequests']" position="attributes">
       <attribute name="t-if">state.allocationRequests</attribute>
     </xpath>
     <xpath expr="//a[@t-on-click='newAllocationRequest']" position="replace">
+      <p
+        t-if="!state.holidays.length"
+        class="o_erp_no_balance text-muted small text-center pt-2 mb-1"
+        role="status"
+      >
+        <t
+          t-if="props.employeeId"
+        >This employee has no vacation balance yet. Calculate it with "Calcular vacaciones" on the employee form.</t>
+        <t t-else="">You have no vacation balance yet.</t>
+      </p>
       <button
         type="button"
         class="btn btn-link o_timeoff_details o_erp_open_balances p-1"
         t-on-click="erpOpenBalances"
       >
-        <t t-if="props.employeeId">Ver saldos del empleado</t>
-        <t t-else="">Ver mis saldos</t>
+        <t t-if="props.employeeId">View employee balances</t>
+        <t t-else="">View my balances</t>
       </button>
     </xpath>
   </t>
@@ -41,7 +56,7 @@
       expr="//span[@t-on-click='props.onClickNewAllocationRequest']/.."
       position="replace"
     >
-      <span class="o_erp_granted_days">Días otorgados:</span>
+      <span class="o_erp_granted_days">Days granted:</span>
     </xpath>
   </t>
 </templates>

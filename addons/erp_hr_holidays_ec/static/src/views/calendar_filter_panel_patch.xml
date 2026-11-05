@@ -2,7 +2,9 @@
 <templates xml:space="preserve">
   <!--
     US-012 (QA-UX): leyenda del calendario de Ausencias. «Validado» → «Aprobado»,
-    el mismo término que el estado de la solicitud.
+    el mismo término que el estado de la solicitud. Texto en inglés propio
+    («Approved time off», no «Approved», que otros módulos traducen distinto),
+    traducido en i18n/es.po.
   -->
   <t t-inherit="hr_holidays.CalendarFilterPanel" t-inherit-mode="extension">
     <xpath expr="//img[hasclass('o_calendar_filter_plain')]/.." position="replace">
@@ -10,7 +12,7 @@
         class="o_calendar_filter_plain"
         src="/hr/static/src/img/icons/plain.svg"
         alt=""
-      /> Aprobado</span>
+      /> Approved time off</span>
     </xpath>
   </t>
 </templates>

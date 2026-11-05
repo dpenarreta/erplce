@@ -2,9 +2,9 @@ from collections import defaultdict
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools import float_compare, format_date, formatLang
+from odoo.tools import float_compare, format_date
 
-from . import const
+from . import const, text
 
 LEAVE_OFFICER_GROUP = "hr_holidays.group_hr_holidays_user"
 
@@ -24,15 +24,6 @@ class HrLeave(models.Model):
     def _erp_request_date(self):
         self.ensure_one()
         return self.request_date_from or (self.date_from and self.date_from.date())
-
-    @api.model
-    def _erp_format_number(self, value):
-        digits = 0 if float(value).is_integer() else 2
-        return formatLang(self.env, value, digits=digits)
-
-    @api.model
-    def _erp_unit_label(self, request_unit):
-        return _("horas") if request_unit == "hour" else _("días")
 
     # ------------------------------------------------------------------
     # Conteo de días calendario (US-012, CA-6)
@@ -116,6 +107,215 @@ class HrLeave(models.Model):
         self._check_erp_max_duration()
         return res
 
+    # ------------------------------------------------------------------
+    # Solicitud que cruza la caducidad de un periodo (US-012, CA-R3-2)
+    # ------------------------------------------------------------------
+    @api.model
+    def _erp_period_label(self, period):
+        """«periodo del año N» (periodo automático) o «saldo «nombre»»
+        (saldo manual con caducidad), para los mensajes de cruce."""
+        if period.erp_auto_generated and period.erp_service_year:
+            return _("periodo del año %(year)s", year=period.erp_service_year)
+        return _("saldo «%(period)s»", period=period.name)
+
+    def _erp_expiry_crossings(self):
+        """Solicitudes de vacaciones anuales de ``self`` que empiezan en o
+        antes de la fecha de caducidad D de un periodo que todavía tiene saldo
+        y terminan después de D.
+
+        Motivo (QA-FUNC B8): el núcleo (``_get_consumed_leaves``) reparte una
+        solicitud que cruza la vigencia de un periodo contando en días
+        laborables la parte que cae dentro de él, aunque las vacaciones se
+        cuenten en días calendario: el empleado perdería días sin aviso.
+
+        Si el periodo que caduca ya no tiene saldo (sin contar la solicitud),
+        toda la solicitud se descuenta del siguiente y no hay cruce. Saldo del
+        periodo = lo que le queda tras las demás solicitudes aprobadas o
+        pendientes del empleado (no se pueden solapar con esta, así que las
+        que lo consumen son anteriores).
+
+        Rendimiento (QA-TECH P3): una búsqueda de periodos para el lote y una
+        llamada a ``_get_consumed_leaves`` por (tipo, fecha de inicio),
+        ignorando las solicitudes del grupo (como mucho una por empleado: no
+        se pueden solapar).
+
+        :return: lista de ``(solicitud, periodo)``, como mucho una por
+            solicitud, en el orden de ``self``
+        """
+        leaves = self.filtered(
+            lambda leave: leave.holiday_status_id.erp_is_annual_vacation
+            and leave.state not in ("refuse", "cancel")
+            and leave.employee_id
+            and leave.request_date_from
+            and leave.request_date_to
+            and leave.request_date_from < leave.request_date_to
+        )
+        if not leaves:
+            return []
+        # sudo(): lectura de servidor de los periodos (asignaciones validadas)
+        # de los empleados de las solicitudes para validar sus fechas; solo
+        # se devuelven el año de servicio, el nombre y la fecha de caducidad
+        # en los mensajes. Una sola búsqueda para todo el lote.
+        periods = (
+            self.env["hr.leave.allocation"]
+            .sudo()
+            .search_fetch(
+                [
+                    ("employee_id", "in", leaves.employee_id.ids),
+                    ("holiday_status_id", "in", leaves.holiday_status_id.ids),
+                    ("state", "=", "validate"),
+                    ("date_to", ">=", min(leaves.mapped("request_date_from"))),
+                    ("date_to", "<", max(leaves.mapped("request_date_to"))),
+                ],
+                [
+                    "employee_id",
+                    "holiday_status_id",
+                    "date_from",
+                    "date_to",
+                    "erp_auto_generated",
+                    "erp_service_year",
+                    "name",
+                ],
+                order="date_to, id",
+            )
+        )
+        if not periods:
+            return []
+        crossed_by_leave = {}
+        groups = defaultdict(lambda: self.env["hr.leave"])
+        for leave in leaves:
+            crossed = periods.filtered(
+                lambda period, lv=leave: period.employee_id == lv.employee_id
+                and period.holiday_status_id == lv.holiday_status_id
+                and lv.request_date_from <= period.date_to < lv.request_date_to
+            )
+            if crossed:
+                crossed_by_leave[leave.id] = crossed
+                groups[(leave.holiday_status_id, leave.request_date_from)] |= leave
+        found = {}
+        for (leave_type, date_from), group in groups.items():
+            consumed = (
+                group.employee_id.sudo()
+                .with_context(ignored_leave_ids=group.ids)
+                ._get_consumed_leaves(leave_type, date_from)[0]
+            )
+            for leave in group:
+                type_data = consumed[leave.employee_id][leave_type]
+                for period in crossed_by_leave[leave.id]:
+                    remaining = (type_data.get(period) or {}).get(
+                        "virtual_remaining_leaves", 0.0
+                    )
+                    if float_compare(remaining, 0.0, precision_digits=2) > 0:
+                        found[leave.id] = period
+                        break
+        return [(leave, found[leave.id]) for leave in leaves if leave.id in found]
+
+    @api.constrains(
+        "holiday_status_id",
+        "employee_id",
+        "request_date_from",
+        "request_date_to",
+        "state",
+    )
+    def _check_erp_vacation_expiry_crossing(self):
+        """Una solicitud de vacaciones anuales no puede cruzar la caducidad
+        de un periodo con saldo (ver ``_erp_expiry_crossings``).
+
+        Restricción (al crear y al cambiar fechas, tipo, empleado o estado;
+        se omiten las rechazadas y anuladas): se evalúa antes que el control
+        nativo de saldo (``_check_validity``, que el núcleo llama después de
+        ``create``/``write``), de modo que este mensaje, más preciso, es el
+        que ve el usuario.
+
+        :raises ValidationError: «Divida la solicitud: el periodo del año N
+            caduca el D.»
+        """
+        crossings = self._erp_expiry_crossings()
+        if crossings:
+            period = crossings[0][1]
+            raise ValidationError(
+                _(
+                    "Divida la solicitud: el %(period)s caduca el %(date)s.",
+                    period=self._erp_period_label(period),
+                    date=format_date(self.env, period.date_to),
+                )
+            )
+
+    @api.model
+    def _erp_recheck_expiry_crossings(self, employees, action):
+        """Re-comprobación del cruce (US-012, O-B) después de liberar saldo
+        de un periodo: al rechazar, anular o eliminar una solicitud de
+        vacaciones, o al cambiar o eliminar vacaciones gozadas antes del
+        sistema, otra solicitud aprobada o pendiente del mismo empleado que
+        se admitió porque el periodo que caduca no tenía saldo puede pasar a
+        cruzarlo con saldo. Se llama después del cambio, en la misma
+        transacción: el error lo deshace.
+
+        :param employees: empleados afectados (``hr.employee``)
+        :param action: lo que se intentaba hacer, para el mensaje (p. ej.
+            «anular la solicitud»)
+        :raises ValidationError: nombra la solicitud afectada y qué hacer
+        """
+        if not employees:
+            return
+        # sudo(): búsqueda de servidor de las solicitudes vigentes de los
+        # empleados afectados (el usuario puede no verlas todas); solo se
+        # devuelven el nombre del empleado y las fechas en el mensaje.
+        leaves = self.sudo().search(
+            [
+                ("employee_id", "in", employees.ids),
+                ("holiday_status_id.erp_is_annual_vacation", "=", True),
+                ("state", "in", ("confirm", "validate1", "validate")),
+            ],
+            order="date_from, id",
+        )
+        crossings = leaves._erp_expiry_crossings()
+        if not crossings:
+            return
+        leave, period = crossings[0]
+        raise ValidationError(
+            _(
+                "No se puede %(action)s: la solicitud de vacaciones de "
+                "%(employee)s del %(date_from)s al %(date_to)s cruzaría la "
+                "caducidad del %(period)s (%(expiry)s), que volvería a tener "
+                "saldo. Anule o divida primero esa solicitud.",
+                action=action,
+                employee=leave.employee_id.name,
+                date_from=format_date(self.env, leave.request_date_from),
+                date_to=format_date(self.env, leave.request_date_to),
+                period=self._erp_period_label(period),
+                expiry=format_date(self.env, period.date_to),
+            )
+        )
+
+    def _erp_active_vacation_employees(self):
+        """Empleados de las solicitudes de vacaciones anuales vigentes de
+        ``self`` (las que, al dejar de contar, liberan saldo)."""
+        return self.filtered(
+            lambda leave: leave.holiday_status_id.erp_is_annual_vacation
+            and leave.state not in ("refuse", "cancel")
+        ).employee_id
+
+    def write(self, vals):
+        if vals.get("state") not in ("refuse", "cancel"):
+            return super().write(vals)
+        employees = self._erp_active_vacation_employees()
+        res = super().write(vals)
+        if vals["state"] == "refuse":
+            action = _("rechazar la solicitud")
+        else:
+            action = _("anular la solicitud")
+        self._erp_recheck_expiry_crossings(employees, action)
+        return res
+
+    def unlink(self):
+        employees = self._erp_active_vacation_employees()
+        res = super().unlink()
+        self._erp_recheck_expiry_crossings(
+            employees.exists(), _("eliminar la solicitud")
+        )
+        return res
+
     def _erp_balance_error_message(self):
         """Mensaje en español del control nativo de saldo, solo para los
         empleados cuyas solicitudes realmente fallan (mismo criterio que
@@ -150,8 +350,8 @@ class HrLeave(models.Model):
                     messages.append(
                         _(
                             "%(employee)s no tiene saldo de «%(type)s» vigente al "
-                            "%(date)s. Pida a Talento Humano la asignación antes de "
-                            "solicitar la ausencia.",
+                            "%(date)s. Pida a Talento Humano que registre el saldo "
+                            "antes de solicitar la ausencia.",
                             employee=employee.name,
                             type=leave_type.name,
                             date=format_date(self.env, date_from),
@@ -188,15 +388,13 @@ class HrLeave(models.Model):
                 messages.append(
                     _(
                         "Saldo insuficiente de «%(type)s» para %(employee)s: "
-                        "disponible %(available)s %(unit)s, solicitado "
-                        "%(requested)s %(unit)s. Reduzca las fechas de la "
-                        "solicitud o pida a Talento Humano una asignación "
-                        "adicional.",
+                        "disponible %(available)s, solicitado %(requested)s. "
+                        "Reduzca las fechas de la solicitud o pida a Talento "
+                        "Humano que revise su saldo.",
                         type=leave_type.name,
                         employee=employee.name,
-                        available=self._erp_format_number(available),
-                        requested=self._erp_format_number(requested),
-                        unit=self._erp_unit_label(unit),
+                        available=text.format_quantity(self.env, available, unit),
+                        requested=text.format_quantity(self.env, requested, unit),
                     )
                 )
         return "\n".join(messages) or False
@@ -239,24 +437,24 @@ class HrLeave(models.Model):
                 if float_compare(value, maximum, precision_digits=2) > 0:
                     raise ValidationError(
                         _(
-                            "La solicitud de «%(type)s» equivale a %(value)s horas "
-                            "por día y supera el máximo de %(maximum)s horas por "
-                            "día. Reduzca las horas de la solicitud.",
+                            "La solicitud de «%(type)s» equivale a %(value)s por "
+                            "día y supera el máximo de %(maximum)s por día. "
+                            "Reduzca las horas de la solicitud.",
                             type=leave.holiday_status_id.name,
-                            value=self._erp_format_number(round(value, 2)),
-                            maximum=self._erp_format_number(maximum),
+                            value=text.format_hours(self.env, round(value, 2)),
+                            maximum=text.format_hours(self.env, maximum),
                         )
                     )
                 continue
             if float_compare(leave.number_of_days, maximum, precision_digits=2) > 0:
                 raise ValidationError(
                     _(
-                        "La solicitud de «%(type)s» dura %(value)s días y supera "
-                        "la duración máxima de %(maximum)s días por solicitud. "
-                        "Ajuste las fechas.",
+                        "La solicitud de «%(type)s» dura %(value)s y supera la "
+                        "duración máxima de %(maximum)s por solicitud. Ajuste "
+                        "las fechas.",
                         type=leave.holiday_status_id.name,
-                        value=self._erp_format_number(leave.number_of_days),
-                        maximum=self._erp_format_number(maximum),
+                        value=text.format_days(self.env, leave.number_of_days),
+                        maximum=text.format_days(self.env, maximum),
                     )
                 )
 

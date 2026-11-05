@@ -3,7 +3,7 @@
     "summary": "Vacaciones por antigüedad, licencias y permisos de ley de Ecuador "
     "sobre Ausencias (hr_holidays): tipos de ausencia, parámetros normativos y "
     "asignación anual de vacaciones.",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Human Resources/Time Off",
     "author": "LAARCOURIER EXPRESS S.A.",
     "license": "LGPL-3",

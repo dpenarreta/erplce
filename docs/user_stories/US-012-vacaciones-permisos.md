@@ -4,7 +4,7 @@
 - **Tipo:** Historia de Usuario
 - **Fecha:** 2026-10-30
 - **Sprint / Módulo:** Talento Humano · `addons/erp_hr_holidays_ec` (nuevo) sobre `hr_holidays` (Ausencias, Odoo 18 Community)
-- **Estado:** BLOQUEADA (2 hallazgos tras 2 rondas; ver Registro de Cierre)
+- **Estado:** COMPLETADA CON PENDIENTES
 - **Tech Lead Asignado:** Tech-Lead Orchestrator
 - **Desarrolladores Requeridos:** DEV-3 (modelo, tipos, parámetros, seguridad) / DEV-2 (saldos por antigüedad, validaciones, aprobación) / DEV-4 (vistas, menús, UX)
 - **Depende de:** US-007 (`erp_hr_ec`), US-008 (`erp.payroll.parameter`), US-010 (Jefe inmediato), US-017 (estándar UX)
@@ -98,7 +98,30 @@ Las fechas «Vigente desde» anteriores a 2026 permiten calcular periodos y regi
 
 ---
 
-### 6. Registro de Cierre (parcial, 2026-10-30)
+#### Ronda 3 de correcciones (decisión del usuario 2026-11-05: retomar)
+Alcance decidido por el Tech Lead (los 2 bloqueantes y los pendientes baratos):
+- **CA-R3-1 · Sin periodos duplicados (P2 QA-TECH):** *Dado que* un empleado ya tiene periodos generados con una fecha de ingreso efectiva X y `erp_company_entry_date` vacío, *cuando* cambia su `first_contract_date` (contrato anterior cargado o corregido) a una fecha Y ≠ X y se ejecuta «Calcular vacaciones», *entonces* no se crea ningún periodo nuevo y se muestra un error claro (indicar la fecha anterior y la nueva, y qué hacer: rechazar o eliminar los periodos generados o fijar la «Fecha de ingreso a la empresa»); *y* en la tarea programada se registra el error de ese empleado y se continúa con el siguiente.
+- **CA-R3-2 · Solicitud que cruza una caducidad (B8 QA-FUNC):** *Dado que* el periodo del año N con saldo caduca en la fecha D, *cuando* se registra una solicitud de vacaciones que empieza antes o en D y termina después de D (p. ej. año 4 caduca 2026-11-09, solicitud del 05 al 14/11), *entonces* se rechaza con «Divida la solicitud: el periodo del año N caduca el D.» (fecha en formato local) y no se descuentan días; las solicitudes que no cruzan, o que cruzan la caducidad de un periodo sin saldo, siguen funcionando.
+- **CA-R3-3 · Pendientes baratos:** O2 el periodo conserva su nombre tras la carga histórica; O3 reimportar la misma fila de la plantilla histórica no duplica (error claro o actualización idempotente; decide DEV-2); textos del servidor con plural correcto («1 día»), sin «asignación» en mensajes al usuario (usar «periodo de vacaciones»/«saldo»); «Calcular vacaciones» desde la lista pide confirmación; textos OWL traducibles con `_t()`; test que verifica los anclajes de los patches OWL; áreas táctiles de los botones propios ≥ 44 px en móvil.
+- **Fuera de esta ronda:** O1 (saldo del empleo anterior tras reingreso: decisión del usuario, liga con US-013); P3 de rendimiento y de desinstalación; validación de parámetros «a validar».
+
+### 6. Registro de Cierre (final, 2026-11-05)
+
+- **Estado final:** COMPLETADA CON PENDIENTES
+- **Fecha de cierre:** 2026-11-05
+- **Ronda 3 (2026-11-05):** QA-FUNC 🟡 APROBADO CON OBSERVACIONES (CA-R3-1..3 ✅, B8 resuelto; 454 tests de RRHH/nómina/vacaciones OK) · QA-TECH 🟡 APROBADO CON OBSERVACIONES 8,5/10 (P2 de periodos duplicados resuelto; sin P1/P2) · QA-UX 🟡 sin Críticos ni Altos.
+- **Pulido aplicado tras la ronda 3:** O-A (adelantar la fecha de ingreso con contrato abierto ya no cuenta como reingreso: solo hay reingreso si existe un contrato cerrado que termina antes de la nueva fecha; decisión del Tech Lead), O-B (rechazar/anular/borrar una solicitud o cambiar/borrar la carga histórica se bloquea si haría que otra solicitud cruce la caducidad de un periodo con saldo), una sola lectura de saldos por lote, mensajes sin sujeto repetido y con plural, resumen de «Calcular vacaciones» cuando nadie tiene derecho, unicidad de la carga histórica en la BD (`erp_vacation_history_uniq`, EXCLUDE), sin «asignación» en ayudas y tarea programada (migración 18.0.1.0.1), botón «Calcular vacaciones» con confirmación en lista y ficha (se retira la acción de servidor), textos OWL traducibles, test de anclajes, submenú Ausencias › Vacaciones, ayudas «?» del núcleo en español, listas sin anchos fijos. Revalidación breve de QA-UX: sin Críticos ni Altos.
+- **Verificación ejecutada:** `bash scripts/check.sh --all` por el Tech Lead → exit 0 (`0 failed, 0 error(s) of 593 tests`; pip-audit limpio). `erp_dev`: `erp_hr_holidays_ec` 18.0.1.0.1, tarea programada inactiva, 0 saldos/ausencias/carga histórica.
+- **Pendientes:**
+  1. [Decisión del usuario, liga con US-013] O1: saldo del empleo anterior tras un reingreso.
+  2. [Validar con RRHH/asesoría laboral] Parámetros «a validar» (incl. `VACATION_VALIDITY_YEARS`=4, días adicionales desde el sexto año, calamidad, conteo en días calendario).
+  3. [Media UX] «Saldos de vacaciones» se desborda 11 px a 1536 px y corta «Empleado» (columnas Validar/Rechazar del núcleo + panel lateral); pasar «Caduca el» o «Por aprobar» a opcional (→ US-019).
+  4. [Baja UX, no reproducido] Aviso «¿Salir del sitio?» y «Campos no válidos: Empleado» al navegar justo después de «Descartar» en la carga histórica.
+  5. [UX] Diálogo de confirmación de la lista con título «Confirmación»/«De acuerdo» (límite del esquema de listas de Odoo) y foco inicial en el botón que ejecuta; ancho móvil no medido en vivo.
+  6. [P3] Rendimiento de la carga histórica (`_get_consumed_leaves` 2× por empleado); registros del núcleo reapuntados/`duration_check` no se restauran al desinstalar; corte de empresa vs global en `start_date`; orden FIFO si `VACATION_VALIDITY_YEARS` baja.
+  7. Antes del primer cálculo real: RRHH debe registrar la «Fecha de ingreso a la empresa» (o los contratos completos) de todos los empleados; luego activar la tarea programada.
+
+### Registro de Cierre parcial (2026-10-30, histórico)
 
 - **Estado:** BLOQUEADA — se alcanzó el máximo de 2 rondas de QA con 2 hallazgos bloqueantes abiertos (correcciones pequeñas, con propuesta de código de los auditores). El código se respalda en `main` a pedido del usuario antes de su feriado; **retomar aquí**.
 - **QA-FUNC (ronda 2):** 🔴 BLOQUEADO por B8; 10/12 CA (CA-7 depende de QA-UX, aprobado en ronda 2). Ronda 1 (B1 reingreso, B2 tests) corregida.

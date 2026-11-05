@@ -143,7 +143,13 @@ class TestHolidaysEcViews(TransactionCase):
         button = buttons[0]
         self.assertEqual(button.get("string"), "Calcular vacaciones")
         self.assertEqual(button.get("type"), "object")
-        self.assertTrue(button.get("confirm"))
+        # Confirmación para un solo empleado, con título y botón propios.
+        self.assertIn("del empleado", button.get("confirm"))
+        self.assertIn("no se duplican", button.get("confirm"))
+        self.assertEqual(button.get("confirm-title"), "Calcular vacaciones")
+        self.assertEqual(button.get("confirm-label"), "Calcular")
+        # Área táctil de 44 px en el celular (SCSS del módulo).
+        self.assertIn("o_erp_generate_vacations", button.get("class", ""))
         # Secundario: la ficha no gana un segundo botón primario.
         self.assertNotIn("oe_highlight", button.get("class", ""))
         self.assertNotIn("btn-primary", button.get("class", ""))
@@ -195,7 +201,11 @@ class TestHolidaysEcViews(TransactionCase):
         empty = stat.xpath("./div[@name='erp_no_balance']")[0]
         self.assertEqual(empty.get("invisible"), "allocation_display != '0'")
         self.assertEqual(_text(empty), "Ausencias")
-        self.assertIn("pendiente de aprobar", stat.get("help", ""))
+        # La ayuda vale también sin saldo (el botón dice «Ausencias»).
+        help_text = stat.get("help", "")
+        self.assertIn("pendiente de aprobar", help_text)
+        self.assertIn("si ya tiene saldo", help_text)
+        self.assertTrue(help_text.startswith("Resumen de ausencias"))
 
     def test_employee_form_entry_date(self):
         """CA-9: «Fecha de ingreso a la empresa» en la pestaña Ecuador, solo
@@ -217,27 +227,59 @@ class TestHolidaysEcViews(TransactionCase):
         )
         self.assertFalse(public.xpath("//field[@name='erp_company_entry_date']"))
 
-    def test_generate_list_action_by_group(self):
-        """Acciones > Calcular vacaciones en la lista de empleados, solo para
-        el encargado de ausencias."""
-        action = self.env.ref(
-            "erp_hr_holidays_ec.action_server_erp_generate_vacation_allocations"
-        )
-        self.assertEqual(action.name, "Calcular vacaciones")
-        self.assertEqual(action.binding_model_id.model, "hr.employee")
-        self.assertEqual(action.binding_view_types, "list")
-        self.assertIn(self.env.ref(OFFICER_GROUP), action.groups_id)
-
-        def bound(user):
-            bindings = (
-                self.env["ir.actions.actions"]
-                .with_user(user)
-                .get_bindings("hr.employee")
+    def test_generate_list_button_by_group(self):
+        """«Calcular vacaciones» en la lista de empleados: botón de cabecera
+        (aparece al marcar empleados) con confirmación, solo para el
+        encargado de ausencias. Ya no es una acción de servidor del menú
+        Acciones (no podía pedir confirmación): su registro se borró."""
+        self.assertFalse(
+            self.env.ref(
+                "erp_hr_holidays_ec.action_server_erp_generate_vacation_allocations",
+                raise_if_not_found=False,
             )
-            return {item["id"] for item in bindings.get("action", [])}
+        )
+        bound = (
+            self.env["ir.actions.actions"]
+            .with_user(self.officer)
+            .get_bindings("hr.employee")
+        )
+        self.assertNotIn(
+            "Calcular vacaciones",
+            [item["name"] for item in bound.get("action", [])],
+        )
 
-        self.assertIn(action.id, bound(self.officer))
-        self.assertNotIn(action.id, bound(self.hr_user))
+        xpath = "//header/button[@name='action_erp_generate_vacation_allocations']"
+        officer_list = _arch(
+            self.env["hr.employee"].with_user(self.officer),
+            "list",
+            "hr.view_employee_tree",
+        )
+        buttons = officer_list.xpath(xpath)
+        self.assertEqual(len(buttons), 1)
+        button = buttons[0]
+        self.assertEqual(button.get("string"), "Calcular vacaciones")
+        self.assertEqual(button.get("type"), "object")
+        self.assertEqual(
+            button.get("confirm"),
+            "Se calcularán los periodos de vacaciones pendientes de los "
+            "empleados seleccionados desde su fecha de ingreso, según su "
+            "antigüedad. Los periodos ya calculados no se duplican. ¿Desea "
+            "continuar?",
+        )
+        self.assertIn("o_erp_generate_vacations", button.get("class", ""))
+        # El botón nativo de la cabecera sigue ahí.
+        self.assertEqual(len(officer_list.xpath("//header/button")), 2)
+        hr_list = _arch(
+            self.env["hr.employee"].with_user(self.hr_user),
+            "list",
+            "hr.view_employee_tree",
+        )
+        self.assertFalse(hr_list.xpath(xpath))
+        # El método sigue protegido en el servidor (lo prueba DEV-2): aquí
+        # solo se comprueba que existe con el nombre que usa el botón.
+        self.assertTrue(
+            callable(self.env["hr.employee"].action_erp_generate_vacation_allocations)
+        )
 
     def test_user_profile_single_primary_and_balance(self):
         """Mi perfil: un solo botón primario y el saldo con el mismo texto que
@@ -384,9 +426,10 @@ class TestHolidaysEcViews(TransactionCase):
         )
         year = tree.xpath("//field[@name='erp_service_year']")[0]
         self.assertEqual(year.get("string"), "Año de servicio")
-        self.assertEqual(year.get("optional"), "show")
-        # Ancho suficiente: el encabezado no se trunca (columna entera, 71 px).
-        self.assertEqual(year.get("width"), "120px")
+        # Talento Humano lo ve en «Periodos de vacaciones»; aquí es opcional
+        # oculto para que la lista no se desborde (QA-UX). Sin anchos fijos.
+        self.assertEqual(year.get("optional"), "hide")
+        self.assertFalse(tree.xpath("//field[@width]"))
         columns = {
             field.get("name"): (field.get("string"), field.get("optional"))
             for field in tree.xpath("/list/field")
@@ -506,7 +549,6 @@ class TestHolidaysEcViews(TransactionCase):
                         ("date_from", "Nace el"),
                         ("date_to", "Caduca el"),
                         ("erp_entitled_days", "Días del periodo"),
-                        ("erp_history_days", "Gozados antes del sistema"),
                         ("erp_days_used", "Gozados"),
                         ("erp_days_pending", "Por aprobar"),
                         ("erp_days_available", "Disponibles"),
@@ -545,8 +587,14 @@ class TestHolidaysEcViews(TransactionCase):
         self.assertIn("Importar registros", action.help)
         template = History.get_import_templates()[0]["label"]
         self.assertIn(template, action.help)
+        self.assertEqual(action.name, "Carga histórica de vacaciones")
         menu = self.env.ref("erp_hr_holidays_ec.menu_erp_hr_vacation_history")
         self.assertEqual(menu.action, action)
+        self.assertEqual(menu.name, "Carga histórica de vacaciones")
+        self.assertEqual(
+            menu.parent_id,
+            self.env.ref("erp_hr_holidays_ec.menu_erp_hr_holidays_vacations"),
+        )
 
     def test_leave_form_and_search_labels(self):
         form = _arch(
@@ -614,6 +662,7 @@ class TestHolidaysEcViews(TransactionCase):
             "hr_holidays.menu_hr_holidays_dashboard",
             "hr_holidays.menu_hr_holidays_management",
             "hr_holidays.menu_open_department_leave_approve",
+            "erp_hr_holidays_ec.menu_erp_hr_holidays_vacations",
             "hr_holidays.hr_holidays_menu_manager_approve_allocations",
             "erp_hr_holidays_ec.menu_erp_vacation_periods",
             "erp_hr_holidays_ec.menu_erp_hr_vacation_history",
@@ -641,6 +690,8 @@ class TestHolidaysEcViews(TransactionCase):
         approvals = {
             "menu_hr_holidays_management",
             "menu_open_department_leave_approve",
+            # Menú «Vacaciones» (saldos y periodos; QA-UX).
+            "menu_erp_hr_holidays_vacations",
             "hr_holidays_menu_manager_approve_allocations",
             "menu_erp_vacation_periods",
         }
@@ -659,6 +710,40 @@ class TestHolidaysEcViews(TransactionCase):
         self.assertEqual(
             self._visible(self.holidays_manager),
             own | approvals | history | {"menu_hr_holidays_report"} | configuration,
+        )
+
+    def test_vacations_menu(self):
+        """Ausencias › Vacaciones, entre «Aprobaciones» y «Reportes», con
+        saldos, periodos y la carga histórica."""
+        root = self.env.ref("hr_holidays.menu_hr_holidays_root")
+        vacations = self.env.ref("erp_hr_holidays_ec.menu_erp_hr_holidays_vacations")
+        self.assertEqual(vacations.parent_id, root)
+        es = self.env(context={"lang": LANG})
+        self.assertEqual(
+            es.ref(vacations.get_external_id()[vacations.id]).name, "Vacaciones"
+        )
+        order = root.child_id.sorted(lambda m: (m.sequence, m.id)).mapped(
+            lambda m: m.get_external_id()[m.id]
+        )
+        management = order.index("hr_holidays.menu_hr_holidays_management")
+        self.assertEqual(
+            order[management + 1], "erp_hr_holidays_ec.menu_erp_hr_holidays_vacations"
+        )
+        self.assertEqual(order[management + 2], "hr_holidays.menu_hr_holidays_report")
+        self.assertEqual(
+            vacations.child_id.sorted("sequence").mapped(
+                lambda m: m.get_external_id()[m.id]
+            ),
+            [
+                "hr_holidays.hr_holidays_menu_manager_approve_allocations",
+                "erp_hr_holidays_ec.menu_erp_vacation_periods",
+                "erp_hr_holidays_ec.menu_erp_hr_vacation_history",
+            ],
+        )
+        approvals = self.env.ref("hr_holidays.menu_hr_holidays_management")
+        self.assertEqual(
+            approvals.child_id.mapped(lambda m: m.get_external_id()[m.id]),
+            ["hr_holidays.menu_open_department_leave_approve"],
         )
 
     # ------------------------------------------------------------------
@@ -844,6 +929,7 @@ class TestHolidaysEcViews(TransactionCase):
         "views/calendar_filter_panel_patch.xml",
         "fields/localized_number_field.js",
         "fields/localized_number_field.xml",
+        "scss/erp_hr_holidays_ec.scss",
     )
 
     def _source(self, name):
@@ -876,10 +962,17 @@ class TestHolidaysEcViews(TransactionCase):
         expected = {
             "hr_holidays.TimeOffDashboard": (
                 dashboard,
-                ("Saldos por aprobar", "Ver mis saldos", "Ver saldos del empleado"),
+                (
+                    "Balances to approve",
+                    "View my balances",
+                    "View employee balances",
+                    "You have no vacation balance yet.",
+                    "This employee has no vacation balance yet. Calculate it "
+                    'with "Calcular vacaciones" on the employee form.',
+                ),
             ),
-            "hr_holidays.TimeOffCardPopover": (dashboard, ("Días otorgados:",)),
-            "hr_holidays.CalendarFilterPanel": (legend, ("Aprobado",)),
+            "hr_holidays.TimeOffCardPopover": (dashboard, ("Days granted:",)),
+            "hr_holidays.CalendarFilterPanel": (legend, ("Approved time off",)),
         }
         for template, (templates, texts) in expected.items():
             with self.subTest(template=template):
@@ -898,14 +991,19 @@ class TestHolidaysEcViews(TransactionCase):
         self.assertEqual(button.get("type"), "button")
         self.assertEqual(button.get("t-on-click"), "erpOpenBalances")
         self.assertNotIn("newAllocationRequest", etree.tostring(button).decode())
+        self.assertIn("o_erp_open_balances", button.get("class"))
+        # Tablero sin saldo: mensaje en lugar de una tarjeta vacía.
+        empty = replaced[0].xpath(".//p[contains(@class, 'o_erp_no_balance')]")[0]
+        self.assertEqual(empty.get("t-if"), "!state.holidays.length")
+        self.assertEqual(empty.get("role"), "status")
 
     def test_owl_js_patches(self):
         """Título de la ventana de solicitud («Solicitar ausencia» /
         «Solicitud de ausencia») y apertura de saldos por patch()."""
         controller = self._source("views/calendar_controller_patch.js")
         self.assertIn("patch(TimeOffCalendarController.prototype", controller)
-        self.assertIn('_t("Solicitar ausencia")', controller)
-        self.assertIn('_t("Solicitud de ausencia")', controller)
+        self.assertIn('_t("Request an absence")', controller)
+        self.assertIn('_t("Absence request")', controller)
         dashboard = self._source("dashboard/time_off_dashboard_patch.js")
         self.assertIn("patch(TimeOffDashboard.prototype", dashboard)
         self.assertIn("hr_holidays.hr_leave_allocation_action_my", dashboard)
@@ -915,4 +1013,5 @@ class TestHolidaysEcViews(TransactionCase):
         self.env.ref("erp_hr_holidays_ec.action_erp_vacation_periods")
         number = self._source("fields/localized_number_field.js")
         self.assertIn('add("erp_localized_number"', number)
+        self.assertIn('displayName: _t("Number in local format")', number)
         self.assertIn("formatFloat", number)

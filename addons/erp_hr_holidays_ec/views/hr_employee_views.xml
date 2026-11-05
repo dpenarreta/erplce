@@ -3,8 +3,8 @@
   <!--
     US-012 (CA-3, CA-4, CA-9): ficha del empleado.
     - Botón «Calcular vacaciones» (secundario: la ficha no tiene primario
-      propio) solo para el encargado de ausencias; el método lo vuelve a
-      comprobar en el servidor.
+      propio) solo para el encargado de ausencias, con confirmación; el
+      método lo vuelve a comprobar en el servidor.
     - Botón inteligente del saldo de hr_holidays con texto claro: «12 de 15
       días · Saldo disponible» en lugar de «12/15 Días · Vacaciones», con el
       separador decimal del idioma (7,5 y no 7.5: widget erp_localized_number,
@@ -22,8 +22,11 @@
           name="action_erp_generate_vacation_allocations"
           type="object"
           string="Calcular vacaciones"
+          class="o_erp_generate_vacations"
           groups="hr_holidays.group_hr_holidays_user"
-          confirm="Se calcularán los periodos de vacaciones pendientes desde la fecha de ingreso del empleado, según su antigüedad. ¿Desea continuar?"
+          confirm="Se calcularán los periodos de vacaciones pendientes del empleado desde su fecha de ingreso, según su antigüedad. Los periodos ya calculados no se duplican. ¿Desea continuar?"
+          confirm-title="Calcular vacaciones"
+          confirm-label="Calcular"
         />
       </xpath>
       <xpath
@@ -32,7 +35,7 @@
       >
         <attribute
           name="help"
-        >Días de vacaciones disponibles de los periodos vigentes. Abra para ver lo gozado y lo pendiente de aprobar.</attribute>
+        >Resumen de ausencias: días de vacaciones disponibles de los periodos vigentes (si ya tiene saldo), lo gozado y lo pendiente de aprobar.</attribute>
       </xpath>
       <!--
         Sin replace (vista de prioridad normal): se ocultan los textos
@@ -105,20 +108,33 @@
     </field>
   </record>
 
-  <!-- Lista de empleados: Acciones > Calcular vacaciones (varios a la vez). -->
-  <record
-    id="action_server_erp_generate_vacation_allocations"
-    model="ir.actions.server"
-  >
-    <field name="name">Calcular vacaciones</field>
-    <field name="model_id" ref="hr.model_hr_employee" />
-    <field name="binding_model_id" ref="hr.model_hr_employee" />
-    <field name="binding_view_types">list</field>
-    <field name="groups_id" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]" />
-    <field name="state">code</field>
-    <field
-      name="code"
-    >action = records.action_erp_generate_vacation_allocations()</field>
+  <!--
+    Lista de empleados: «Calcular vacaciones» para los seleccionados, como
+    botón de la cabecera (aparece al marcar empleados) y no como acción de
+    servidor del menú Acciones: una acción de servidor no puede pedir
+    confirmación. El esquema de las listas no admite confirm-title ni
+    confirm-label (la ficha sí): la ventana usa el título estándar
+    «Confirmación». La acción de servidor anterior
+    (action_server_erp_generate_vacation_allocations) ya no está en los datos
+    del módulo: la actualización la borra sola (registros huérfanos del
+    módulo).
+  -->
+  <record id="hr_employee_view_list_inherit_erp_hr_holidays_ec" model="ir.ui.view">
+    <field name="name">hr.employee.list.inherit.erp_hr_holidays_ec</field>
+    <field name="model">hr.employee</field>
+    <field name="inherit_id" ref="hr.view_employee_tree" />
+    <field name="arch" type="xml">
+      <xpath expr="//header" position="inside">
+        <button
+          name="action_erp_generate_vacation_allocations"
+          type="object"
+          string="Calcular vacaciones"
+          class="o_erp_generate_vacations"
+          groups="hr_holidays.group_hr_holidays_user"
+          confirm="Se calcularán los periodos de vacaciones pendientes de los empleados seleccionados desde su fecha de ingreso, según su antigüedad. Los periodos ya calculados no se duplican. ¿Desea continuar?"
+        />
+      </xpath>
+    </field>
   </record>
 
   <!--
@@ -151,7 +167,7 @@
       >
         <attribute
           name="help"
-        >Días de vacaciones disponibles de los periodos vigentes. Abra para ver lo gozado y lo pendiente de aprobar.</attribute>
+        >Resumen de ausencias: días de vacaciones disponibles de los periodos vigentes (si ya tiene saldo), lo gozado y lo pendiente de aprobar.</attribute>
       </xpath>
       <xpath
         expr="//div[@name='button_box']/button[@name='%(hr_holidays.hr_leave_action_new_request)d'][@icon='fa-calendar']/div"
