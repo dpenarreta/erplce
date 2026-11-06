@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Liquidación de haberes (US-013, CA-5 a CA-11, CA-13).
+
+    Flujo visible en la barra de estado: Borrador → Calculada → Confirmada
+    (Anulada solo aparece cuando lo está). Botones del encabezado:
+    - Calcular (borrador, primario) / Recalcular (calculada): usuario de nómina.
+    - Confirmar (calculada, primario): solo responsable de nómina, con
+      confirmación (asiento, cierre de contrato y archivo del empleado).
+    - Imprimir (calculada o confirmada): PDF report_settlement.
+    - Volver a borrador (calculada o anulada).
+    - Anular: en borrador o calculada (ya guardada) cualquier usuario de
+      nómina; en confirmada solo el responsable, con confirmación (revierte
+      el asiento). En un registro nuevo sin guardar no se muestra.
+    El servidor impone igualmente estados y grupos (AccessError / UserError).
+
+    Número, estado, última remuneración, antigüedad (service_display, texto
+    «3 años, 2 meses y 5 días» del servidor), totales y
+    asientos: solo lectura. Una liquidación confirmada o anulada solo admite
+    observaciones (bloqueo en el modelo): la vista deja el resto en lectura.
+
+    Rubros: lista no editable en línea (la explicación, un texto largo, se ve
+    completa en la columna y en el diálogo del rubro). Los calculados son de
+    solo lectura; RRHH añade «Otro ingreso» u «Otro descuento» con los
+    botones de la lista (código fijado por el contexto) y los edita en el
+    diálogo. Los periodos de vacaciones liquidados se muestran con el resumen
+    calculado (settled_vacation_summary), no con settled_allocation_ids, para
+    no exponer hr.leave.allocation a quien no tiene permisos de ausencias.
+    El diario solo lo ven usuarios de contabilidad (quien no lo es no puede
+    listar diarios); vacío, se usa el del contrato.
+  -->
+  <record id="erp_hr_settlement_view_list" model="ir.ui.view">
+    <field name="name">erp.hr.settlement.list</field>
+    <field name="model">erp.hr.settlement</field>
+    <field name="arch" type="xml">
+      <list string="Liquidaciones" decoration-muted="state == 'cancel'">
+        <field name="name" string="Número" />
+        <field name="employee_id" widget="many2one_avatar_employee" />
+        <field name="cause_id" />
+        <field name="date_departure" string="Salida" />
+        <field name="contract_id" optional="hide" />
+        <field name="total_income" optional="hide" />
+        <field name="total_deduction" optional="hide" />
+        <field name="net" sum="Total neto" />
+        <field
+          name="state"
+          widget="badge"
+          decoration-info="state == 'draft'"
+          decoration-warning="state == 'computed'"
+          decoration-success="state == 'done'"
+          decoration-muted="state == 'cancel'"
+        />
+        <field name="company_id" groups="base.group_multi_company" optional="show" />
+        <field name="currency_id" column_invisible="1" />
+      </list>
+    </field>
+  </record>
+
+  <record id="erp_hr_settlement_view_form" model="ir.ui.view">
+    <field name="name">erp.hr.settlement.form</field>
+    <field name="model">erp.hr.settlement</field>
+    <field name="arch" type="xml">
+      <form string="Liquidación de haberes">
+        <header>
+          <button
+            name="action_compute"
+            type="object"
+            string="Calcular"
+            class="btn-primary"
+            invisible="state != 'draft'"
+            data-hotkey="c"
+          />
+          <button
+            name="action_confirm"
+            type="object"
+            string="Confirmar"
+            class="btn-primary"
+            invisible="state != 'computed'"
+            groups="payroll.group_payroll_manager"
+            confirm="Se generará el asiento contable, se cerrará el contrato con la fecha de salida y se archivará la ficha del empleado. ¿Desea confirmar la liquidación?"
+            data-hotkey="v"
+          />
+          <button
+            name="action_compute"
+            type="object"
+            string="Recalcular"
+            invisible="state != 'computed'"
+            data-hotkey="c"
+          />
+          <button
+            name="%(erp_hr_settlement_ec.action_report_settlement)d"
+            type="action"
+            string="Imprimir"
+            invisible="state not in ('computed', 'done')"
+            data-hotkey="p"
+          />
+          <button
+            name="action_draft"
+            type="object"
+            string="Volver a borrador"
+            invisible="state not in ('computed', 'cancel')"
+          />
+          <button
+            name="action_cancel"
+            type="object"
+            string="Anular"
+            invisible="state not in ('draft', 'computed') or not id"
+            confirm="¿Desea anular esta liquidación? Podrá volver a borrador más adelante."
+          />
+          <button
+            name="action_cancel"
+            type="object"
+            string="Anular"
+            invisible="state != 'done'"
+            groups="payroll.group_payroll_manager"
+            confirm="Se revertirá el asiento contable y las provisiones de décimos y los días de vacaciones volverán a estar pendientes. El contrato y la ficha del empleado no se reabren solos. ¿Desea anular la liquidación confirmada?"
+          />
+          <field
+            name="state"
+            widget="statusbar"
+            statusbar_visible="draft,computed,done"
+          />
+        </header>
+        <sheet>
+          <widget
+            name="web_ribbon"
+            title="Anulada"
+            bg_color="text-bg-danger"
+            invisible="state != 'cancel'"
+          />
+          <div class="oe_title">
+            <h1>
+              <field name="name" readonly="1" invisible="name == '/'" />
+              <span invisible="name != '/'">Liquidación sin número</span>
+            </h1>
+            <div class="text-muted" invisible="name != '/'">
+              El número se asigna al confirmar la liquidación.
+            </div>
+          </div>
+          <group>
+            <group name="departure" string="Empleado y salida">
+              <field
+                name="employee_id"
+                widget="many2one_avatar_employee"
+                options="{'no_create': True}"
+                readonly="state in ('done', 'cancel')"
+                placeholder="Empleado que sale de la empresa"
+              />
+              <field
+                name="contract_id"
+                options="{'no_create': True}"
+                readonly="state in ('done', 'cancel')"
+                invisible="not employee_id"
+              />
+              <field
+                name="cause_id"
+                options="{'no_create': True}"
+                readonly="state in ('done', 'cancel')"
+              />
+              <field name="date_departure" readonly="state in ('done', 'cancel')" />
+              <field name="company_id" groups="base.group_multi_company" readonly="1" />
+              <field name="currency_id" invisible="1" />
+            </group>
+            <group name="service" string="Tiempo de servicio">
+              <field name="date_entry" readonly="state in ('done', 'cancel')" />
+              <field name="service_display" string="Antigüedad" />
+              <field name="service_total_days" />
+              <field name="last_wage" readonly="1" />
+            </group>
+          </group>
+          <notebook>
+            <page name="lines" string="Rubros">
+              <div
+                class="alert bg-info-subtle text-info-emphasis border-info-subtle mb-2"
+                role="note"
+                invisible="state not in ('draft', 'computed')"
+              >
+                Pulse <strong>Calcular</strong> para generar los rubros que
+                corresponden a la causa de salida, cada uno con su explicación.
+                Para anticipos, préstamos o bonos acordados use
+                <strong>Añadir otro ingreso</strong> o
+                <strong>Añadir otro descuento</strong>: se conservan al
+                recalcular. En el celular, <strong>Calcular</strong> está en el
+                menú ⚙ Acciones.
+              </div>
+              <field
+                name="line_ids"
+                readonly="state in ('done', 'cancel')"
+                context="{'default_is_manual': True}"
+              >
+                <list string="Rubros" decoration-muted="amount == 0">
+                  <control>
+                    <create
+                      name="add_other_income"
+                      string="Añadir otro ingreso"
+                      context="{'default_code': 'OTHER_INCOME', 'default_is_manual': True}"
+                    />
+                    <create
+                      name="add_other_deduction"
+                      string="Añadir otro descuento"
+                      context="{'default_code': 'OTHER_DEDUCTION', 'default_is_manual': True}"
+                    />
+                  </control>
+                  <field name="sequence" column_invisible="1" />
+                  <field name="code" column_invisible="1" />
+                  <field name="currency_id" column_invisible="1" />
+                  <field name="name" string="Rubro" />
+                  <field name="explanation" />
+                  <field name="base" optional="show" />
+                  <field name="quantity" optional="show" />
+                  <field
+                    name="line_type"
+                    widget="badge"
+                    decoration-success="line_type == 'income'"
+                    decoration-danger="line_type == 'deduction'"
+                  />
+                  <field name="amount" />
+                  <field name="is_manual" optional="show" />
+                  <field name="account_id" optional="hide" />
+                </list>
+                <form string="Rubro de la liquidación">
+                  <sheet>
+                    <group>
+                      <group name="main">
+                        <field name="code" readonly="1" force_save="1" />
+                        <field
+                          name="name"
+                          readonly="not is_manual"
+                          placeholder="p. ej. Anticipo de sueldo de marzo"
+                        />
+                        <field name="line_type" />
+                        <field name="amount" readonly="not is_manual" />
+                        <field name="currency_id" invisible="1" />
+                      </group>
+                      <group name="detail">
+                        <field name="base" readonly="not is_manual" />
+                        <field name="quantity" readonly="not is_manual" />
+                        <field
+                          name="account_id"
+                          invisible="not is_manual"
+                          options="{'no_create': True}"
+                          placeholder="La del tipo de rubro"
+                        />
+                        <field name="is_manual" readonly="1" force_save="1" />
+                      </group>
+                    </group>
+                    <group name="explanation" string="Explicación">
+                      <field
+                        name="explanation"
+                        nolabel="1"
+                        colspan="2"
+                        readonly="not is_manual"
+                        placeholder="Detalle que verá el trabajador en el PDF, p. ej. anticipo entregado el 10/03/2026"
+                      />
+                    </group>
+                  </sheet>
+                </form>
+              </field>
+              <group class="oe_subtotal_footer" name="totals">
+                <field name="total_income" />
+                <field name="total_deduction" />
+                <field name="net" class="oe_subtotal_footer_separator" />
+              </group>
+              <div class="clearfix" />
+            </page>
+            <page
+              name="settled"
+              string="Vacaciones liquidadas"
+              invisible="not settled_vacation_summary"
+            >
+              <group>
+                <field name="settled_vacation_days" />
+                <field name="settled_vacation_summary" />
+              </group>
+            </page>
+            <page name="accounting" string="Contabilidad">
+              <group>
+                <group name="journal">
+                  <field
+                    name="journal_id"
+                    options="{'no_create': True}"
+                    readonly="state in ('done', 'cancel')"
+                    placeholder="El del contrato"
+                    groups="account.group_account_readonly,account.group_account_invoice"
+                  />
+                  <field name="move_id" invisible="not move_id" />
+                  <field name="reversal_move_id" invisible="not reversal_move_id" />
+                </group>
+              </group>
+              <div class="text-muted" role="note" invisible="move_id">
+                El asiento contable se genera al confirmar la liquidación.
+              </div>
+            </page>
+            <page name="note" string="Observaciones">
+              <field
+                name="note"
+                placeholder="Notas internas de la liquidación (no aparecen en el PDF)"
+              />
+            </page>
+          </notebook>
+        </sheet>
+        <chatter />
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_hr_settlement_view_search" model="ir.ui.view">
+    <field name="name">erp.hr.settlement.search</field>
+    <field name="model">erp.hr.settlement</field>
+    <field name="arch" type="xml">
+      <search string="Buscar liquidaciones">
+        <field name="employee_id" />
+        <field name="name" string="Número" />
+        <field name="cause_id" />
+        <field name="contract_id" />
+        <filter name="draft" string="Borrador" domain="[('state', '=', 'draft')]" />
+        <filter
+          name="computed"
+          string="Calculadas"
+          domain="[('state', '=', 'computed')]"
+        />
+        <filter name="done" string="Confirmadas" domain="[('state', '=', 'done')]" />
+        <filter name="cancel" string="Anuladas" domain="[('state', '=', 'cancel')]" />
+        <separator />
+        <filter name="date_departure" string="Fecha de salida" date="date_departure" />
+        <group expand="0" string="Agrupar por">
+          <filter
+            name="group_by_state"
+            string="Estado"
+            context="{'group_by': 'state'}"
+          />
+          <filter
+            name="group_by_cause"
+            string="Causa de salida"
+            context="{'group_by': 'cause_id'}"
+          />
+          <filter
+            name="group_by_employee"
+            string="Empleado"
+            context="{'group_by': 'employee_id'}"
+          />
+          <filter
+            name="group_by_date_departure"
+            string="Mes de salida"
+            context="{'group_by': 'date_departure:month'}"
+          />
+          <filter
+            name="group_by_company"
+            string="Empresa"
+            context="{'group_by': 'company_id'}"
+            groups="base.group_multi_company"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="erp_hr_settlement_action" model="ir.actions.act_window">
+    <field name="name">Liquidaciones</field>
+    <field name="res_model">erp.hr.settlement</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="erp_hr_settlement_view_search" />
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Registre la primera liquidación de haberes
+      </p>
+      <p>
+        Cuando termina la relación laboral, elija el empleado, su contrato, la
+        fecha de salida y la causa, y pulse <strong>Calcular</strong>: el
+        sistema obtiene los décimos y vacaciones pendientes, el desahucio y la
+        indemnización que correspondan, con la explicación de cada valor. El
+        responsable de nómina la confirma y se imprime en PDF para firma.
+      </p>
+    </field>
+  </record>
+</odoo>

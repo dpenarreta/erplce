@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Ajustes > Nómina (US-013, CA-9): cuentas del asiento de la liquidación de
+    haberes, en un bloque propio tras «Contabilidad» del rol de pagos. Vacías,
+    se usan las cuentas por defecto del plan l10n_ec (a validar por el
+    contador). Los marcadores empiezan por «Por defecto:» para que no se
+    confundan con una cuenta elegida; la ayuda del bloque nombra las cuentas.
+    Los campos ocupan todo el ancho disponible para que el marcador no se
+    corte (QA-UX, US-013 ronda 2).
+  -->
+  <record
+    id="res_config_settings_view_form_inherit_erp_hr_settlement_ec"
+    model="ir.ui.view"
+  >
+    <field name="name">res.config.settings.form.inherit.erp_hr_settlement_ec</field>
+    <field name="model">res.config.settings</field>
+    <field name="inherit_id" ref="payroll.res_config_settings_view_form" />
+    <field name="arch" type="xml">
+      <xpath expr="//block[@id='payroll_accountant']" position="after">
+        <block title="Liquidación de haberes" id="erp_settlement_accounts">
+          <setting
+            id="erp_settlement_expense_accounts"
+            string="Cuentas de gasto de la liquidación"
+            help="Vacaciones no gozadas y proporcionales, bonificación por desahucio e indemnización por despido intempestivo. Si deja una cuenta vacía se usa la del plan de cuentas: 52020303 «Vacaciones», 52020305 «Desahucio» y 52020304 «Despido intempestivo» (a validar por el contador)."
+          >
+            <div class="content-group">
+              <div class="row mt-2">
+                <label
+                  for="erp_settlement_vacation_account_id"
+                  string="Vacaciones"
+                  class="col-lg-4 o_light_label"
+                />
+                <field
+                  name="erp_settlement_vacation_account_id"
+                  class="col-lg-8"
+                  options="{'no_create': True}"
+                  placeholder="Por defecto: 52020303 Vacaciones"
+                />
+              </div>
+              <div class="row">
+                <label
+                  for="erp_settlement_severance_account_id"
+                  string="Desahucio"
+                  class="col-lg-4 o_light_label"
+                />
+                <field
+                  name="erp_settlement_severance_account_id"
+                  class="col-lg-8"
+                  options="{'no_create': True}"
+                  placeholder="Por defecto: 52020305 Desahucio"
+                />
+              </div>
+              <div class="row">
+                <label
+                  for="erp_settlement_indemnity_account_id"
+                  string="Indemnización"
+                  class="col-lg-4 o_light_label"
+                />
+                <field
+                  name="erp_settlement_indemnity_account_id"
+                  class="col-lg-8"
+                  options="{'no_create': True}"
+                  placeholder="Por defecto: 52020304 Despido intempestivo"
+                />
+              </div>
+            </div>
+          </setting>
+          <setting
+            id="erp_settlement_payable_account"
+            string="Liquidaciones por pagar"
+            help="Cuenta por pagar del neto de la liquidación al empleado. Si la deja vacía se usa la cuenta acreedora de la regla «Neto» del rol mensual (sueldos por pagar)."
+          >
+            <field
+              name="erp_settlement_payable_account_id"
+              class="w-100"
+              options="{'no_create': True}"
+              placeholder="Por defecto: la de «Neto» del rol mensual"
+            />
+          </setting>
+        </block>
+      </xpath>
+    </field>
+  </record>
+</odoo>

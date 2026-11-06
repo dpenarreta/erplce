@@ -53,3 +53,12 @@ LEAVE_PARAMETER_CODES = (
     LEAVE_NURSING_MONTHS,
 )
 ALL_PARAMETER_CODES = VACATION_PARAMETER_CODES + LEAVE_PARAMETER_CODES
+
+# Restricción ``hr_leave_allocation_duration_check`` tal como la redefine este
+# módulo (US-012, CA-11). ``erp_hr_settlement_ec`` la amplía y, al
+# desinstalarse, la restituye con esta definición (su ``uninstall_hook``).
+ALLOCATION_DURATION_CHECK = (
+    "CHECK ((number_of_days > 0 AND allocation_type = 'regular') "
+    "OR (allocation_type != 'regular') "
+    "OR (COALESCE(erp_history_days, 0) > 0 AND number_of_days >= 0))"
+)

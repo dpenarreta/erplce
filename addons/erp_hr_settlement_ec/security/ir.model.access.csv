@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_erp_hr_termination_cause_user,erp.hr.termination.cause.user,model_erp_hr_termination_cause,payroll.group_payroll_user,1,0,0,0
+access_erp_hr_termination_cause_manager,erp.hr.termination.cause.manager,model_erp_hr_termination_cause,payroll.group_payroll_manager,1,1,1,1
+access_erp_hr_indemnity_bracket_user,erp.hr.indemnity.bracket.user,model_erp_hr_indemnity_bracket,payroll.group_payroll_user,1,0,0,0
+access_erp_hr_indemnity_bracket_manager,erp.hr.indemnity.bracket.manager,model_erp_hr_indemnity_bracket,payroll.group_payroll_manager,1,1,1,1
+access_erp_hr_settlement_user,erp.hr.settlement.user,model_erp_hr_settlement,payroll.group_payroll_user,1,1,1,1
+access_erp_hr_settlement_manager,erp.hr.settlement.manager,model_erp_hr_settlement,payroll.group_payroll_manager,1,1,1,1
+access_erp_hr_settlement_line_user,erp.hr.settlement.line.user,model_erp_hr_settlement_line,payroll.group_payroll_user,1,1,1,1
+access_erp_hr_settlement_line_manager,erp.hr.settlement.line.manager,model_erp_hr_settlement_line,payroll.group_payroll_manager,1,1,1,1

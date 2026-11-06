@@ -1,7 +1,7 @@
 import logging
 from collections import Counter, defaultdict
 from contextlib import contextmanager
-from datetime import timedelta
+from datetime import date, timedelta
 
 from dateutil.relativedelta import relativedelta
 
@@ -15,6 +15,16 @@ from odoo.addons.payroll_account.models.hr_payslip import (
     HrPayslip as PayrollAccountHrPayslip,
 )
 
+from .const import (
+    ACCRUED_PAY_RULES,
+    ACCRUED_PAY_SELECTION,
+    BENEFIT_PAY_STRUCTURE_CODE,
+    PAYMENT_DAY,
+    PAYMENT_MONTH,
+    PERIOD_START_DAY,
+    PERIOD_START_MONTH,
+    benefit_period_param_code,
+)
 from .erp_payroll_parameter import PAYROLL_COMPUTE_CACHE_KEY
 
 _logger = logging.getLogger(__name__)
@@ -66,7 +76,11 @@ PAYSLIP_SINGLE_CONTRACT_KEY = "erp_payroll_ec.payslip_single_contract"
 PAYSLIP_SKIP_LINE_COPY_KEY = "erp_payroll_ec.payslip_skip_line_copy"
 # Campos que solo cambian las acciones del rol (calcular, confirmar, anular,
 # volver a borrador, reembolso).
-PAYSLIP_PROTECTED_FIELDS = frozenset({"state", "move_id", "credit_note", "refunded_id"})
+# ``erp_benefit_pay_code`` (décimo que paga un rol de «Pago de décimos
+# acumulados») lo fija el asistente al crear el rol (US-013).
+PAYSLIP_PROTECTED_FIELDS = frozenset(
+    {"state", "move_id", "credit_note", "refunded_id", "erp_benefit_pay_code"}
+)
 # Campos editables de un rol confirmado: nota interna, pagado y las
 # preferencias de visualización de la pestaña de líneas (no afectan importes).
 PAYSLIP_DONE_WRITABLE_FIELDS = frozenset(
@@ -99,8 +113,16 @@ FOURTEENTH_REGIME_RULES = {
 }
 IESS_RULES = {"IESS_PERSONAL": "IESS_PERSONAL", "IESS_PATRONAL": "IESS_PATRONAL"}
 ALWAYS_APPLY_RULES = ("BASIC", "GROSS", "NET")
+# Reglas de «Pago de décimos acumulados» (US-013): ACCRUED_PAY_RULES en
+# models/const.py (pago -> beneficio, régimen y provisiones que paga).
 EC_RULE_CODES = frozenset(
-    {*CONCEPT_RULES, *BENEFIT_RULES, *IESS_RULES, *ALWAYS_APPLY_RULES}
+    {
+        *CONCEPT_RULES,
+        *BENEFIT_RULES,
+        *IESS_RULES,
+        *ALWAYS_APPLY_RULES,
+        *ACCRUED_PAY_RULES,
+    }
 )
 # Tipos de cuenta en los que el apunte lleva al empleado como tercero.
 EMPLOYEE_PARTNER_ACCOUNT_TYPES = (
@@ -161,6 +183,29 @@ class HrPayslip(models.Model):
         string="Régimen de décimo cuarto",
         compute_sudo=True,
         groups="payroll.group_payroll_user",
+    )
+    # Provisiones de décimos que paga este rol (US-013): solo los roles de
+    # «Pago de décimos acumulados»; las crea la confirmación y las elimina la
+    # anulación (erp.payroll.provision.payment).
+    erp_paid_provision_ids = fields.One2many(
+        "erp.payroll.provision.payment",
+        "payslip_id",
+        string="Provisiones pagadas",
+        readonly=True,
+        groups="payroll.group_payroll_user",
+        help="Provisiones mensuales de décimos que se pagan con este rol.",
+    )
+    # Décimo que paga un rol de «Pago de décimos acumulados» (US-013, CA-1,
+    # CA-2): lo fija el asistente «Pago de décimos» al crear el rol y decide
+    # qué regla de pago y qué provisiones entran (un décimo por rol). Vacío
+    # en el resto de roles.
+    erp_benefit_pay_code = fields.Selection(
+        ACCRUED_PAY_SELECTION,
+        string="Décimo que paga",
+        readonly=True,
+        index="btree_not_null",
+        help="Décimo acumulado que paga este rol (solo roles de «Pago de "
+        "décimos acumulados», generados con el asistente Pago de décimos).",
     )
 
     def init(self):
@@ -508,8 +553,10 @@ class HrPayslip(models.Model):
         Acceso: usuario de nómina (``payroll.group_payroll_user``).
         """
         self._erp_check_recomputable()
+        self._erp_check_provisions_not_paid(_("recalcular"))
         self._check_contract_in_period()
         self._erp_check_period_in_month()
+        self._erp_check_benefit_pay_code()
         self.check_access("write")
         PayslipLine = self.env["hr.payslip.line"]
         with self._erp_transition(), self._erp_compute_scope():
@@ -980,6 +1027,16 @@ class HrPayslip(models.Model):
                 ]
             ),
         )
+        return self._erp_filter_payable_assignments(assignments)
+
+    def _erp_filter_payable_assignments(self, assignments):
+        """Criterio único de qué asignaciones fijas paga el rol (lo usan el
+        cálculo, ``_erp_get_assignments``, y la reconstrucción de ingresos no
+        remunerativos, ``_erp_get_non_remuneration_income_map``): asignaciones
+        de ``assignments`` (ya activas: la búsqueda aplica ``active_test``) de
+        conceptos **activos** y **fijos** de la empresa del rol, vigentes algún
+        día del periodo."""
+        self.ensure_one()
         return assignments.filtered(
             lambda a: a.concept_id.active
             and a.concept_id.amount_kind == "fixed"
@@ -1074,6 +1131,119 @@ class HrPayslip(models.Model):
             for concept, amount in totals.items()
         }
 
+    def _erp_get_non_remuneration_income(self):
+        """Ingresos no remunerativos de un rol (envoltorio de
+        ``_erp_get_non_remuneration_income_map``; para varios roles use el
+        mapa, que consulta en lote).
+
+        :return: ``float`` (positivo, redondeado a la moneda de la empresa)
+        """
+        self.ensure_one()
+        return self._erp_get_non_remuneration_income_map()[self.id]
+
+    def _erp_get_non_remuneration_income_map(self):
+        """Parte de los ingresos propios (líneas ``INC_OTHER``) de cada rol de
+        ``self`` que corresponde a conceptos de ingreso con «Cuenta como
+        remuneración» desmarcado (viáticos, reembolsos de gastos; US-013,
+        CA-14).
+
+        La línea ``INC_OTHER`` guarda la suma de todos los conceptos de
+        ingreso; el detalle por concepto se reconstruye con los mismos datos
+        con que se calculó el rol:
+
+        - entradas variables (``hr.payslip.input``) con importe positivo: no
+          cambian una vez confirmado el rol; su concepto es el enlazado
+          (``erp_concept_id``) o, si no lo tiene, el concepto variable de la
+          empresa del rol con ese código (también archivado);
+        - asignaciones fijas con el **mismo criterio que el cálculo**
+          (``_erp_filter_payable_assignments``): asignaciones activas del
+          empleado vigentes algún día del periodo, de conceptos fijos
+          **activos** de la empresa del rol (importe mensual completo). Una
+          asignación de un concepto archivado no se pagó en el rol (o el
+          concepto se archivó después), así que no se resta.
+
+        Se usa el valor **actual** de la casilla del concepto: si RRHH la
+        desmarca después, el concepto deja de contar también en los roles
+        anteriores (la casilla describe la naturaleza del concepto). El
+        resultado nunca supera el total de las líneas ``INC_OTHER`` del rol
+        (si una asignación se editó después del cálculo, no se excluye más de
+        lo que se pagó). Interpretación a validar con el asesor laboral.
+
+        Rendimiento: número de consultas constante, sea cual sea el número de
+        roles: una búsqueda de asignaciones para todos los empleados y el
+        rango de fechas de ``self``, como mucho una de conceptos por código, y
+        el reparto por rol se hace en memoria.
+
+        :return: ``{hr.payslip id: float}`` (positivo, redondeado a la moneda
+            de la empresa de cada rol; 0.0 si el rol no pagó ``INC_OTHER``)
+        """
+        result = dict.fromkeys(self.ids, 0.0)
+        paid_by_slip = {}
+        for slip in self:
+            paid = sum(
+                line.total
+                for line in slip.line_ids
+                if line.code == "INC_OTHER" and line.salary_rule_id.code == "INC_OTHER"
+            )
+            if slip.company_id.currency_id.compare_amounts(paid, 0.0) > 0:
+                paid_by_slip[slip] = paid
+        if not paid_by_slip:
+            return result
+        slips = self.browse([slip.id for slip in paid_by_slip])
+        inputs_by_slip = {
+            slip: slip.input_line_ids.filtered(lambda line: line.amount > 0)
+            for slip in slips
+        }
+        unlinked = {
+            (slip.company_id.id, line.code)
+            for slip, inputs in inputs_by_slip.items()
+            for line in inputs
+            if not line.erp_concept_id
+        }
+        by_company_code = {}
+        if unlinked:
+            Concept = self.env["erp.payroll.concept"].with_context(active_test=False)
+            for concept in Concept.search(
+                [
+                    ("code", "in", list({code for _company, code in unlinked})),
+                    ("company_id", "in", list({company for company, _c in unlinked})),
+                    ("amount_kind", "=", "variable"),
+                ]
+            ):
+                by_company_code[(concept.company_id.id, concept.code)] = concept
+        assignments = self.env["erp.payroll.employee.concept"].search(
+            [
+                ("employee_id", "in", slips.employee_id.ids),
+                ("date_from", "<=", max(slips.mapped("date_to"))),
+                "|",
+                ("date_to", "=", False),
+                ("date_to", ">=", min(slips.mapped("date_from"))),
+            ]
+        )
+        by_employee = defaultdict(lambda: assignments.browse())
+        for assignment in assignments:
+            by_employee[assignment.employee_id.id] |= assignment
+        for slip, paid in paid_by_slip.items():
+            excluded = 0.0
+            for line in inputs_by_slip[slip]:
+                concept = line.erp_concept_id or by_company_code.get(
+                    (slip.company_id.id, line.code)
+                )
+                if (
+                    concept
+                    and concept.concept_type == "income"
+                    and not concept.erp_is_remuneration
+                ):
+                    excluded += line.amount
+            for assignment in slip._erp_filter_payable_assignments(
+                by_employee[slip.employee_id.id]
+            ):
+                concept = assignment.concept_id
+                if concept.concept_type == "income" and not concept.erp_is_remuneration:
+                    excluded += assignment.amount
+            result[slip.id] = slip.company_id.currency_id.round(min(excluded, paid))
+        return result
+
     # --- Bases -----------------------------------------------------------
     def _erp_get_basic(self, contract):
         """Sueldo del contrato prorrateado por días: sueldo × días / MONTH_DAYS
@@ -1128,6 +1298,12 @@ class HrPayslip(models.Model):
             )
         if code not in EC_RULE_CODES:
             self._erp_raise_unknown_rule(code)
+        if code in ACCRUED_PAY_RULES:
+            # Pago de décimos acumulados (US-013): solo si hay importe.
+            currency = self._erp_currency(contract)
+            return not currency.is_zero(
+                self._erp_get_accrued_benefit_amount(code, contract)
+            )
         if not self._erp_has_labor_relationship(contract):
             return False
         if code in IESS_RULES:
@@ -1197,9 +1373,302 @@ class HrPayslip(models.Model):
             ) / self._erp_param_positive("THIRTEENTH_DIVISOR")
         elif code in ("D14_PAID", *FOURTEENTH_REGIME_RULES):
             amount = self._erp_get_fourteenth_amount(contract)
+        elif code in ACCRUED_PAY_RULES:
+            amount = self._erp_get_accrued_benefit_amount(code, contract)
         else:
             self._erp_raise_unknown_rule(code)
         return currency.round(amount)
+
+    # --- Pago de décimos acumulados (US-013) ------------------------------
+    def _erp_get_accrued_provision_lines(self, code):
+        """Provisiones pendientes que paga la regla ``code`` de «Pago de
+        décimos acumulados» en este rol: las del empleado, con los códigos de
+        ``ACCRUED_PAY_RULES[code]``, de roles mensuales cuyo inicio cae en el
+        periodo del rol (``date_from``-``date_to`` = periodo de cálculo del
+        décimo). Memorizado durante el cálculo.
+
+        sudo(): misma política que la confirmación
+        (``_erp_prepare_provision_payments``): el importe del rol debe ser la
+        suma de **todas** las provisiones pendientes del empleado aunque las
+        reglas de registro del usuario oculten algún rol mensual; si el
+        cálculo viera menos que la confirmación, esta pediría recalcular sin
+        fin. Solo se leen importes; el resultado no se devuelve al usuario.
+
+        :return: ``hr.payslip.line`` (sudo)
+        """
+        self.ensure_one()
+        _benefit, _regime, provision_codes = ACCRUED_PAY_RULES[code]
+        return self._erp_memo(
+            ("accrued_provision_lines", self.id, code),
+            lambda: self.env["hr.payslip.line"]
+            .sudo()
+            ._erp_get_pending_provision_lines(
+                provision_codes,
+                employees=self.employee_id,
+                date_from=self.date_from,
+                date_to=self.date_to,
+            ),
+        )
+
+    def _erp_get_accrued_benefit_amount(self, code, contract):
+        """Importe de la regla ``code`` de «Pago de décimos acumulados»
+        (US-013, CA-1 a CA-3).
+
+        - Solo la regla del décimo que paga el rol (``erp_benefit_pay_code``):
+          un rol de pago de décimo tercero no suma provisiones de décimo
+          cuarto aunque caigan en su periodo, y viceversa.
+        - Régimen: lo da el código de la provisión (``D14_PROV_COSTA`` /
+          ``D14_PROV_SIERRA``, el régimen con el que se calculó cada mes), no
+          el establecimiento actual del empleado: si cambió de régimen, cada
+          pago incluye solo las provisiones de su régimen.
+        - Modalidad: no se vuelve a comprobar. Una provisión pendiente solo
+          existe si el mes se calculó en modalidad acumulada, y se debe aunque
+          el empleado haya pasado después a la modalidad mensual.
+        - Contratos: el importe va solo al contrato principal del rol
+          (``_erp_get_main_contract``); el motor hace una pasada por contrato
+          (``get_lines_dict``) y así no se suma una vez por cada contrato.
+
+        :return: ``float`` (positivo, redondeado a la moneda)
+        """
+        self.ensure_one()
+        if not self.erp_benefit_pay_code:
+            self._erp_check_benefit_pay_code()
+        if code != self.erp_benefit_pay_code:
+            return 0.0
+        if contract != self._erp_get_main_contract():
+            return 0.0
+        lines = self._erp_get_accrued_provision_lines(code)
+        return self._erp_currency(contract).round(sum(lines.mapped("total")))
+
+    def _erp_is_benefit_pay(self):
+        """El rol es de «Pago de décimos acumulados» (o de una estructura
+        hija)."""
+        self.ensure_one()
+        return BENEFIT_PAY_STRUCTURE_CODE in (
+            (self.struct_id or self.contract_id.struct_id)
+            .get_structure_with_parents()
+            .mapped("code")
+        )
+
+    def _erp_check_benefit_pay_code(self):
+        """Un rol de «Pago de décimos acumulados» paga un solo décimo
+        (``erp_benefit_pay_code``), que fija el asistente «Pago de décimos».
+        Sin él no se sabe qué provisiones pagar: ``UserError``."""
+        invalid = self.filtered(
+            lambda slip: not slip.erp_benefit_pay_code
+            and not slip.credit_note
+            and slip._erp_is_benefit_pay()
+        )
+        if invalid:
+            raise UserError(
+                _(
+                    "El rol de pago de décimos de %(employees)s no indica qué "
+                    "décimo paga. Genere los roles de pago de décimos con el "
+                    "asistente «Pago de décimos» (Nómina), que fija el décimo, "
+                    "el periodo y la fecha de pago.",
+                    employees=", ".join(invalid.mapped("employee_id.name")),
+                )
+            )
+
+    @api.model
+    def _erp_get_benefit_period(self, pay_code, year, company=None):
+        """Periodo de cálculo y fecha de pago del décimo ``pay_code`` del año
+        de pago ``year`` (US-013, CA-1, CA-2).
+
+        Con los parámetros ``<PREFIJO>_PERIOD_START_MONTH/DAY`` y
+        ``<PREFIJO>_PAYMENT_MONTH/DAY`` (``benefit_period_param_code``),
+        vigentes al 1 de enero del año de pago:
+
+        - periodo: del día/mes de inicio del año anterior al día anterior al
+          mismo día/mes del año de pago (p. ej. décimo tercero 2026: del
+          01/12/2025 al 30/11/2026);
+        - fecha de pago: día/mes de pago del año de pago (p. ej. 24/12/2026).
+
+        Un día mayor que el último del mes se ajusta al último (29 de febrero).
+
+        :param pay_code: regla de ``ACCRUED_PAY_RULES``
+        :param year: año de pago (``int``)
+        :return: ``(inicio, fin, fecha de pago)``
+        :raises UserError: año fuera de rango, parámetro sin vigencia o con un
+            mes/día no válido
+        """
+        company = company or self.env.company
+        benefit, regime, _codes = ACCRUED_PAY_RULES[pay_code]
+        if not isinstance(year, int) or not 2000 <= year <= 2999:
+            raise UserError(
+                _(
+                    "El año de pago del décimo debe ser un año de cuatro cifras "
+                    "(por ejemplo, %(year)s).",
+                    year=fields.Date.context_today(self).year,
+                )
+            )
+        reference = date(year, 1, 1)
+        Parameter = self.env["erp.payroll.parameter"]
+
+        def value(suffix, maximum):
+            code = benefit_period_param_code(benefit, regime, suffix)
+            number = Parameter._get_value(code, reference, company)
+            if number != int(number) or not 1 <= number <= maximum:
+                raise UserError(
+                    _(
+                        "El parámetro de nómina %(code)s vigente al %(date)s "
+                        "debe ser un número entero entre 1 y %(maximum)s (vale "
+                        "%(value)s). Corríjalo en Parámetros de nómina.",
+                        code=code,
+                        date=format_date(self.env, reference),
+                        maximum=maximum,
+                        value=number,
+                    )
+                )
+            return int(number)
+
+        def safe_date(year_, month, day):
+            return date(year_, month, 1) + relativedelta(day=day)
+
+        start_month = value(PERIOD_START_MONTH, 12)
+        start_day = value(PERIOD_START_DAY, 31)
+        payment_month = value(PAYMENT_MONTH, 12)
+        payment_day = value(PAYMENT_DAY, 31)
+        period_start = safe_date(year - 1, start_month, start_day)
+        period_end = safe_date(year, start_month, start_day) - timedelta(days=1)
+        payment_date = safe_date(year, payment_month, payment_day)
+        return period_start, period_end, payment_date
+
+    def _erp_prepare_provision_payments(self):
+        """Valores de las marcas de provisión pagada
+        (``erp.payroll.provision.payment``, ``document_type='payslip'``) de
+        cada rol de «Pago de décimos acumulados» de ``self`` (US-013, CA-3).
+        Los reembolsos no marcan nada. Se llama antes de confirmar (sin
+        escribir nada) y las marcas se crean después
+        (``_erp_create_provision_payments``).
+
+        Las provisiones se vuelven a buscar ahora (pendientes del empleado,
+        del código y del periodo del rol) y su suma debe ser igual a la línea
+        de pago del rol: si otro documento pagó alguna o se confirmó otro mes
+        desde el cálculo, ``UserError`` (recalcular), en lugar de marcar
+        provisiones que el rol no pagó.
+
+        sudo(): la búsqueda debe ver todas las provisiones del empleado
+        aunque las reglas de registro del usuario oculten algún rol, y las
+        marcas son datos derivados del rol que se está confirmando (el permiso
+        de confirmar ya se comprobó).
+        """
+        PayslipLine = self.env["hr.payslip.line"].sudo()
+        vals_list = []
+        for slip in self.filtered(
+            lambda s: s.erp_benefit_pay_code and not s.credit_note
+        ):
+            code = slip.erp_benefit_pay_code
+            _benefit, _regime, provision_codes = ACCRUED_PAY_RULES[code]
+            pending = PayslipLine._erp_get_pending_provision_lines(
+                provision_codes,
+                employees=slip.employee_id,
+                date_from=slip.date_from,
+                date_to=slip.date_to,
+            )
+            currency = slip.company_id.currency_id
+            paid = currency.round(
+                sum(
+                    slip.line_ids.filtered(
+                        lambda line, code=code: line.code == code
+                    ).mapped("total")
+                )
+            )
+            pending_total = currency.round(sum(pending.mapped("total")))
+            if currency.compare_amounts(pending_total, paid):
+                raise UserError(
+                    _(
+                        "Las provisiones pendientes de %(employee)s cambiaron "
+                        "desde el cálculo del rol de pago de décimos "
+                        "%(payslip)s (el rol paga %(paid)s y hoy hay "
+                        "%(pending)s pendientes). Recalcule el rol antes de "
+                        "confirmarlo.",
+                        employee=slip.employee_id.name,
+                        payslip=slip.number or slip.name,
+                        paid=formatLang(self.env, paid, currency_obj=currency),
+                        pending=formatLang(
+                            self.env, pending_total, currency_obj=currency
+                        ),
+                    )
+                )
+            vals_list += [
+                {
+                    "payslip_line_id": line.id,
+                    "amount": line.total,
+                    "document_type": "payslip",
+                    "payslip_id": slip.id,
+                }
+                for line in pending
+            ]
+        return vals_list
+
+    def _erp_create_provision_payments(self, vals_list):
+        """Crea las marcas preparadas por ``_erp_prepare_provision_payments``.
+        sudo(): ver ``_erp_prepare_provision_payments``."""
+        if vals_list:
+            self.env["erp.payroll.provision.payment"].sudo().create(vals_list)
+
+    def _erp_unlink_paid_provisions(self):
+        """Elimina las marcas de provisión pagada de los roles de pago de
+        décimos de ``self``: sus provisiones vuelven a quedar pendientes
+        (anulación o reembolso del rol, US-013 CA-3).
+
+        sudo(): las marcas son datos derivados del rol; el permiso de anular
+        o reembolsar ya se comprobó."""
+        payments = self.sudo().erp_paid_provision_ids
+        if payments:
+            payments.unlink()
+
+    def _erp_check_provisions_not_paid(self, action):
+        """Un rol mensual cuyas provisiones de décimos ya se pagaron (rol de
+        pago de décimos o liquidación) no se anula, recalcula, reembolsa ni
+        borra: ``UserError`` que nombra el documento que las pagó, en lugar
+        del error técnico de la BD (``ondelete='restrict'``) o de dejar la
+        provisión pagada sin su rol (US-013, CA-3).
+
+        :param action: verbo de la acción para el mensaje (p. ej. «anular»)
+
+        sudo(): la comprobación debe ver las marcas aunque el usuario no tenga
+        acceso al documento que pagó; solo se leen sus nombres.
+        """
+        if not self.ids:
+            return
+        payments = (
+            self.env["erp.payroll.provision.payment"]
+            .sudo()
+            .search([("provision_payslip_id", "in", self.ids)])
+        )
+        if not payments:
+            return
+        details = "\n".join(
+            self.env._(
+                "- %(payslip)s: pagadas en %(documents)s",
+                payslip=slip.number or slip.name or "",
+                documents=", ".join(
+                    sorted(
+                        {
+                            payment._erp_document_name()
+                            for payment in payments
+                            if payment.provision_payslip_id == slip
+                        }
+                    )
+                ),
+            )
+            for slip in payments.provision_payslip_id
+        )
+        raise UserError(
+            _(
+                "No se puede %(action)s el rol de pagos: sus provisiones de "
+                "décimos ya se pagaron:\n%(details)s\n\nAnule primero el "
+                "documento que las pagó.",
+                action=action,
+                details=details,
+            )
+        )
+
+    @api.ondelete(at_uninstall=False)
+    def _erp_unlink_except_paid_provisions(self):
+        self._erp_check_provisions_not_paid(_("eliminar"))
 
     def _erp_raise_unknown_rule(self, code):
         raise UserError(
@@ -1423,10 +1892,15 @@ class HrPayslip(models.Model):
                 originals = self.filtered(lambda slip: not slip.credit_note)
                 originals._check_contract_in_period()
                 originals._erp_check_period_in_month()
+            # Pago de décimos acumulados (US-013, CA-3): se comprueba antes de
+            # confirmar que el rol paga exactamente lo pendiente y, después,
+            # las provisiones quedan marcadas como pagadas.
+            payments = self._erp_prepare_provision_payments()
             res = super(
                 PayrollAccountHrPayslip, self.with_context(without_compute_sheet=True)
             ).action_payslip_done()
             self._erp_create_account_moves()
+            self._erp_create_provision_payments(payments)
         return res
 
     def _erp_create_account_moves(self):
@@ -1664,9 +2138,35 @@ class HrPayslip(models.Model):
                     )
                 )
             done._erp_check_moves_not_reconciled()
+            # US-013, CA-3: un rol mensual con provisiones ya pagadas no se
+            # anula (antes se anula el pago de décimos o la liquidación).
+            done._erp_check_provisions_not_paid(_("anular"))
+        # Reembolsos confirmados de pagos de décimos: al anularlos, el rol
+        # original vuelve a pagar sus provisiones (se marcan otra vez).
+        credit_notes = done.filtered("credit_note")
+        refunded_benefit = self.browse()
+        if credit_notes:
+            # sudo(): solo se busca el rol original de cada reembolso.
+            refunded_benefit = (
+                self.sudo()
+                .search(
+                    [
+                        ("refunded_id", "in", credit_notes.ids),
+                        ("state", "=", "done"),
+                        ("erp_benefit_pay_code", "!=", False),
+                    ]
+                )
+                .with_env(self.env)
+            )
         with self._erp_transition():
             res = super(PayrollAccountHrPayslip, self).action_payslip_cancel()
             done._erp_reverse_account_moves()
+            # Pago de décimos anulado: sus provisiones vuelven a quedar
+            # pendientes (US-013, CA-3).
+            done._erp_unlink_paid_provisions()
+            refunded_benefit._erp_create_provision_payments(
+                refunded_benefit._erp_prepare_provision_payments()
+            )
         return res
 
     def _erp_check_moves_not_reconciled(self):
@@ -1740,8 +2240,14 @@ class HrPayslip(models.Model):
         self._erp_check_payroll_manager(
             _("Solo el responsable de nómina puede emitir el reembolso de un rol.")
         )
+        # US-013, CA-3: un rol mensual con provisiones ya pagadas no se
+        # reembolsa; el reembolso de un pago de décimos deja sus provisiones
+        # otra vez pendientes.
+        self._erp_check_provisions_not_paid(_("reembolsar"))
         with self._erp_transition():
-            return super().refund_sheet()
+            res = super().refund_sheet()
+            self.filtered("erp_benefit_pay_code")._erp_unlink_paid_provisions()
+        return res
 
     # ------------------------------------------------------------------
     # Validación de contrato (US-006, CA-4)

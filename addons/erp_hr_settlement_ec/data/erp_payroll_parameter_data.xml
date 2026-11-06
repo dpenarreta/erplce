@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!--
+        Parámetros normativos de la liquidación de haberes (US-013, CA-6,
+        CA-12), en el mismo modelo y con el mismo criterio que los de US-008:
+        VALORES POR DEFECTO DE PARTIDA en estado «A validar» que el
+        responsable de nómina o el asesor laboral debe confirmar o corregir.
+        No se garantiza que estén vigentes. noupdate: las actualizaciones no
+        pisan los cambios del usuario. Sin empresa: comunes a todas.
+        «Vigente desde» (2020-01-01) es el inicio de uso para cubrir
+        liquidaciones con periodos anteriores, no la fecha de vigencia legal.
+        Códigos: models/const.py (SETTLEMENT_PARAMETER_CODES).
+    -->
+  <record
+    id="param_severance_bonus_rate_2020"
+    model="erp.payroll.parameter"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">SEVERANCE_BONUS_RATE</field>
+    <field
+      name="name"
+    >Bonificación por desahucio: porcentaje de la última remuneración por año de servicio</field>
+    <field name="value_type">percent</field>
+    <field name="value">25</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 185 (reformado por la Ley Orgánica para la Justicia Laboral y Reconocimiento del Trabajo en el Hogar, R.O. Supl. 483, 20/04/2015): en la terminación por desahucio el empleador bonifica al trabajador con el 25 % de la última remuneración mensual por cada año de servicio; igual bonificación si la relación termina por acuerdo entre las partes.</field>
+    <field name="note">Valor de partida a validar por el asesor laboral.</field>
+  </record>
+  <record
+    id="param_severance_bonus_proportional_fraction_2020"
+    model="erp.payroll.parameter"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">SEVERANCE_BONUS_PROPORTIONAL_FRACTION</field>
+    <field
+      name="name"
+    >Bonificación por desahucio: fracción de año proporcional (1 = sí, 0 = solo años completos)</field>
+    <field name="value_type">number</field>
+    <field name="value">1</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 185 (por cada uno de los años de servicio). El pago proporcional de la fracción de año es una interpretación a confirmar con el asesor laboral.</field>
+    <field
+      name="note"
+    >Valor de partida a validar. 1: la fracción de año se paga en proporción a los días; 0: solo cuentan los años completos.</field>
+  </record>
+  <record
+    id="param_indemnity_year_fraction_as_full_2020"
+    model="erp.payroll.parameter"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">INDEMNITY_YEAR_FRACTION_AS_FULL</field>
+    <field
+      name="name"
+    >Indemnización por despido intempestivo: fracción de año como año completo (1 = sí, 0 = no)</field>
+    <field name="value_type">number</field>
+    <field name="value">1</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 188: «La fracción de un año se considerará como año completo» para la indemnización por despido intempestivo.</field>
+    <field
+      name="note"
+    >Valor de partida a validar. 1: la fracción de año cuenta como año completo; 0: solo cuentan los años completos.</field>
+  </record>
+  <record
+    id="param_vacation_day_base_months_2020"
+    model="erp.payroll.parameter"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">VACATION_DAY_BASE_MONTHS</field>
+    <field
+      name="name"
+    >Valor del día de vacaciones: meses de remuneración de la base</field>
+    <field name="value_type">number</field>
+    <field name="value">12</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 71 (la remuneración de las vacaciones es la veinticuatroava parte de lo percibido en un año completo de trabajo) y siguientes sobre las vacaciones no gozadas al terminar la relación laboral (artículo exacto a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Valor del día = remuneraciones de los últimos N meses (este valor) / «Valor del día de vacaciones: divisor». Con 12 meses y divisor 360 equivale a la veinticuatroava parte del año por cada 15 días.</field>
+  </record>
+  <record
+    id="param_vacation_day_divisor_2020"
+    model="erp.payroll.parameter"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">VACATION_DAY_DIVISOR</field>
+    <field name="name">Valor del día de vacaciones: divisor</field>
+    <field name="value_type">number</field>
+    <field name="value">360</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 71 (veinticuatroava parte de lo percibido en un año por 15 días de vacaciones: año / 24 / 15 = año / 360).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Divisor de las remuneraciones de la base para obtener el valor de un día de vacaciones no gozadas.</field>
+  </record>
+  <record
+    id="param_vacation_proportional_divisor_2020"
+    model="erp.payroll.parameter"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">VACATION_PROPORTIONAL_DIVISOR</field>
+    <field
+      name="name"
+    >Vacaciones proporcionales: divisor de las remuneraciones del año en curso</field>
+    <field name="value_type">number</field>
+    <field name="value">24</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 71 y siguientes (el trabajador que sale antes de cumplir el año de servicio recibe la parte proporcional: veinticuatroava parte de lo percibido; artículo exacto a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. Vacaciones proporcionales = remuneraciones del año de servicio en curso / este valor.</field>
+  </record>
+</odoo>

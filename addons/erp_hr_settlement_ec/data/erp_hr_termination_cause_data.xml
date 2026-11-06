@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!--
+        Causas de salida (US-013, decisión 1 del usuario: todas las legales).
+        Los indicadores de rubros de cada causa son VALORES DE PARTIDA en
+        estado «A validar»: el asesor laboral debe confirmarlos (estado
+        «Validado») o corregirlos. Todas pagan los décimos y las vacaciones
+        pendientes; la bonificación por desahucio y la indemnización por
+        despido intempestivo dependen de la causa. noupdate: las
+        actualizaciones no pisan los cambios del usuario.
+        Fuente consultada: Código del Trabajo, Codificación 17 (R.O. Supl. 167,
+        16/12/2005) con sus reformas; artículos citados a confirmar.
+    -->
+  <record
+    id="cause_resignation"
+    model="erp.hr.termination.cause"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">RESIGNATION</field>
+    <field name="name">Renuncia voluntaria</field>
+    <field name="sequence">10</field>
+    <field name="state">to_validate</field>
+    <field name="departure_reason_id" ref="hr.departure_resigned" />
+    <field name="pays_thirteenth" eval="True" />
+    <field name="pays_fourteenth" eval="True" />
+    <field name="pays_pending_vacation" eval="True" />
+    <field name="pays_proportional_vacation" eval="True" />
+    <field name="pays_severance_bonus" eval="True" />
+    <field name="pays_unfair_dismissal_indemnity" eval="False" />
+    <field
+      name="description"
+    >El trabajador termina la relación laboral por su voluntad (renuncia formalizada como desahucio). Paga décimos y vacaciones pendientes y la bonificación por desahucio. Rubros marcados «a validar» por el asesor laboral.</field>
+    <field
+      name="legal_basis"
+    >Código del Trabajo, art. 169 num. 9 (desahucio), arts. 184 y 185 (bonificación por desahucio, reformados por la Ley Orgánica para la Justicia Laboral, R.O. Supl. 483, 20/04/2015).</field>
+  </record>
+  <record
+    id="cause_unfair_dismissal"
+    model="erp.hr.termination.cause"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">UNFAIR_DISMISSAL</field>
+    <field name="name">Despido intempestivo</field>
+    <field name="sequence">20</field>
+    <field name="state">to_validate</field>
+    <field name="departure_reason_id" ref="hr.departure_fired" />
+    <field name="pays_thirteenth" eval="True" />
+    <field name="pays_fourteenth" eval="True" />
+    <field name="pays_pending_vacation" eval="True" />
+    <field name="pays_proportional_vacation" eval="True" />
+    <field name="pays_severance_bonus" eval="True" />
+    <field name="pays_unfair_dismissal_indemnity" eval="True" />
+    <field
+      name="description"
+    >El empleador termina la relación laboral sin causa legal. Paga décimos y vacaciones pendientes, la indemnización por tramos de años de servicio y la bonificación por desahucio. Rubros marcados «a validar» por el asesor laboral.</field>
+    <field
+      name="legal_basis"
+    >Código del Trabajo, art. 188 (indemnización por despido intempestivo) y art. 185 (bonificación por desahucio).</field>
+  </record>
+  <record
+    id="cause_employer_just_cause"
+    model="erp.hr.termination.cause"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">EMPLOYER_JUST_CAUSE</field>
+    <field name="name">Visto bueno solicitado por el empleador</field>
+    <field name="sequence">30</field>
+    <field name="state">to_validate</field>
+    <field name="departure_reason_id" ref="hr.departure_fired" />
+    <field name="pays_thirteenth" eval="True" />
+    <field name="pays_fourteenth" eval="True" />
+    <field name="pays_pending_vacation" eval="True" />
+    <field name="pays_proportional_vacation" eval="True" />
+    <field name="pays_severance_bonus" eval="False" />
+    <field name="pays_unfair_dismissal_indemnity" eval="False" />
+    <field
+      name="description"
+    >El inspector del trabajo concede el visto bueno pedido por el empleador por una causa del art. 172. Paga solo décimos y vacaciones pendientes. Rubros marcados «a validar» por el asesor laboral.</field>
+    <field
+      name="legal_basis"
+    >Código del Trabajo, art. 169 num. 7 y art. 172 (causas por las que el empleador puede dar por terminado el contrato), art. 183 (visto bueno).</field>
+  </record>
+  <record
+    id="cause_employee_just_cause"
+    model="erp.hr.termination.cause"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">EMPLOYEE_JUST_CAUSE</field>
+    <field name="name">Visto bueno solicitado por el trabajador</field>
+    <field name="sequence">40</field>
+    <field name="state">to_validate</field>
+    <field name="departure_reason_id" ref="hr.departure_resigned" />
+    <field name="pays_thirteenth" eval="True" />
+    <field name="pays_fourteenth" eval="True" />
+    <field name="pays_pending_vacation" eval="True" />
+    <field name="pays_proportional_vacation" eval="True" />
+    <field name="pays_severance_bonus" eval="True" />
+    <field name="pays_unfair_dismissal_indemnity" eval="True" />
+    <field
+      name="description"
+    >El inspector del trabajo concede el visto bueno pedido por el trabajador por una causa del art. 173. Paga décimos y vacaciones pendientes y las mismas indemnizaciones que el despido intempestivo. Rubros marcados «a validar» por el asesor laboral.</field>
+    <field
+      name="legal_basis"
+    >Código del Trabajo, art. 169 num. 8, art. 173 (causas para que el trabajador dé por terminado el contrato) y art. 191 (indemnizaciones del despido intempestivo cuando el trabajador obtiene el visto bueno).</field>
+  </record>
+  <record
+    id="cause_contract_end"
+    model="erp.hr.termination.cause"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">CONTRACT_END</field>
+    <field name="name">Fin de contrato o de plazo</field>
+    <field name="sequence">50</field>
+    <field name="state">to_validate</field>
+    <field name="pays_thirteenth" eval="True" />
+    <field name="pays_fourteenth" eval="True" />
+    <field name="pays_pending_vacation" eval="True" />
+    <field name="pays_proportional_vacation" eval="True" />
+    <field name="pays_severance_bonus" eval="False" />
+    <field name="pays_unfair_dismissal_indemnity" eval="False" />
+    <field
+      name="description"
+    >Conclusión de la obra, del periodo de labor o servicios objeto del contrato, o del plazo pactado cuando la ley lo admite. Paga décimos y vacaciones pendientes. Rubros marcados «a validar» por el asesor laboral.</field>
+    <field
+      name="legal_basis"
+    >Código del Trabajo, art. 169 num. 3 (conclusión de la obra, periodo de labor o servicios objeto del contrato).</field>
+  </record>
+  <record
+    id="cause_mutual_agreement"
+    model="erp.hr.termination.cause"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">MUTUAL_AGREEMENT</field>
+    <field name="name">Mutuo acuerdo</field>
+    <field name="sequence">60</field>
+    <field name="state">to_validate</field>
+    <field name="pays_thirteenth" eval="True" />
+    <field name="pays_fourteenth" eval="True" />
+    <field name="pays_pending_vacation" eval="True" />
+    <field name="pays_proportional_vacation" eval="True" />
+    <field name="pays_severance_bonus" eval="True" />
+    <field name="pays_unfair_dismissal_indemnity" eval="False" />
+    <field
+      name="description"
+    >Las partes acuerdan terminar la relación laboral. Paga décimos y vacaciones pendientes y la bonificación por desahucio. Rubros marcados «a validar» por el asesor laboral.</field>
+    <field
+      name="legal_basis"
+    >Código del Trabajo, art. 169 num. 2 (acuerdo de las partes) y art. 185, segundo inciso (igual bonificación cuando la relación termina por acuerdo entre las partes).</field>
+  </record>
+  <record
+    id="cause_notice"
+    model="erp.hr.termination.cause"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">NOTICE</field>
+    <field name="name">Desahucio</field>
+    <field name="sequence">70</field>
+    <field name="state">to_validate</field>
+    <field name="pays_thirteenth" eval="True" />
+    <field name="pays_fourteenth" eval="True" />
+    <field name="pays_pending_vacation" eval="True" />
+    <field name="pays_proportional_vacation" eval="True" />
+    <field name="pays_severance_bonus" eval="True" />
+    <field name="pays_unfair_dismissal_indemnity" eval="False" />
+    <field
+      name="description"
+    >Aviso escrito con el que una de las partes da por terminado el contrato. Paga décimos y vacaciones pendientes y la bonificación por desahucio. Rubros marcados «a validar» por el asesor laboral.</field>
+    <field
+      name="legal_basis"
+    >Código del Trabajo, art. 169 num. 9, art. 184 (desahucio) y art. 185 (bonificación por desahucio).</field>
+  </record>
+  <record
+    id="cause_death"
+    model="erp.hr.termination.cause"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">DEATH</field>
+    <field name="name">Fallecimiento</field>
+    <field name="sequence">80</field>
+    <field name="state">to_validate</field>
+    <field name="pays_thirteenth" eval="True" />
+    <field name="pays_fourteenth" eval="True" />
+    <field name="pays_pending_vacation" eval="True" />
+    <field name="pays_proportional_vacation" eval="True" />
+    <field name="pays_severance_bonus" eval="False" />
+    <field name="pays_unfair_dismissal_indemnity" eval="False" />
+    <field
+      name="description"
+    >Muerte del trabajador. Paga décimos y vacaciones pendientes a sus herederos. Otros valores (p. ej. por accidente de trabajo) se registran como rubros manuales. Rubros marcados «a validar» por el asesor laboral.</field>
+    <field
+      name="legal_basis"
+    >Código del Trabajo, art. 169 num. 5 (muerte o incapacidad permanente y total del trabajador).</field>
+  </record>
+  <record
+    id="cause_retirement"
+    model="erp.hr.termination.cause"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="code">RETIREMENT</field>
+    <field name="name">Jubilación</field>
+    <field name="sequence">90</field>
+    <field name="state">to_validate</field>
+    <field name="departure_reason_id" ref="hr.departure_retired" />
+    <field name="pays_thirteenth" eval="True" />
+    <field name="pays_fourteenth" eval="True" />
+    <field name="pays_pending_vacation" eval="True" />
+    <field name="pays_proportional_vacation" eval="True" />
+    <field name="pays_severance_bonus" eval="False" />
+    <field name="pays_unfair_dismissal_indemnity" eval="False" />
+    <field
+      name="description"
+    >El trabajador se jubila. Paga décimos y vacaciones pendientes. La jubilación patronal (cálculo actuarial) y cualquier bonificación pactada se registran como rubros manuales. Rubros marcados «a validar» por el asesor laboral.</field>
+    <field
+      name="legal_basis"
+    >Código del Trabajo, art. 216 (jubilación patronal) y Ley de Seguridad Social (jubilación por el IESS). Rubros a confirmar con el asesor laboral.</field>
+  </record>
+</odoo>

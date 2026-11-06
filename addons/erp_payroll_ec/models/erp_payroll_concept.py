@@ -65,6 +65,16 @@ class ErpPayrollConcept(models.Model):
         help="Solo ingresos: el importe forma parte de la base del décimo "
         "tercer sueldo.",
     )
+    # US-013, CA-14: base de remuneración de la liquidación (última
+    # remuneración, valor del día de vacaciones, vacaciones proporcionales).
+    erp_is_remuneration = fields.Boolean(
+        string="Cuenta como remuneración",
+        default=True,
+        tracking=True,
+        help="Desmárquelo en viáticos, reembolsos de gastos y otros ingresos "
+        "que no son remuneración: no cuentan para la liquidación (vacaciones, "
+        "desahucio, indemnización).",
+    )
     account_debit_id = fields.Many2one(
         "account.account",
         string="Cuenta deudora",

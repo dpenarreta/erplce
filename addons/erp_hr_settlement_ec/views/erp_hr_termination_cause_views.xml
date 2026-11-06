@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Causas de salida (US-013, CA-12). Catálogo legal común: el usuario de
+    nómina solo lee (ACL), el responsable crea, edita y archiva. Estado «A
+    validar» / «Validado» con los mismos botones y textos que los parámetros
+    normativos de erp_payroll_ec (US-017, CA-10): la barra de estado solo
+    informa; validar es una acción deliberada del responsable.
+  -->
+  <record id="erp_hr_termination_cause_view_list" model="ir.ui.view">
+    <field name="name">erp.hr.termination.cause.list</field>
+    <field name="model">erp.hr.termination.cause</field>
+    <field name="arch" type="xml">
+      <list string="Causas de salida" decoration-muted="not active">
+        <field name="sequence" widget="handle" />
+        <field name="name" />
+        <field name="code" optional="hide" />
+        <!-- Encabezados cortos para que la lista quepa sin cortes (QA-UX, US-013
+             ronda 1); la etiqueta completa y la ayuda del campo siguen en el
+             formulario y en la ayuda del encabezado. -->
+        <field name="pays_thirteenth" string="13.º" optional="show" />
+        <field name="pays_fourteenth" string="14.º" optional="show" />
+        <field name="pays_pending_vacation" string="Vac. pend." optional="show" />
+        <field name="pays_proportional_vacation" string="Vac. prop." optional="show" />
+        <field name="pays_severance_bonus" string="Desahucio" optional="show" />
+        <field
+          name="pays_unfair_dismissal_indemnity"
+          string="Indemniz."
+          optional="show"
+        />
+        <field
+          name="state"
+          widget="badge"
+          decoration-warning="state == 'to_validate'"
+          decoration-success="state == 'validated'"
+        />
+        <field name="active" column_invisible="1" />
+      </list>
+    </field>
+  </record>
+
+  <record id="erp_hr_termination_cause_view_form" model="ir.ui.view">
+    <field name="name">erp.hr.termination.cause.form</field>
+    <field name="model">erp.hr.termination.cause</field>
+    <field name="arch" type="xml">
+      <form string="Causa de salida">
+        <header>
+          <button
+            name="action_validate"
+            type="object"
+            string="Marcar como validado"
+            class="btn-primary"
+            invisible="state == 'validated'"
+            groups="payroll.group_payroll_manager"
+            confirm="¿Confirma que los rubros de esta causa coinciden con la norma vigente?"
+          />
+          <button
+            name="action_set_to_validate"
+            type="object"
+            string="Devolver a revisión"
+            invisible="state != 'validated'"
+            groups="payroll.group_payroll_manager"
+          />
+          <field
+            name="state"
+            widget="statusbar"
+            statusbar_visible="to_validate,validated"
+          />
+        </header>
+        <sheet>
+          <widget
+            name="web_ribbon"
+            title="Archivada"
+            bg_color="text-bg-danger"
+            invisible="active"
+          />
+          <div class="oe_title">
+            <label for="name" />
+            <h1>
+              <field name="name" placeholder="p. ej. Despido intempestivo" />
+            </h1>
+          </div>
+          <group>
+            <group name="identification" string="Identificación">
+              <!--
+                Código técnico: solo en modo desarrollador. Es obligatorio y
+                el modelo no lo genera, así que fuera de ese modo se pide solo
+                al crear la causa (invisible una vez guardada).
+              -->
+              <field
+                name="code"
+                placeholder="p. ej. DESPIDO_INTEMPESTIVO"
+                groups="base.group_no_one"
+              />
+              <field
+                name="code"
+                placeholder="p. ej. DESPIDO_INTEMPESTIVO"
+                groups="!base.group_no_one"
+                invisible="id"
+              />
+              <field name="departure_reason_id" options="{'no_create': True}" />
+              <field name="sequence" />
+              <!-- Casilla (no interruptor): archivar es poco frecuente. -->
+              <field name="active" widget="boolean" />
+            </group>
+            <group name="items" string="Rubros que paga">
+              <field name="pays_thirteenth" />
+              <field name="pays_fourteenth" />
+              <field name="pays_pending_vacation" />
+              <field name="pays_proportional_vacation" />
+              <field name="pays_severance_bonus" />
+              <field name="pays_unfair_dismissal_indemnity" />
+            </group>
+          </group>
+          <div class="text-muted mb-3" role="note">
+            Cambiar los rubros o la norma de una causa validada la devuelve a
+            «A validar». Los valores (porcentajes, tramos, divisores) están en
+            <strong>Parámetros normativos</strong> y
+            <strong>Tramos de indemnización</strong>.
+          </div>
+          <group name="description" string="Cuándo se usa">
+            <field
+              name="description"
+              nolabel="1"
+              colspan="2"
+              placeholder="Situación en la que se aplica esta causa y qué rubros paga"
+            />
+          </group>
+          <group name="legal_basis" string="Norma / fuente">
+            <field
+              name="legal_basis"
+              nolabel="1"
+              colspan="2"
+              placeholder="Artículos del Código del Trabajo u otra norma que respaldan la causa"
+            />
+          </group>
+        </sheet>
+        <chatter />
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_hr_termination_cause_view_search" model="ir.ui.view">
+    <field name="name">erp.hr.termination.cause.search</field>
+    <field name="model">erp.hr.termination.cause</field>
+    <field name="arch" type="xml">
+      <search string="Buscar causas de salida">
+        <field
+          name="name"
+          string="Causa"
+          filter_domain="['|', ('name', 'ilike', self), ('code', 'ilike', self)]"
+        />
+        <field name="legal_basis" />
+        <filter
+          name="to_validate"
+          string="A validar"
+          domain="[('state', '=', 'to_validate')]"
+        />
+        <filter
+          name="validated"
+          string="Validadas"
+          domain="[('state', '=', 'validated')]"
+        />
+        <separator />
+        <filter
+          name="pays_severance_bonus"
+          string="Pagan desahucio"
+          domain="[('pays_severance_bonus', '=', True)]"
+        />
+        <filter
+          name="pays_unfair_dismissal_indemnity"
+          string="Pagan indemnización"
+          domain="[('pays_unfair_dismissal_indemnity', '=', True)]"
+        />
+        <separator />
+        <filter name="inactive" string="Archivadas" domain="[('active', '=', False)]" />
+        <group expand="0" string="Agrupar por">
+          <filter
+            name="group_by_state"
+            string="Estado"
+            context="{'group_by': 'state'}"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="erp_hr_termination_cause_action" model="ir.actions.act_window">
+    <field name="name">Causas de salida</field>
+    <field name="res_model">erp.hr.termination.cause</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="erp_hr_termination_cause_view_search" />
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        No hay causas de salida que coincidan con la búsqueda
+      </p>
+      <p>
+        Cada causa de salida (renuncia, despido intempestivo, desahucio...)
+        indica qué rubros se calculan en la liquidación de haberes. Los valores
+        de partida están <strong>A validar</strong> por el asesor laboral.
+      </p>
+    </field>
+  </record>
+</odoo>

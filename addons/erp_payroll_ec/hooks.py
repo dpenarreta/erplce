@@ -3,6 +3,7 @@ import logging
 from odoo.tools import SQL
 
 from .models.hr_payslip import PAYSLIP_UNIQUE_PERIOD_INDEX
+from .models.hr_payslip_line import PAYSLIP_LINE_PROVISION_INDEX
 
 _logger = logging.getLogger(__name__)
 
@@ -29,12 +30,12 @@ def post_init_hook(env):
 
 def uninstall_hook(env):
     """Deshace los cambios hechos fuera de los registros propios del módulo:
-    el índice único parcial de ``hr_payslip`` y las ACL de OCA de las líneas
+    el índice único parcial de ``hr_payslip``, el índice parcial de
+    provisiones de ``hr_payslip_line`` y las ACL de OCA de las líneas
     del rol, las estructuras y las categorías de reglas (vuelven a su valor
     original: CRUD para el usuario de nómina)."""
-    env.cr.execute(
-        SQL("DROP INDEX IF EXISTS %s", SQL.identifier(PAYSLIP_UNIQUE_PERIOD_INDEX))
-    )
+    for index in (PAYSLIP_UNIQUE_PERIOD_INDEX, PAYSLIP_LINE_PROVISION_INDEX):
+        env.cr.execute(SQL("DROP INDEX IF EXISTS %s", SQL.identifier(index)))
     for xmlid in OCA_READ_ONLY_ACCESSES:
         access = env.ref(xmlid, raise_if_not_found=False)
         if access:

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!--
+        Estructura «Pago de décimos acumulados» (US-013, CA-1 a CA-4). Mismo
+        patrón que «Rol mensual Ecuador» (hr_payroll_structure_data.xml): las
+        reglas no tienen lógica y llaman a hr.payslip._erp_rule_applies /
+        _erp_rule_amount; ningún importe legal aquí.
+
+        - Un rol de esta estructura cubre el periodo de cálculo del décimo
+          (no es mensual): su importe es la suma de las provisiones mensuales
+          pendientes (D13_PROV, D14_PROV_COSTA, D14_PROV_SIERRA) de roles
+          confirmados del periodo (models/const.py, ACCRUED_PAY_RULES).
+        - Sin aportes IESS ni provisiones: el décimo no es materia gravada y
+          ya se provisionó en el rol mensual.
+        - Totales: reutiliza las reglas GROSS y NET de «Rol mensual Ecuador»
+          (mismo cálculo y cuenta «Sueldos por pagar» del neto).
+        - Sin padre: no hereda las reglas del rol mensual (la estructura
+          mensual no cambia).
+        - Contabilidad (CA-4): las reglas de pago debitan la cuenta de pasivo
+          de la provisión (hr.salary.rule.ERP_RULE_DEFAULT_ACCOUNTS, a
+          validar) y el neto acredita «Sueldos por pagar».
+    -->
+  <record id="rule_ec_d13_acc_pay" model="hr.salary.rule">
+    <field name="name">Décimo tercer sueldo acumulado</field>
+    <field name="code">D13_ACC_PAY</field>
+    <field name="sequence">60</field>
+    <field name="category_id" ref="categ_ec_alw" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("D13_ACC_PAY", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("D13_ACC_PAY", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Pago del décimo tercero acumulado: suma de las provisiones mensuales pendientes del periodo de cálculo.</field>
+  </record>
+  <record id="rule_ec_d14_acc_pay_costa" model="hr.salary.rule">
+    <field name="name">Décimo cuarto sueldo acumulado (Costa / Galápagos)</field>
+    <field name="code">D14_ACC_PAY_COSTA</field>
+    <field name="sequence">61</field>
+    <field name="category_id" ref="categ_ec_alw" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("D14_ACC_PAY_COSTA", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("D14_ACC_PAY_COSTA", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Pago del décimo cuarto acumulado del régimen Costa / Galápagos: suma de las provisiones mensuales pendientes del periodo de cálculo.</field>
+  </record>
+  <record id="rule_ec_d14_acc_pay_sierra" model="hr.salary.rule">
+    <field name="name">Décimo cuarto sueldo acumulado (Sierra / Amazonía)</field>
+    <field name="code">D14_ACC_PAY_SIERRA</field>
+    <field name="sequence">62</field>
+    <field name="category_id" ref="categ_ec_alw" />
+    <field name="company_id" eval="False" />
+    <field name="condition_select">python</field>
+    <field
+      name="condition_python"
+    >result = payslip._erp_rule_applies("D14_ACC_PAY_SIERRA", contract)</field>
+    <field name="amount_select">code</field>
+    <field
+      name="amount_python_compute"
+    >result = payslip._erp_rule_amount("D14_ACC_PAY_SIERRA", contract, categories, result_rules)</field>
+    <field
+      name="note"
+    >Pago del décimo cuarto acumulado del régimen Sierra / Amazonía: suma de las provisiones mensuales pendientes del periodo de cálculo.</field>
+  </record>
+
+  <record id="structure_ec_benefit_pay" model="hr.payroll.structure">
+    <field name="name">Pago de décimos acumulados</field>
+    <field name="code">EC_BENEFIT_PAY</field>
+    <field name="parent_id" eval="False" />
+    <field name="company_id" ref="base.main_company" />
+    <field
+      name="note"
+    >Rol de pago anual del décimo tercero o del décimo cuarto de los empleados con modalidad acumulada: paga las provisiones mensuales pendientes del periodo de cálculo.</field>
+    <field
+      name="rule_ids"
+      eval="[Command.set([
+                ref('rule_ec_d13_acc_pay'),
+                ref('rule_ec_d14_acc_pay_costa'),
+                ref('rule_ec_d14_acc_pay_sierra'),
+                ref('rule_ec_gross'),
+                ref('rule_ec_net'),
+            ])]"
+    />
+  </record>
+</odoo>

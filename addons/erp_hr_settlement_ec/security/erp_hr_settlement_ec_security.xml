@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+        Liquidaciones (US-013): el usuario de nómina crea, calcula y elimina
+        (solo en borrador o anuladas: bloqueo en el modelo); confirmar y
+        anular lo restringe la capa de negocio al responsable de nómina
+        (payroll.group_payroll_manager). Causas de salida y tramos de
+        indemnización: lectura para el usuario, CRUD para el responsable.
+        Multiempresa: cada empresa ve sus liquidaciones y rubros; los tramos
+        sin empresa son comunes; las causas son un catálogo legal común.
+    -->
+  <record id="erp_hr_settlement_company_rule" model="ir.rule">
+    <field name="name">Liquidación de haberes: multiempresa</field>
+    <field name="model_id" ref="model_erp_hr_settlement" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="erp_hr_settlement_line_company_rule" model="ir.rule">
+    <field name="name">Rubro de liquidación: multiempresa</field>
+    <field name="model_id" ref="model_erp_hr_settlement_line" />
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="erp_hr_indemnity_bracket_company_rule" model="ir.rule">
+    <field name="name">Tramo de indemnización: multiempresa</field>
+    <field name="model_id" ref="model_erp_hr_indemnity_bracket" />
+    <field name="domain_force">
+            ['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]
+        </field>
+  </record>
+</odoo>

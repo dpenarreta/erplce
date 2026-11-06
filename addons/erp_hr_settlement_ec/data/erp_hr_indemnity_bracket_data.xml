@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+  <!--
+        Tramos de la indemnización por despido intempestivo (US-013, CA-6).
+        VALORES DE PARTIDA en estado «A validar». Meses = meses fijos + meses
+        por año × años de servicio, acotado a [mínimo, máximo] (máximo 0 =
+        sin tope). La fracción de año: parámetro
+        INDEMNITY_YEAR_FRACTION_AS_FULL. Sin empresa: comunes a todas.
+        «Vigente desde» (2020-01-01) es el inicio de uso, no la fecha legal.
+    -->
+  <record
+    id="indemnity_bracket_up_to_3_2020"
+    model="erp.hr.indemnity.bracket"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="name">Hasta 3 años de servicio</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="years_from">0</field>
+    <field name="years_to">3</field>
+    <field name="fixed_months">3</field>
+    <field name="months_per_year">0</field>
+    <field name="min_months">3</field>
+    <field name="max_months">0</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 188, num. 1: hasta tres años de servicio, el valor correspondiente a tres meses de remuneración.</field>
+    <field name="note">Valor de partida a validar por el asesor laboral.</field>
+  </record>
+  <record
+    id="indemnity_bracket_over_3_2020"
+    model="erp.hr.indemnity.bracket"
+    context="{'mail_create_nolog': True}"
+  >
+    <field name="name">Más de 3 años de servicio</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="years_from">3</field>
+    <field name="years_to">0</field>
+    <field name="fixed_months">0</field>
+    <field name="months_per_year">1</field>
+    <field name="min_months">0</field>
+    <field name="max_months">25</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 188, num. 2: de más de tres años, un mes de remuneración por cada año de servicio, sin exceder de veinticinco meses de remuneración.</field>
+    <field
+      name="note"
+    >Valor de partida a validar por el asesor laboral. El art. 188 prevé además recargos para casos especiales (p. ej. dirigentes sindicales, embarazo, discapacidad): se registran como rubros manuales hasta que se modelen.</field>
+  </record>
+</odoo>

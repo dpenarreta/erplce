@@ -16,6 +16,7 @@ from odoo.exceptions import AccessError
 from odoo.tests import TransactionCase, new_test_user, tagged
 from odoo.tools import SQL, index_exists, mute_logger
 
+from ..models.const import ACCRUED_PAY_RULES, BENEFIT_PERIOD_PARAMETER_CODES
 from ..models.hr_payslip import PAYSLIP_UNIQUE_PERIOD_INDEX
 from ..models.hr_salary_rule import ERP_RULE_DEFAULT_ACCOUNTS
 
@@ -28,6 +29,8 @@ PARAMETER_TYPES = {
     "FOURTEENTH_MONTHS": "number",
     "MONTH_DAYS": "number",
     "RESERVE_FUND_MIN_MONTHS": "number",
+    # Periodos y pago de los décimos acumulados (US-013).
+    **dict.fromkeys(BENEFIT_PERIOD_PARAMETER_CODES, "number"),
 }
 
 # código de regla -> (código de categoría, ¿condición Python?)
@@ -197,7 +200,8 @@ class TestPayrollEcModel(TransactionCase):
 
     def test_rule_account_mapping_covers_structure(self):
         mapped = {self.env.ref(xmlid).code for xmlid in ERP_RULE_DEFAULT_ACCOUNTS}
-        self.assertEqual(mapped, set(RULES))
+        # Rol mensual + reglas propias de «Pago de décimos acumulados» (US-013).
+        self.assertEqual(mapped, set(RULES) | set(ACCRUED_PAY_RULES))
 
     def _require_ec_chart(self):
         if self.company.chart_template != "ec":

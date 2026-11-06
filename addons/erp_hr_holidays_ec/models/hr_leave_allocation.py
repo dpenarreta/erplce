@@ -8,6 +8,7 @@ from odoo.exceptions import UserError
 from odoo.tools import format_date
 
 from . import text
+from .const import ALLOCATION_DURATION_CHECK
 
 _logger = logging.getLogger(__name__)
 
@@ -123,10 +124,12 @@ class HrLeaveAllocation(models.Model):
             # Redefine la restricción de hr_holidays (mismo nombre): un
             # periodo de vacaciones consumido por completo con días gozados
             # antes del sistema queda con saldo 0 (US-012, CA-11).
+            # COALESCE (18.0.1.0.2): con erp_history_days NULL la condición
+            # daba NULL y PostgreSQL acepta un CHECK con resultado NULL, así
+            # que un saldo regular de 0 (o negativo) sin días históricos
+            # pasaba la restricción.
             "duration_check",
-            "CHECK ((number_of_days > 0 AND allocation_type = 'regular') "
-            "OR (allocation_type != 'regular') "
-            "OR (erp_history_days > 0 AND number_of_days >= 0))",
+            ALLOCATION_DURATION_CHECK,
             "Los días del saldo deben ser mayores que cero.",
         ),
         (

@@ -25,6 +25,13 @@
              en el formulario y en la ayuda del campo. -->
         <field name="iess_base" string="Base IESS" optional="show" />
         <field name="thirteenth_base" string="Base 13.º" optional="show" />
+        <!-- CA-14 (US-013): solo los ingresos cuentan o no como remuneración. -->
+        <field
+          name="erp_is_remuneration"
+          string="Remuneración"
+          optional="hide"
+          invisible="concept_type != 'income'"
+        />
         <field name="account_debit_id" optional="hide" />
         <field name="account_credit_id" optional="hide" />
         <field name="company_id" groups="base.group_multi_company" optional="show" />
@@ -64,6 +71,9 @@
             >
               <field name="iess_base" />
               <field name="thirteenth_base" />
+              <!-- CA-14 (US-013): desmarcar en viáticos y reembolsos de
+                   gastos; el grupo ya se oculta en los descuentos. -->
+              <field name="erp_is_remuneration" invisible="concept_type != 'income'" />
             </group>
           </group>
           <group>

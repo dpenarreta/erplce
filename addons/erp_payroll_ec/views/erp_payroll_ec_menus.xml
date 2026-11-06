@@ -9,6 +9,15 @@
     groups="payroll.group_payroll_user"
     sequence="40"
   />
+  <!-- Nómina > Pago de décimos (US-013): asistente, solo responsable -->
+  <menuitem
+    id="erp_payroll_ec_menu_benefit_payment"
+    name="Pago de décimos"
+    parent="payroll.payroll_menu_root"
+    action="erp_payroll_benefit_payment_wizard_action"
+    groups="payroll.group_payroll_manager"
+    sequence="35"
+  />
   <!-- Nómina > Configuración (solo responsable de nómina, menú de OCA) -->
   <menuitem
     id="erp_payroll_ec_menu_parameter"

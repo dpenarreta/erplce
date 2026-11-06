@@ -7,9 +7,10 @@ _logger = logging.getLogger(__name__)
 
 CHART_TEMPLATE_EC = "ec"
 
-# Cuentas por defecto (plan l10n_ec, plantilla 'ec') de las reglas de la
-# estructura «Rol mensual Ecuador». Valores A VALIDAR por el contador: son la
-# cuenta equivalente más cercana del plan, no una decisión contable cerrada.
+# Cuentas por defecto (plan l10n_ec, plantilla 'ec') de las reglas de las
+# estructuras «Rol mensual Ecuador» y «Pago de décimos acumulados». Valores A
+# VALIDAR por el contador: son la cuenta equivalente más cercana del plan, no
+# una decisión contable cerrada.
 # Las cuentas se crean por empresa al cargar el plan, así que no se pueden
 # referenciar por xmlid en los datos: se buscan por código.
 #
@@ -39,6 +40,12 @@ ERP_RULE_DEFAULT_ACCOUNTS = {
     "erp_payroll_ec.rule_ec_d13_prov": ("52020301", "2105010102"),
     "erp_payroll_ec.rule_ec_d14_prov_costa": ("52020302", "2105010104"),
     "erp_payroll_ec.rule_ec_d14_prov_sierra": ("52020302", "2105010103"),
+    # «Pago de décimos acumulados» (US-013, CA-4): el pago debita el pasivo de
+    # la provisión (la misma cuenta que acreditó la provisión mensual) y el
+    # neto (regla NET compartida) acredita «Sueldos por pagar». Sin gasto.
+    "erp_payroll_ec.rule_ec_d13_acc_pay": ("2105010102", None),
+    "erp_payroll_ec.rule_ec_d14_acc_pay_costa": ("2105010104", None),
+    "erp_payroll_ec.rule_ec_d14_acc_pay_sierra": ("2105010103", None),
 }
 
 

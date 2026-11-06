@@ -115,6 +115,13 @@
           invisible="not employee_id"
           groups="payroll.group_payroll_user"
         />
+        <!-- US-013: décimo que paga un rol de «Pago de décimos acumulados»
+             (lo fija el asistente; solo lectura y solo si tiene valor). -->
+        <field
+          name="erp_benefit_pay_code"
+          readonly="1"
+          invisible="not erp_benefit_pay_code"
+        />
       </xpath>
 
       <!-- Entradas variables: conceptos del catálogo por código -->

@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    Tramos de indemnización por despido intempestivo (US-013, CA-6, CA-12),
+    con vigencia por fecha. Usuario de nómina: lectura; responsable: CRUD
+    (ACL). Estado «A validar» / «Validado» igual que los parámetros
+    normativos (US-017, CA-10). Los meses se muestran con 2 decimales (el
+    campo guarda 4). «Hasta (años)» y «Máximo (meses)» usan los widgets
+    erp_no_limit_integer / erp_no_limit_float (static/src/fields): en lectura,
+    0 se muestra «Sin tope»; al editar se escribe 0 (sin campo calculado) y el
+    formulario muestra «Sin tope» al lado mientras el valor sea 0.
+  -->
+  <record id="erp_hr_indemnity_bracket_view_list" model="ir.ui.view">
+    <field name="name">erp.hr.indemnity.bracket.list</field>
+    <field name="model">erp.hr.indemnity.bracket</field>
+    <field name="arch" type="xml">
+      <list
+        string="Tramos de indemnización"
+        decoration-muted="not active"
+        default_order="date_from desc, years_from"
+      >
+        <field name="name" />
+        <!-- Encabezados cortos (QA-UX, US-013 ronda 1): la etiqueta completa
+             y la ayuda siguen en el formulario y en la ayuda del campo. «Hasta»
+             y «Máximo» con 0 se leen «Sin tope» (widget de static/src). -->
+        <field name="date_from" string="Vigente desde" />
+        <field name="years_from" string="Más de (años)" width="110px" />
+        <field
+          name="years_to"
+          string="Hasta (años)"
+          widget="erp_no_limit_integer"
+          width="100px"
+        />
+        <field
+          name="fixed_months"
+          string="Meses fijos"
+          digits="[16, 2]"
+          optional="show"
+        />
+        <field name="months_per_year" string="Meses/año" digits="[16, 2]" />
+        <field name="min_months" string="Mín. meses" digits="[16, 2]" optional="show" />
+        <field
+          name="max_months"
+          string="Máx. meses"
+          widget="erp_no_limit_float"
+          digits="[16, 2]"
+          optional="show"
+        />
+        <field
+          name="state"
+          widget="badge"
+          decoration-warning="state == 'to_validate'"
+          decoration-success="state == 'validated'"
+        />
+        <field name="norm" optional="hide" />
+        <field name="company_id" groups="base.group_multi_company" optional="show" />
+        <field name="active" column_invisible="1" />
+      </list>
+    </field>
+  </record>
+
+  <record id="erp_hr_indemnity_bracket_view_form" model="ir.ui.view">
+    <field name="name">erp.hr.indemnity.bracket.form</field>
+    <field name="model">erp.hr.indemnity.bracket</field>
+    <field name="arch" type="xml">
+      <form string="Tramo de indemnización">
+        <header>
+          <button
+            name="action_validate"
+            type="object"
+            string="Marcar como validado"
+            class="btn-primary"
+            invisible="state == 'validated'"
+            groups="payroll.group_payroll_manager"
+            confirm="¿Confirma que el tramo coincide con la norma vigente?"
+          />
+          <button
+            name="action_set_to_validate"
+            type="object"
+            string="Devolver a revisión"
+            invisible="state != 'validated'"
+            groups="payroll.group_payroll_manager"
+          />
+          <field
+            name="state"
+            widget="statusbar"
+            statusbar_visible="to_validate,validated"
+          />
+        </header>
+        <sheet>
+          <widget
+            name="web_ribbon"
+            title="Archivado"
+            bg_color="text-bg-danger"
+            invisible="active"
+          />
+          <div class="oe_title">
+            <label for="name" />
+            <h1>
+              <field name="name" placeholder="p. ej. Más de 3 años" />
+            </h1>
+          </div>
+          <group>
+            <group name="years" string="Años de servicio">
+              <field name="date_from" />
+              <field name="years_from" />
+              <!-- En edición el campo muestra 0: «Sin tope» al lado. -->
+              <label for="years_to" />
+              <div class="o_row">
+                <field name="years_to" widget="erp_no_limit_integer" />
+                <span class="text-muted ms-2" invisible="years_to">Sin tope</span>
+              </div>
+              <field
+                name="company_id"
+                groups="base.group_multi_company"
+                options="{'no_create': True}"
+                placeholder="Todas las empresas"
+              />
+              <field name="active" widget="boolean" />
+            </group>
+            <group name="months" string="Meses de remuneración">
+              <field name="fixed_months" digits="[16, 2]" />
+              <field name="months_per_year" digits="[16, 2]" />
+              <field name="min_months" digits="[16, 2]" />
+              <label for="max_months" />
+              <div class="o_row">
+                <field name="max_months" widget="erp_no_limit_float" digits="[16, 2]" />
+                <span class="text-muted ms-2" invisible="max_months">Sin tope</span>
+              </div>
+            </group>
+          </group>
+          <div class="text-muted mb-3" role="note">
+            Meses a pagar = meses fijos + meses por año × años de servicio,
+            sin bajar del mínimo ni pasar del máximo (0 = sin tope). Para un
+            cambio legal, cree tramos nuevos con su fecha «Vigente desde» en
+            lugar de modificar los anteriores.
+          </div>
+          <group name="norm" string="Norma / fuente">
+            <field
+              name="norm"
+              nolabel="1"
+              colspan="2"
+              placeholder="Norma y artículo que respaldan el tramo"
+            />
+          </group>
+          <group name="note" string="Notas">
+            <field name="note" nolabel="1" colspan="2" />
+          </group>
+        </sheet>
+        <chatter />
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_hr_indemnity_bracket_view_search" model="ir.ui.view">
+    <field name="name">erp.hr.indemnity.bracket.search</field>
+    <field name="model">erp.hr.indemnity.bracket</field>
+    <field name="arch" type="xml">
+      <search string="Buscar tramos de indemnización">
+        <field name="name" />
+        <field name="norm" />
+        <filter
+          name="to_validate"
+          string="A validar"
+          domain="[('state', '=', 'to_validate')]"
+        />
+        <filter
+          name="validated"
+          string="Validados"
+          domain="[('state', '=', 'validated')]"
+        />
+        <separator />
+        <filter
+          name="in_force"
+          string="Vigentes desde hoy o antes"
+          domain="[('date_from', '&lt;=', context_today().strftime('%Y-%m-%d'))]"
+        />
+        <filter
+          name="future"
+          string="Futuros"
+          domain="[('date_from', '&gt;', context_today().strftime('%Y-%m-%d'))]"
+        />
+        <separator />
+        <filter name="inactive" string="Archivados" domain="[('active', '=', False)]" />
+        <group expand="0" string="Agrupar por">
+          <filter
+            name="group_by_date_from"
+            string="Vigencia"
+            context="{'group_by': 'date_from:day'}"
+          />
+          <filter
+            name="group_by_state"
+            string="Estado"
+            context="{'group_by': 'state'}"
+          />
+          <filter
+            name="group_by_company"
+            string="Empresa"
+            context="{'group_by': 'company_id'}"
+            groups="base.group_multi_company"
+          />
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="erp_hr_indemnity_bracket_action" model="ir.actions.act_window">
+    <field name="name">Tramos de indemnización</field>
+    <field name="res_model">erp.hr.indemnity.bracket</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="erp_hr_indemnity_bracket_view_search" />
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        No hay tramos de indemnización que coincidan con la búsqueda
+      </p>
+      <p>
+        Los tramos fijan cuántos meses de remuneración se pagan por despido
+        intempestivo según los años de servicio. Rige la versión con la fecha
+        «Vigente desde» más reciente anterior a la fecha de salida.
+      </p>
+      <p>
+        En «Hasta (años)» y «Máx. meses», el valor 0 significa
+        <strong>sin tope</strong> y la lista lo muestra así.
+      </p>
+    </field>
+  </record>
+</odoo>

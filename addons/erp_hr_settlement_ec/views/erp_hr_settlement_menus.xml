@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-013: Nómina › Liquidaciones (usuario de nómina) y Nómina ›
+    Configuración › Causas de salida / Tramos de indemnización (menú de OCA,
+    solo responsable). «Pago de décimos» vive en erp_payroll_ec (secuencia
+    35: entre Liquidaciones, 30, y Bonos y descuentos asignados, 40).
+  -->
+  <menuitem
+    id="erp_hr_settlement_menu"
+    name="Liquidaciones"
+    parent="payroll.payroll_menu_root"
+    action="erp_hr_settlement_action"
+    groups="payroll.group_payroll_user"
+    sequence="30"
+  />
+  <menuitem
+    id="erp_hr_termination_cause_menu"
+    name="Causas de salida"
+    parent="payroll.payroll_menu_configuration"
+    action="erp_hr_termination_cause_action"
+    groups="payroll.group_payroll_manager"
+    sequence="22"
+  />
+  <menuitem
+    id="erp_hr_indemnity_bracket_menu"
+    name="Tramos de indemnización"
+    parent="payroll.payroll_menu_configuration"
+    action="erp_hr_indemnity_bracket_action"
+    groups="payroll.group_payroll_manager"
+    sequence="23"
+  />
+</odoo>

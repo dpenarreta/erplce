@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    US-013 (CA-1 a CA-4, CA-13): asistente «Pago de décimos». Solo el
+    responsable de nómina (ACL del asistente, grupo del menú y AccessError en
+    action_generate). El periodo de cálculo y la fecha de pago salen de los
+    parámetros de nómina: se muestran en solo lectura para que el usuario vea
+    qué meses se pagan antes de generar. Si el periodo no se puede calcular
+    (régimen sin elegir, parámetro sin vigencia), se muestra el aviso y se
+    oculta el botón (el servidor lo rechaza igualmente).
+    Al generar, el servidor devuelve una notificación con el resumen (roles
+    creados y empleados omitidos con su motivo) y abre el lote: los campos de
+    resultado del asistente no se muestran.
+    El diario del lote solo lo ven usuarios de contabilidad (quien no lo es
+    no puede listar diarios); vacío, se usa el de los contratos.
+  -->
+  <record id="erp_payroll_benefit_payment_wizard_view_form" model="ir.ui.view">
+    <field name="name">erp.payroll.benefit.payment.wizard.form</field>
+    <field name="model">erp.payroll.benefit.payment.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Pago de décimos">
+        <div
+          class="alert bg-info-subtle text-info-emphasis border-info-subtle mb-3"
+          role="note"
+        >
+          Se crea un <strong>lote de roles</strong> con un rol por cada empleado
+          que cobra el décimo de forma <strong>acumulada</strong> y tiene
+          provisiones pendientes de pago en el periodo. Quien no tiene nada
+          pendiente no se incluye. Revise el lote y confirme los roles para
+          registrar el pago.
+        </div>
+        <group>
+          <group name="benefit" string="Qué se paga">
+            <!-- Radios: el widget de Odoo no usa el id del campo en sus
+                 entradas, así que la etiqueta automática quedaría con un
+                 «for» que no apunta a nada. Se muestra un texto de etiqueta
+                 (sin «for») y el grupo de radios toma su nombre accesible
+                 del atributo string (aria-label del role="radiogroup"). -->
+            <span class="o_td_label">
+              <span class="o_form_label">Décimo</span>
+            </span>
+            <field name="benefit" widget="radio" nolabel="1" string="Décimo" />
+            <span class="o_td_label" invisible="benefit != 'fourteenth'">
+              <span class="o_form_label">Régimen</span>
+            </span>
+            <field
+              name="regime"
+              widget="radio"
+              nolabel="1"
+              string="Régimen"
+              invisible="benefit != 'fourteenth'"
+              required="benefit == 'fourteenth'"
+            />
+            <!-- Sin separador de miles: «2026», no «2.026». -->
+            <field name="year" options="{'enable_formatting': False}" />
+          </group>
+          <group name="period" string="Periodo de cálculo">
+            <field name="pay_code" invisible="1" />
+            <field name="date_start" invisible="not date_start" />
+            <field name="date_end" invisible="not date_end" />
+            <field
+              name="payment_date"
+              required="1"
+              help="Fecha del pago y del asiento contable de los roles. Se propone la de los parámetros del décimo; puede cambiarla."
+            />
+            <field
+              name="journal_id"
+              options="{'no_create': True}"
+              placeholder="El de nómina de los contratos"
+              groups="account.group_account_readonly,account.group_account_invoice"
+            />
+            <field
+              name="company_id"
+              options="{'no_create': True}"
+              groups="base.group_multi_company"
+            />
+          </group>
+        </group>
+        <div
+          class="alert alert-warning mb-0"
+          role="status"
+          invisible="not period_message"
+        >
+          <field name="period_message" readonly="1" />
+        </div>
+        <footer>
+          <button
+            name="action_generate"
+            type="object"
+            string="Generar pago"
+            class="btn-primary"
+            invisible="period_message"
+            data-hotkey="q"
+          />
+          <button special="cancel" string="Cancelar" data-hotkey="x" />
+        </footer>
+      </form>
+    </field>
+  </record>
+
+  <record id="erp_payroll_benefit_payment_wizard_action" model="ir.actions.act_window">
+    <field name="name">Pago de décimos</field>
+    <field name="res_model">erp.payroll.benefit.payment.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="view_id" ref="erp_payroll_benefit_payment_wizard_view_form" />
+    <field name="target">new</field>
+  </record>
+</odoo>

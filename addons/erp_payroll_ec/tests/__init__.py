@@ -6,3 +6,6 @@ from . import test_payroll_ec_views
 from . import test_payroll_ec_ui_fields
 from . import test_payroll_ec_integrity
 from . import test_payroll_ec_parameter_state
+from . import test_payroll_ec_provision_payment
+from . import test_payroll_ec_benefit_payment
+from . import test_payroll_ec_benefit_wizard_views

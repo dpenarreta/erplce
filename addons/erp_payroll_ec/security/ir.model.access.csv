@@ -8,3 +8,6 @@ access_erp_payroll_employee_concept_manager,erp.payroll.employee.concept.manager
 access_hr_payslip_line_manager,hr.payslip.line.manager,payroll.model_hr_payslip_line,payroll.group_payroll_manager,1,1,1,1
 access_hr_payroll_structure_manager,hr.payroll.structure.manager,payroll.model_hr_payroll_structure,payroll.group_payroll_manager,1,1,1,1
 access_hr_salary_rule_category_manager,hr.salary.rule.category.manager,payroll.model_hr_salary_rule_category,payroll.group_payroll_manager,1,1,1,1
+access_erp_payroll_provision_payment_user,erp.payroll.provision.payment.user,model_erp_payroll_provision_payment,payroll.group_payroll_user,1,0,0,0
+access_erp_payroll_provision_payment_manager,erp.payroll.provision.payment.manager,model_erp_payroll_provision_payment,payroll.group_payroll_manager,1,0,0,0
+access_erp_payroll_benefit_payment_wizard_manager,erp.payroll.benefit.payment.wizard.manager,model_erp_payroll_benefit_payment_wizard,payroll.group_payroll_manager,1,1,1,1

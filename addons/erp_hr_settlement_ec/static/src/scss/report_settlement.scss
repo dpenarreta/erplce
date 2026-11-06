@@ -1,0 +1,307 @@
+// PDF de la liquidación de haberes (US-013, CA-11). Acotado a
+// .o_erp_settlement_report para no afectar a otros informes.
+// Colores de la marca ERP LCE desde erp_branding (primary_variables.scss,
+// incluido en web.report_assets_common vía web._assets_primary_variables):
+// amarillo sobre negro, gris de marca para líneas y superficies, y el gris
+// atenuado de la marca para textos secundarios (6.1:1 sobre blanco, 4.7:1
+// sobre el gris de marca: WCAG AA).
+// wkhtmltopdf (WebKit antiguo): tablas en lugar de flex/grid y prefijo
+// -webkit- en la rotación de la marca de agua.
+
+$erp-settlement-yellow: $erp-brand-yellow;
+$erp-settlement-black: $erp-brand-black;
+$erp-settlement-white: $erp-brand-white;
+$erp-settlement-gray: $erp-brand-gray;
+$erp-settlement-text: $erp-brand-black;
+$erp-settlement-muted: $erp-brand-muted;
+
+.o_erp_settlement_report {
+  color: $erp-settlement-text;
+  font-size: 10.5pt;
+  line-height: 1.35;
+
+  .page {
+    position: relative;
+  }
+
+  // Bordes separados (no colapsados) y sin bordes por defecto: con
+  // border-collapse, wkhtmltopdf dibuja líneas verticales entre celdas
+  // heredadas del CSS común de informes. Cada tabla añade solo sus líneas
+  // horizontales.
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  th,
+  td {
+    border: 0 none;
+    text-align: left;
+  }
+
+  h2 {
+    font-size: 11pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 14px 0 6px;
+    padding-bottom: 3px;
+    border-bottom: 2px solid $erp-settlement-black;
+  }
+
+  .o_erp_num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  // Solo en la primera página (wkhtmltopdf no la repite, ni con
+  // position: fixed): el estado de cada página va en el encabezado y el pie.
+  .o_erp_watermark {
+    position: absolute;
+    top: 330px;
+    left: -10%;
+    width: 120%;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 88pt;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    color: rgba($erp-settlement-black, 0.08);
+    -webkit-transform: rotate(-30deg);
+    transform: rotate(-30deg);
+    z-index: 0;
+  }
+
+  .o_erp_brand_band {
+    background-color: $erp-settlement-black;
+    color: $erp-settlement-white;
+
+    td {
+      padding: 10px 14px;
+      vertical-align: middle;
+    }
+
+    .o_erp_brand {
+      font-size: 18pt;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+
+      span {
+        color: $erp-settlement-yellow;
+      }
+    }
+
+    .o_erp_title {
+      text-align: right;
+      font-size: 12pt;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+
+    .o_erp_number {
+      color: $erp-settlement-yellow;
+      font-size: 11pt;
+    }
+  }
+
+  .o_erp_status_notice {
+    margin-top: 8px;
+    padding: 6px 10px;
+    border: 2px solid $erp-settlement-black;
+    background-color: $erp-settlement-gray;
+  }
+
+  .o_erp_parties {
+    margin-top: 4px;
+
+    .o_erp_party {
+      width: 50%;
+      vertical-align: top;
+      padding-right: 10px;
+
+      & + .o_erp_party {
+        padding-right: 0;
+        padding-left: 10px;
+      }
+    }
+  }
+
+  .o_erp_data {
+    th,
+    td {
+      padding: 3px 6px 3px 0;
+      vertical-align: top;
+      border-bottom: 1px solid $erp-settlement-gray;
+    }
+
+    th {
+      width: 32%;
+      font-weight: bold;
+      color: $erp-settlement-muted;
+      white-space: nowrap;
+    }
+
+    &.o_erp_data_wide th {
+      width: 18%;
+    }
+  }
+
+  .o_erp_lines {
+    th,
+    td {
+      padding: 5px 6px;
+      vertical-align: top;
+      border-bottom: 1px solid $erp-settlement-gray;
+    }
+
+    thead th {
+      background-color: $erp-settlement-gray;
+      border-bottom: 2px solid $erp-settlement-black;
+      font-weight: bold;
+    }
+
+    thead th.o_erp_col_item {
+      text-align: left;
+    }
+
+    tr {
+      page-break-inside: avoid;
+    }
+
+    .o_erp_empty {
+      text-align: center;
+      color: $erp-settlement-muted;
+      font-style: italic;
+    }
+  }
+
+  .o_erp_explanation {
+    margin-top: 2px;
+    font-size: 9pt;
+    color: $erp-settlement-muted;
+    white-space: pre-line;
+  }
+
+  .o_erp_totals {
+    width: 45%;
+    margin: 8px 0 0 55%;
+
+    th,
+    td {
+      padding: 4px 6px;
+      border-bottom: 1px solid $erp-settlement-gray;
+    }
+
+    th {
+      text-align: left;
+    }
+
+    td {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .o_erp_net th,
+    .o_erp_net td {
+      font-size: 12pt;
+      font-weight: bold;
+      border-top: 2px solid $erp-settlement-black;
+      border-bottom: 3px double $erp-settlement-black;
+    }
+  }
+
+  .o_erp_block {
+    page-break-inside: avoid;
+  }
+
+  // Título del resumen alineado con la tabla de totales.
+  .o_erp_totals_block h2 {
+    margin-left: 55%;
+    page-break-after: avoid;
+  }
+
+  .o_erp_legal {
+    margin-top: 14px;
+    font-size: 9pt;
+    color: $erp-settlement-muted;
+  }
+
+  .o_erp_place_date {
+    margin-top: 28px;
+    page-break-after: avoid;
+
+    .o_erp_blank {
+      display: inline-block;
+      width: 60%;
+      border-bottom: 1px solid $erp-settlement-black;
+    }
+  }
+
+  .o_erp_signatures {
+    margin-top: 60px;
+    page-break-inside: avoid;
+
+    td {
+      width: 42%;
+      text-align: center;
+      vertical-align: top;
+    }
+
+    .o_erp_signature_gap {
+      width: 16%;
+    }
+
+    .o_erp_signature_line {
+      border-top: 1px solid $erp-settlement-black;
+      margin-bottom: 4px;
+    }
+  }
+}
+
+// Encabezado de cada página (solo con contenido en borrador o anulada).
+.o_erp_settlement_header {
+  .o_erp_header_status {
+    padding: 2px 0;
+    border-bottom: 2px solid $erp-settlement-black;
+    color: $erp-settlement-text;
+    font-size: 8.5pt;
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+}
+
+.o_erp_settlement_footer {
+  font-size: 8pt;
+  color: $erp-settlement-muted;
+
+  .o_erp_footer_status {
+    color: $erp-settlement-text;
+    letter-spacing: 0.05em;
+  }
+
+  // Solo la línea superior: sin recuadro ni línea vertical entre celdas
+  // (los bordes de Bootstrap en tablas se ven en wkhtmltopdf).
+  table,
+  tr,
+  td {
+    border: 0 none;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-top: 1px solid $erp-settlement-gray;
+  }
+
+  td {
+    padding: 4px 0 0;
+  }
+
+  .o_erp_num {
+    text-align: right;
+    white-space: nowrap;
+  }
+}

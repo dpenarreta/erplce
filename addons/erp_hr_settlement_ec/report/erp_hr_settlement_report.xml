@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <!--
+    PDF de la liquidación de haberes (US-013, CA-11): respaldo para firma del
+    empleador y del trabajador; el acta oficial la registra RRHH en el SUT con
+    estos valores (decisión 3 del usuario).
+
+    - Marca ERP LCE sobria sin imágenes externas: franja negra con «ERP LCE»
+      en amarillo y líneas grises; colores de erp_branding ($erp-brand-*, que
+      web.report_assets_common recibe con web._assets_primary_variables);
+      estilos en static/src/scss/report_settlement.scss, acotados a
+      .o_erp_settlement_report.
+    - Disposición propia (sin web.external_layout): el encabezado estándar
+      depende del logo y de la plantilla de documentos de la empresa; aquí
+      el documento es siempre el mismo. Pie con número de página.
+    - «BORRADOR» si la liquidación no está confirmada; «ANULADA» si está
+      anulada: aviso bajo el título y marca de agua en la primera página, y
+      estado en el encabezado y el pie de CADA página. wkhtmltopdf no repite
+      la marca de agua (ni con position: fixed, comprobado con un PDF real):
+      el encabezado y el pie sí se imprimen en cada página. Cada documento
+      lleva siempre su div.header (vacío si está confirmado): Odoo empareja
+      encabezados y documentos por posición al imprimir varios a la vez.
+    - Importes con la moneda de la empresa (currency_id de la liquidación).
+    - A4 con márgenes propios (sin el hueco del encabezado estándar).
+  -->
+  <record id="paperformat_settlement_a4" model="report.paperformat">
+    <field name="name">A4 liquidación de haberes</field>
+    <field name="format">A4</field>
+    <field name="orientation">Portrait</field>
+    <field name="margin_top">12</field>
+    <field name="margin_bottom">18</field>
+    <field name="margin_left">12</field>
+    <field name="margin_right">12</field>
+    <field name="header_line" eval="False" />
+    <field name="header_spacing">5</field>
+    <field name="dpi">90</field>
+  </record>
+
+  <record id="action_report_settlement" model="ir.actions.report">
+    <field name="name">Liquidación de haberes (PDF)</field>
+    <field name="model">erp.hr.settlement</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">erp_hr_settlement_ec.report_settlement</field>
+    <field name="report_file">erp_hr_settlement_ec.report_settlement</field>
+    <field
+      name="print_report_name"
+    >'Liquidación - %s - %s' % (object.employee_id.name, object.name if object.name != '/' else 'borrador')</field>
+    <field name="paperformat_id" ref="paperformat_settlement_a4" />
+    <!--
+      Sin enlace al menú Imprimir / ⚙ (QA-UX, US-013 ronda 2): ahí aparecía
+      también en borrador y en registros nuevos. Se imprime solo con el botón
+      «Imprimir» de la cabecera (calculada o confirmada). eval="False" lo
+      desvincula también en bases ya actualizadas.
+    -->
+    <field name="binding_model_id" eval="False" />
+    <field name="groups_id" eval="[(4, ref('payroll.group_payroll_user'))]" />
+  </record>
+
+  <template id="report_settlement_document">
+    <t t-set="employee" t-value="o.employee_id" />
+    <t t-set="company" t-value="o.company_id" />
+    <t t-set="is_draft" t-value="o.state in ('draft', 'computed')" />
+    <t t-set="is_cancel" t-value="o.state == 'cancel'" />
+    <t t-set="number" t-value="o.name if o.name != '/' else 'Sin número'" />
+    <div
+      class="article o_erp_settlement_report"
+      t-att-data-oe-model="o._name"
+      t-att-data-oe-id="o.id"
+      t-att-data-oe-lang="o.env.context.get('lang')"
+    >
+      <div class="header o_erp_settlement_header">
+        <div t-if="is_draft or is_cancel" class="o_erp_header_status">
+          <strong t-out="'ANULADA' if is_cancel else 'BORRADOR'" /> ·
+          <t t-if="is_cancel">Sin validez</t>
+          <t t-else="">Sin validez para firma</t>
+        </div>
+      </div>
+      <div class="page">
+        <div
+          t-if="is_draft or is_cancel"
+          class="o_erp_watermark"
+          aria-hidden="true"
+          t-out="'ANULADA' if is_cancel else 'BORRADOR'"
+        />
+
+        <!-- Marca y título -->
+        <table class="o_erp_brand_band">
+          <tr>
+            <td class="o_erp_brand">ERP <span>LCE</span></td>
+            <td class="o_erp_title">
+              <div>LIQUIDACIÓN DE HABERES</div>
+              <div class="o_erp_number" t-out="number" />
+            </td>
+          </tr>
+        </table>
+        <div t-if="is_draft" class="o_erp_status_notice">
+          <strong>BORRADOR.</strong>
+          Liquidación no confirmada: los valores pueden cambiar. Sin validez
+          para firma hasta que el responsable de nómina la confirme.
+        </div>
+        <div t-if="is_cancel" class="o_erp_status_notice">
+          <strong>ANULADA.</strong>
+          Esta liquidación fue anulada y no tiene validez.
+        </div>
+
+        <!-- Empleador y trabajador -->
+        <table class="o_erp_parties">
+          <tr>
+            <td class="o_erp_party">
+              <h2>Empleador</h2>
+              <table class="o_erp_data">
+                <tr>
+                  <th scope="row">Razón social</th>
+                  <td t-out="company.name" />
+                </tr>
+                <tr>
+                  <th scope="row">RUC</th>
+                  <td t-out="company.vat or '—'" />
+                </tr>
+                <tr t-if="company.street or company.city">
+                  <th scope="row">Dirección</th>
+                  <td
+                    t-out="(company.street or '') + (', ' if company.street and company.city else '') + (company.city or '')"
+                  />
+                </tr>
+              </table>
+            </td>
+            <td class="o_erp_party">
+              <h2>Trabajador</h2>
+              <table class="o_erp_data">
+                <tr>
+                  <th scope="row">Nombre</th>
+                  <td t-out="employee.name" />
+                </tr>
+                <tr>
+                  <th scope="row">Cédula</th>
+                  <td t-out="employee.identification_id or '—'" />
+                </tr>
+                <tr>
+                  <th scope="row">Cargo</th>
+                  <td
+                    t-out="employee.job_title or o.contract_id.job_id.name or employee.job_id.name or '—'"
+                  />
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Relación laboral -->
+        <h2>Relación laboral</h2>
+        <table class="o_erp_data o_erp_data_wide">
+          <tr>
+            <th scope="row">Fecha de ingreso</th>
+            <td>
+              <span t-if="o.date_entry" t-field="o.date_entry" />
+              <span t-else="">—</span>
+            </td>
+            <th scope="row">Fecha de salida</th>
+            <td>
+              <span t-field="o.date_departure" />
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Antigüedad</th>
+            <td>
+              <t t-out="o.service_display or '—'" />
+              <t t-if="o.service_total_days">
+                (<t t-out="o.service_total_days" /> días en total)
+              </t>
+            </td>
+            <th scope="row">Última remuneración</th>
+            <td>
+              <span t-field="o.last_wage" />
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Causa de salida</th>
+            <td t-out="o.cause_id.name" />
+            <th scope="row">Contrato</th>
+            <td t-out="o.contract_id.name" />
+          </tr>
+        </table>
+
+        <!-- Rubros -->
+        <h2>Detalle de valores</h2>
+        <table class="o_erp_lines">
+          <thead>
+            <tr>
+              <th scope="col" class="o_erp_col_item">Rubro y explicación</th>
+              <th scope="col" class="o_erp_num">Base</th>
+              <th scope="col" class="o_erp_num">Cantidad</th>
+              <th scope="col" class="o_erp_num">Ingresos</th>
+              <th scope="col" class="o_erp_num">Descuentos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr t-foreach="o.line_ids" t-as="line">
+              <td>
+                <strong t-out="line.name" />
+                <div
+                  t-if="line.explanation"
+                  class="o_erp_explanation"
+                  t-out="line.explanation"
+                />
+              </td>
+              <td class="o_erp_num">
+                <span t-if="line.base" t-field="line.base" />
+              </td>
+              <td class="o_erp_num">
+                <!-- Sin base (rubros manuales), la cantidad 1 no aporta. -->
+                <t t-if="line.base or line.quantity != 1">
+                  <t
+                    t-set="qty_precision"
+                    t-value="0 if line.quantity == int(line.quantity) else (2 if round(line.quantity, 2) == line.quantity else 4)"
+                  />
+                  <span
+                    t-out="line.quantity"
+                    t-options="{'widget': 'float', 'precision': qty_precision}"
+                  />
+                </t>
+              </td>
+              <td class="o_erp_num">
+                <span t-if="line.line_type == 'income'" t-field="line.amount" />
+              </td>
+              <td class="o_erp_num">
+                <span t-if="line.line_type == 'deduction'" t-field="line.amount" />
+              </td>
+            </tr>
+            <tr t-if="not o.line_ids">
+              <td colspan="5" class="o_erp_empty">
+                Sin rubros: la liquidación aún no se ha calculado.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!--
+          Totales juntos en la misma página (sin «Neto» suelto) y con su
+          título: si caen solos al inicio de una página, no pierden contexto.
+        -->
+        <div class="o_erp_block o_erp_totals_block">
+          <h2>Resumen de la liquidación</h2>
+          <table class="o_erp_totals">
+            <tr>
+              <th scope="row">Total ingresos</th>
+              <td>
+                <span t-field="o.total_income" />
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Total descuentos</th>
+              <td>
+                <span t-field="o.total_deduction" />
+              </td>
+            </tr>
+            <tr class="o_erp_net">
+              <th scope="row">Neto a recibir</th>
+              <td>
+                <span t-field="o.net" />
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <div t-if="o.settled_vacation_summary" class="o_erp_block">
+          <h2>Periodos de vacaciones liquidados</h2>
+          <div class="o_erp_explanation" t-out="o.settled_vacation_summary" />
+        </div>
+
+        <p class="o_erp_legal">
+          Valores calculados según la causa de salida y los parámetros vigentes
+          a la fecha de salida. El acta de finiquito oficial se registra en el
+          Sistema Único de Trabajo (SUT) del Ministerio del Trabajo con estos
+          valores.
+        </p>
+
+        <!-- Lugar y fecha y firmas, juntos en la misma página. -->
+        <div class="o_erp_block">
+          <p class="o_erp_place_date">
+          Lugar y fecha: <span class="o_erp_blank" />
+        </p>
+          <table class="o_erp_signatures">
+            <tr>
+              <td>
+                <div class="o_erp_signature_line" />
+                <div>
+                  <strong>Empleador</strong>
+                </div>
+                <div t-out="company.name" />
+                <div>RUC: <t t-out="company.vat or '—'" /></div>
+              </td>
+              <td class="o_erp_signature_gap" />
+              <td>
+                <div class="o_erp_signature_line" />
+                <div>
+                  <strong>Trabajador</strong>
+                </div>
+                <div t-out="employee.name" />
+                <div>C.I.: <t t-out="employee.identification_id or '—'" /></div>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="footer o_erp_settlement_footer">
+        <table>
+          <tr>
+            <td>
+              <strong t-if="is_draft or is_cancel" class="o_erp_footer_status">
+                <t t-out="'ANULADA' if is_cancel else 'BORRADOR'" /> ·
+              </strong>
+              ERP LCE · Liquidación de haberes <t t-out="number" />
+              · <t t-out="employee.name" />
+            </td>
+            <td class="o_erp_num">
+              Página <span class="page" /> de <span class="topage" />
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </template>
+
+  <template id="report_settlement">
+    <t t-call="web.html_container">
+      <t t-foreach="docs" t-as="o">
+        <t t-call="erp_hr_settlement_ec.report_settlement_document" />
+      </t>
+    </t>
+  </template>
+</odoo>

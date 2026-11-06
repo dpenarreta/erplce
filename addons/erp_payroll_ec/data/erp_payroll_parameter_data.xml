@@ -113,4 +113,198 @@
       name="note"
     >Valor de partida a validar. El fondo de reserva se genera desde el día en que se cumple este periodo de servicio (contado desde la fecha del primer contrato); en ese mes se paga o provisiona en proporción a los días con derecho (a confirmar).</field>
   </record>
+  <!--
+        Periodos de cálculo y fechas de pago de los décimos acumulados (US-013,
+        CA-1, CA-2). Meses (1-12) y días (1-31) como números. Valores de
+        partida «A validar»: el contador o asesor laboral debe confirmarlos.
+        Códigos: models/const.py (BENEFIT_PERIOD_PARAMETER_CODES).
+    -->
+  <record id="param_thirteenth_period_start_month_2020" model="erp.payroll.parameter">
+    <field name="code">THIRTEENTH_PERIOD_START_MONTH</field>
+    <field name="name">Décimo tercero: mes de inicio del periodo de cálculo</field>
+    <field name="value_type">number</field>
+    <field name="value">12</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 111 (décima tercera remuneración: pago hasta el 24 de diciembre de cada año, la doceava parte de las remuneraciones percibidas). Periodo de cálculo del 1 de diciembre del año anterior al 30 de noviembre del año de pago según la práctica e instructivos del Ministerio del Trabajo (número de acuerdo ministerial: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record id="param_thirteenth_period_start_day_2020" model="erp.payroll.parameter">
+    <field name="code">THIRTEENTH_PERIOD_START_DAY</field>
+    <field name="name">Décimo tercero: día de inicio del periodo de cálculo</field>
+    <field name="value_type">number</field>
+    <field name="value">1</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 111 (décima tercera remuneración: pago hasta el 24 de diciembre de cada año, la doceava parte de las remuneraciones percibidas). Periodo de cálculo del 1 de diciembre del año anterior al 30 de noviembre del año de pago según la práctica e instructivos del Ministerio del Trabajo (número de acuerdo ministerial: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record id="param_thirteenth_payment_month_2020" model="erp.payroll.parameter">
+    <field name="code">THIRTEENTH_PAYMENT_MONTH</field>
+    <field name="name">Décimo tercero: mes de pago</field>
+    <field name="value_type">number</field>
+    <field name="value">12</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 111 (décima tercera remuneración: pago hasta el 24 de diciembre de cada año, la doceava parte de las remuneraciones percibidas). Periodo de cálculo del 1 de diciembre del año anterior al 30 de noviembre del año de pago según la práctica e instructivos del Ministerio del Trabajo (número de acuerdo ministerial: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record id="param_thirteenth_payment_day_2020" model="erp.payroll.parameter">
+    <field name="code">THIRTEENTH_PAYMENT_DAY</field>
+    <field name="name">Décimo tercero: día límite de pago</field>
+    <field name="value_type">number</field>
+    <field name="value">24</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 111 (décima tercera remuneración: pago hasta el 24 de diciembre de cada año, la doceava parte de las remuneraciones percibidas). Periodo de cálculo del 1 de diciembre del año anterior al 30 de noviembre del año de pago según la práctica e instructivos del Ministerio del Trabajo (número de acuerdo ministerial: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record
+    id="param_fourteenth_costa_period_start_month_2020"
+    model="erp.payroll.parameter"
+  >
+    <field name="code">FOURTEENTH_COSTA_PERIOD_START_MONTH</field>
+    <field
+      name="name"
+    >Décimo cuarto Costa / Galápagos: mes de inicio del periodo de cálculo</field>
+    <field name="value_type">number</field>
+    <field name="value">3</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 113 (décima cuarta remuneración: un salario básico unificado; fechas de pago diferenciadas por región). Régimen Costa / Galápagos: periodo de cálculo del 1 de marzo del año anterior al último día de febrero del año de pago y pago hasta el 15 de marzo, según la práctica e instructivos del Ministerio del Trabajo (norma que fija las fechas: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record
+    id="param_fourteenth_costa_period_start_day_2020"
+    model="erp.payroll.parameter"
+  >
+    <field name="code">FOURTEENTH_COSTA_PERIOD_START_DAY</field>
+    <field
+      name="name"
+    >Décimo cuarto Costa / Galápagos: día de inicio del periodo de cálculo</field>
+    <field name="value_type">number</field>
+    <field name="value">1</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 113 (décima cuarta remuneración: un salario básico unificado; fechas de pago diferenciadas por región). Régimen Costa / Galápagos: periodo de cálculo del 1 de marzo del año anterior al último día de febrero del año de pago y pago hasta el 15 de marzo, según la práctica e instructivos del Ministerio del Trabajo (norma que fija las fechas: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record id="param_fourteenth_costa_payment_month_2020" model="erp.payroll.parameter">
+    <field name="code">FOURTEENTH_COSTA_PAYMENT_MONTH</field>
+    <field name="name">Décimo cuarto Costa / Galápagos: mes de pago</field>
+    <field name="value_type">number</field>
+    <field name="value">3</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 113 (décima cuarta remuneración: un salario básico unificado; fechas de pago diferenciadas por región). Régimen Costa / Galápagos: periodo de cálculo del 1 de marzo del año anterior al último día de febrero del año de pago y pago hasta el 15 de marzo, según la práctica e instructivos del Ministerio del Trabajo (norma que fija las fechas: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record id="param_fourteenth_costa_payment_day_2020" model="erp.payroll.parameter">
+    <field name="code">FOURTEENTH_COSTA_PAYMENT_DAY</field>
+    <field name="name">Décimo cuarto Costa / Galápagos: día límite de pago</field>
+    <field name="value_type">number</field>
+    <field name="value">15</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 113 (décima cuarta remuneración: un salario básico unificado; fechas de pago diferenciadas por región). Régimen Costa / Galápagos: periodo de cálculo del 1 de marzo del año anterior al último día de febrero del año de pago y pago hasta el 15 de marzo, según la práctica e instructivos del Ministerio del Trabajo (norma que fija las fechas: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record
+    id="param_fourteenth_sierra_period_start_month_2020"
+    model="erp.payroll.parameter"
+  >
+    <field name="code">FOURTEENTH_SIERRA_PERIOD_START_MONTH</field>
+    <field
+      name="name"
+    >Décimo cuarto Sierra / Amazonía: mes de inicio del periodo de cálculo</field>
+    <field name="value_type">number</field>
+    <field name="value">8</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 113 (décima cuarta remuneración: un salario básico unificado; fechas de pago diferenciadas por región). Régimen Sierra / Amazonía: periodo de cálculo del 1 de agosto del año anterior al 31 de julio del año de pago y pago hasta el 15 de agosto, según la práctica e instructivos del Ministerio del Trabajo (norma que fija las fechas: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record
+    id="param_fourteenth_sierra_period_start_day_2020"
+    model="erp.payroll.parameter"
+  >
+    <field name="code">FOURTEENTH_SIERRA_PERIOD_START_DAY</field>
+    <field
+      name="name"
+    >Décimo cuarto Sierra / Amazonía: día de inicio del periodo de cálculo</field>
+    <field name="value_type">number</field>
+    <field name="value">1</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 113 (décima cuarta remuneración: un salario básico unificado; fechas de pago diferenciadas por región). Régimen Sierra / Amazonía: periodo de cálculo del 1 de agosto del año anterior al 31 de julio del año de pago y pago hasta el 15 de agosto, según la práctica e instructivos del Ministerio del Trabajo (norma que fija las fechas: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record id="param_fourteenth_sierra_payment_month_2020" model="erp.payroll.parameter">
+    <field name="code">FOURTEENTH_SIERRA_PAYMENT_MONTH</field>
+    <field name="name">Décimo cuarto Sierra / Amazonía: mes de pago</field>
+    <field name="value_type">number</field>
+    <field name="value">8</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 113 (décima cuarta remuneración: un salario básico unificado; fechas de pago diferenciadas por región). Régimen Sierra / Amazonía: periodo de cálculo del 1 de agosto del año anterior al 31 de julio del año de pago y pago hasta el 15 de agosto, según la práctica e instructivos del Ministerio del Trabajo (norma que fija las fechas: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
+  <record id="param_fourteenth_sierra_payment_day_2020" model="erp.payroll.parameter">
+    <field name="code">FOURTEENTH_SIERRA_PAYMENT_DAY</field>
+    <field name="name">Décimo cuarto Sierra / Amazonía: día límite de pago</field>
+    <field name="value_type">number</field>
+    <field name="value">15</field>
+    <field name="date_from">2020-01-01</field>
+    <field name="state">to_validate</field>
+    <field
+      name="norm"
+    >Código del Trabajo, art. 113 (décima cuarta remuneración: un salario básico unificado; fechas de pago diferenciadas por región). Régimen Sierra / Amazonía: periodo de cálculo del 1 de agosto del año anterior al 31 de julio del año de pago y pago hasta el 15 de agosto, según la práctica e instructivos del Ministerio del Trabajo (norma que fija las fechas: a confirmar).</field>
+    <field
+      name="note"
+    >Valor de partida a validar. «Vigente desde» (2020-01-01) es el inicio de uso para cubrir periodos de cálculo anteriores a 2026, no la fecha de vigencia legal. El periodo de cálculo dura un año: empieza el día y mes de inicio y termina el día anterior al mismo día y mes del año siguiente.</field>
+  </record>
 </odoo>
